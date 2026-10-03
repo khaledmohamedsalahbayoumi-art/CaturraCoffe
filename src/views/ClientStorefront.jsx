@@ -22,7 +22,12 @@ import {
   Home,
   X,
   Bot,
-  Bell
+  Bell,
+  Mail,
+  Clock,
+  Award,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
 import { StoreAiAssistant } from '../components/StoreAiAssistant';
 import { STORE_WHATSAPP_NUMBER, generateWhatsAppOrderUrl } from '../utils/whatsapp';
@@ -904,6 +909,284 @@ export const ClientStorefront = () => {
           })}
         </div>
       </main>
+
+      {/* 🌟 LUXURY STORE FOOTER (من نحن - العنوان - تواصل معنا - السوشيال ميديا) 🌟 */}
+      <footer className="store-footer" id="store-footer">
+        <div className="store-footer-container">
+          
+          {/* Brand & Trust Header Strip */}
+          <div className="store-footer-brand-strip">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <img
+                src="/caturra_logo.jpg"
+                alt="Caturra Logo"
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  border: '2px solid rgba(34, 203, 124, 0.4)',
+                  padding: '2px',
+                  background: '#ffffff'
+                }}
+              />
+              <div>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span>كاتورا للقهوة المختصة</span>
+                  <span style={{ fontSize: '0.78rem', background: 'rgba(34, 203, 124, 0.2)', color: '#4ade80', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                    Caturra Specialty Coffee
+                  </span>
+                </h2>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.86rem', color: '#a7f3d0' }}>
+                  أصالة التحميص المختص وتجربة استثنائية من قلب المحاصيل العالمية إلى فنجانك ☕
+                </p>
+              </div>
+            </div>
+
+            {/* Trust Pills */}
+            <div className="store-footer-trust-pills">
+              <span className="trust-pill"><Award size={14} color="#4ade80" /> بن أرابيكا مختص 100%</span>
+              <span className="trust-pill"><Sparkles size={14} color="#4ade80" /> تحميص طازج دوري</span>
+              <span className="trust-pill"><Shield size={14} color="#4ade80" /> جودة معتمدة ومضمونة</span>
+            </div>
+          </div>
+
+          {/* Main Footer 4-Column Grid */}
+          <div className="store-footer-grid">
+            
+            {/* Column 1: من نحن (About Us) */}
+            <div className="store-footer-col">
+              <h3 className="store-footer-title">
+                <Coffee size={18} color="#4ade80" />
+                <span>من نحن</span>
+              </h3>
+              <p style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1', marginBottom: '14px' }}>
+                <strong>كاتورا (Caturra)</strong> محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.
+              </p>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '6px 12px', borderRadius: '10px', fontSize: '0.78rem', color: '#86efac', border: '1px solid rgba(134,239,172,0.2)' }}>
+                <span>🌱 تحميص محلي بحرفية عالمية</span>
+              </div>
+            </div>
+
+            {/* Column 2: العنوان ومواعيد العمل (Address & Hours) */}
+            <div className="store-footer-col">
+              <h3 className="store-footer-title">
+                <MapPin size={18} color="#4ade80" />
+                <span>العنوان ومواعيد العمل</span>
+              </h3>
+              
+              <div className="store-footer-info-item">
+                <div className="store-footer-icon-wrap">
+                  <MapPin size={16} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.88rem' }}>مقر المحمصة والمتجر:</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
+                    القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام
+                  </div>
+                </div>
+              </div>
+
+              <div className="store-footer-info-item" style={{ marginTop: '12px' }}>
+                <div className="store-footer-icon-wrap">
+                  <Clock size={16} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.88rem' }}>ساعات العمل والخدمة:</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
+                    يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل
+                  </div>
+                </div>
+              </div>
+
+              <div className="store-footer-info-item" style={{ marginTop: '12px' }}>
+                <div className="store-footer-icon-wrap">
+                  <Shield size={16} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.88rem' }}>خدمة الشحن والتوصيل:</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
+                    شحن لجميع المحافظات خلال 24-48 ساعة 🚚
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 3: تواصل معنا (Contact Us) */}
+            <div className="store-footer-col">
+              <h3 className="store-footer-title">
+                <Phone size={18} color="#4ade80" />
+                <span>تواصل معنا</span>
+              </h3>
+
+              {/* Direct Call */}
+              <a
+                href="tel:01012345678"
+                className="store-footer-action-link"
+              >
+                <div className="store-footer-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
+                  <Phone size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>الاتصال الهاتفي المباشر</div>
+                  <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.92rem', direction: 'ltr', textAlign: 'right' }}>01012345678</div>
+                </div>
+              </a>
+
+              {/* Direct WhatsApp */}
+              <a
+                href={`https://wa.me/${STORE_WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن منتجاتكم وطلبات القهوة.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="store-footer-action-link"
+                style={{ marginTop: '10px' }}
+              >
+                <div className="store-footer-icon-wrap" style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80' }}>
+                  <MessageCircle size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>محادثة واتساب فورية</div>
+                  <div style={{ fontWeight: '800', color: '#4ade80', fontSize: '0.88rem' }}>تواصل عبر واتساب 💬</div>
+                </div>
+              </a>
+
+              {/* Email */}
+              <a
+                href="mailto:contact@caturracoffee.com"
+                className="store-footer-action-link"
+                style={{ marginTop: '10px' }}
+              >
+                <div className="store-footer-icon-wrap" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }}>
+                  <Mail size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>البريد الإلكتروني للطلبات</div>
+                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.84rem' }}>contact@caturracoffee.com</div>
+                </div>
+              </a>
+            </div>
+
+            {/* Column 4: السوشيال ميديا وروابط المتجر (Social Media) */}
+            <div className="store-footer-col">
+              <h3 className="store-footer-title">
+                <Sparkles size={18} color="#4ade80" />
+                <span>تابعنا على السوشيال ميديا</span>
+              </h3>
+              
+              <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '14px' }}>
+                تابع أحدث المحاصيل، عروض التحميص الحصرية، وطرق تحضير القهوة المختصة:
+              </p>
+
+              {/* Social Icons Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="store-footer-social-card"
+                  style={{ '--hover-color': '#e1306c' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                  </svg>
+                  <span>إنستجرام</span>
+                </a>
+
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="store-footer-social-card"
+                  style={{ '--hover-color': '#1877f2' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                  </svg>
+                  <span>فيسبوك</span>
+                </a>
+
+                <a
+                  href="https://tiktok.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="store-footer-social-card"
+                  style={{ '--hover-color': '#00f2fe' }}
+                >
+                  <span style={{ fontWeight: '900', fontSize: '1rem', lineHeight: '1' }}>♪</span>
+                  <span>تيك توك</span>
+                </a>
+
+                <a
+                  href={`https://wa.me/${STORE_WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="store-footer-social-card"
+                  style={{ '--hover-color': '#25d366' }}
+                >
+                  <MessageSquare size={18} />
+                  <span>واتساب</span>
+                </a>
+              </div>
+
+              {/* Quick Navigation Links */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+                <div style={{ fontSize: '0.76rem', color: '#94a3b8', marginBottom: '6px', fontWeight: '700' }}>أقسام تهمك:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory('coffee');
+                      window.scrollTo({ top: 380, behavior: 'smooth' });
+                    }}
+                    className="store-footer-tag"
+                  >
+                    بن مختص
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory('tools');
+                      window.scrollTo({ top: 380, behavior: 'smooth' });
+                    }}
+                    className="store-footer-tag"
+                  >
+                    أدوات V60
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory('boxes');
+                      window.scrollTo({ top: 380, behavior: 'smooth' });
+                    }}
+                    className="store-footer-tag"
+                  >
+                    بوكسات الهدايا
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Footer Bottom Bar */}
+          <div className="store-footer-bottom">
+            <div style={{ fontSize: '0.84rem', color: '#94a3b8' }}>
+              جميع الحقوق محفوظة © {new Date().getFullYear()} <strong>كاتورا للقهوة المختصة (Caturra Coffee)</strong> • صُنع بكل شغف في مصر 🇪🇬
+            </div>
+
+            {/* Accepted Payment Badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>وسائل الدفع المقبولة:</span>
+              <span className="payment-chip">InstaPay</span>
+              <span className="payment-chip">فودافون كاش</span>
+              <span className="payment-chip">فيزا / ماستركارد</span>
+              <span className="payment-chip">الدفع عند الاستلام</span>
+            </div>
+          </div>
+
+        </div>
+      </footer>
 
       {/* ⚖️ CUSTOMER WEIGHT & GRIND SELECTION MODAL ⚖️ */}
       {calibratingProduct && (
