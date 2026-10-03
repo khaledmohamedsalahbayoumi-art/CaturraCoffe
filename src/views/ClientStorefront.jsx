@@ -729,76 +729,69 @@ export const ClientStorefront = () => {
         </div>
       </header>
 
-      {/* HERO BANNER */}
+      {/* HERO BANNER (Full-width background image with overlay text) */}
       <section
+        className="store-hero-banner"
         style={{
           position: 'relative',
-          padding: '30px 16px',
-          background: 'linear-gradient(135deg, var(--mint-950) 0%, var(--mint-900) 50%, var(--mint-800) 100%)',
-          color: '#ffffff',
-          overflow: 'hidden',
           width: '100%',
-          maxWidth: '100%',
+          minHeight: '440px',
+          display: 'flex',
+          alignItems: 'center',
+          overflow: 'hidden',
+          backgroundImage: `linear-gradient(to left, rgba(1, 28, 16, 0.94) 0%, rgba(2, 42, 24, 0.86) 42%, rgba(1, 25, 14, 0.6) 72%, rgba(0, 18, 9, 0.35) 100%), url('/caturra_hero.jpg?v=2')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 38%',
+          backgroundRepeat: 'no-repeat',
+          color: '#ffffff',
           boxSizing: 'border-box'
         }}
       >
-        <div className="store-hero-grid">
-          <div>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(5px)',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '0.78rem',
-                fontWeight: '700',
-                marginBottom: '14px',
-                color: 'var(--mint-200)'
-              }}
-            >
-              <Sparkles size={14} />
-              محاصيل بن مختص طازجة مع حمص يومي بمعايير عالمية
+        {/* Subtle decorative glow overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at 85% 50%, rgba(34, 203, 124, 0.15) 0%, transparent 60%)',
+            pointerEvents: 'none'
+          }}
+        />
+
+        <div className="store-hero-content-container">
+          <div className="store-hero-text-block">
+            
+            {/* Badge */}
+            <span className="store-hero-badge">
+              <Sparkles size={14} color="#4ade80" />
+              <span>محاصيل بن مختص طازجة مع حمص يومي بمعايير عالمية</span>
             </span>
 
-            <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.4rem)', fontWeight: '900', lineHeight: '1.25', margin: '0 0 14px', color: '#ffffff' }}>
+            {/* Title */}
+            <h1 className="store-hero-title">
               اكتشف رحلة النكهات الاستثنائية مع قهوة كاتورا
             </h1>
 
-            <p style={{ fontSize: '0.92rem', color: 'var(--mint-100)', lineHeight: '1.65', margin: '0 0 20px', maxWidth: '520px' }}>
+            {/* Paragraph */}
+            <p className="store-hero-desc">
               محاصيل مختارة بعناية من أفضل مزارع إثيوبيا، كولومبيا، والبرازيل، مع إمكانية تحديد وزن البن بدقة بالجرام ودرجة الطحن لتناسب ذوقك وأدواتك.
             </p>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Action Buttons */}
+            <div className="store-hero-actions">
               <a
                 href="#products-section"
-                className="btn btn-primary"
-                style={{
-                  backgroundColor: '#ffffff',
-                  color: 'var(--mint-900)',
-                  fontWeight: '800',
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  fontSize: '0.9rem'
-                }}
+                className="btn btn-primary store-hero-cta"
               >
-                تصفح المحاصيل والأدوات ↓
+                <span>تصفح المحاصيل والأدوات</span>
+                <span style={{ fontSize: '1rem' }}>↓</span>
               </a>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--mint-200)', fontSize: '0.84rem' }}>
-                <Shield size={16} />
-                <span>شحن سريع لجميع المحافظات</span>
+              
+              <div className="store-hero-perk">
+                <Shield size={16} color="#86efac" />
+                <span>شحن سريع لجميع المحافظات 🚚</span>
               </div>
             </div>
-          </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '100%' }}>
-            <img
-              src="/caturra_hero.jpg?v=2"
-              alt="Caturra Coffee"
-              className="store-hero-img"
-            />
           </div>
         </div>
       </section>
