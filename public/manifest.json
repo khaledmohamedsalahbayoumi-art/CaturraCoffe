@@ -1,0 +1,24 @@
+{
+  "name": "كاتورا للقهوة المختصة | Caturra Coffee",
+  "short_name": "كاتورا",
+  "description": "منظومة ومتجر كاتورا للقهوة المختصة ERP & Store",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#013b20",
+  "theme_color": "#04884b",
+  "icons": [
+    {
+      "src": "/caturra_logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/caturra_logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
