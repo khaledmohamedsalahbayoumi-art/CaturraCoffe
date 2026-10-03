@@ -1022,7 +1022,7 @@ export const ClientStorefront = () => {
       {isAcademyPageOpen && (
         <div className="store-academy-standalone-page">
           
-          {/* Academy Hero Section with Cinematic Background Image */}
+          {/* Academy Hero Section with Pure Natural Image (No Filter) */}
           <section
             className="academy-standalone-hero"
             style={{
@@ -1033,7 +1033,7 @@ export const ClientStorefront = () => {
               alignItems: 'center',
               justifyContent: 'center',
               overflow: 'hidden',
-              backgroundImage: `linear-gradient(to bottom, rgba(1, 28, 16, 0.88) 0%, rgba(2, 42, 24, 0.8) 50%, rgba(1, 20, 12, 0.92) 100%), url('/caturra_academy_hero.jpg')`,
+              backgroundImage: "url('/caturra_academy_hero.jpg')",
               backgroundSize: 'cover',
               backgroundPosition: 'center 35%',
               backgroundRepeat: 'no-repeat',
@@ -1043,17 +1043,19 @@ export const ClientStorefront = () => {
               boxSizing: 'border-box'
             }}
           >
-            {/* Subtle atmospheric glow */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'radial-gradient(ellipse at 50% 40%, rgba(217, 119, 6, 0.15) 0%, transparent 70%)',
-                pointerEvents: 'none'
-              }}
-            />
-
-            <div style={{ maxWidth: '960px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+            <div style={{
+              maxWidth: '960px',
+              margin: '0 auto',
+              textAlign: 'center',
+              position: 'relative',
+              zIndex: 2,
+              background: 'rgba(0, 0, 0, 0.55)',
+              backdropFilter: 'blur(8px)',
+              padding: '36px 28px',
+              borderRadius: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+            }}>
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
