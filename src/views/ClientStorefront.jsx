@@ -61,6 +61,8 @@ export const ClientStorefront = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [isAcademyPageOpen, setIsAcademyPageOpen] = useState(false);
+  const [academySearchQuery, setAcademySearchQuery] = useState('');
   const [selectedAcademyArticle, setSelectedAcademyArticle] = useState(null);
   const [academyCategoryFilter, setAcademyCategoryFilter] = useState('all');
 
@@ -698,31 +700,55 @@ export const ClientStorefront = () => {
               <Sparkles size={13} style={{ color: '#b45309' }} />
             </button>
 
-            {/* Academy Shortcut Button in Header */}
-            <button
-              onClick={() => {
-                const el = document.getElementById('caturra-academy');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="btn btn-outline"
-              style={{
-                height: '38px',
-                padding: '0 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
-                borderColor: '#f59e0b',
-                color: '#b45309',
-                fontWeight: '800',
-                fontSize: '0.82rem',
-                borderRadius: '10px'
-              }}
-              title="أكاديمية كاتورا للقهوة المختصة (وصفات ودروس)"
-            >
-              <GraduationCap size={17} style={{ color: '#d97706' }} />
-              <span className="btn-text-hide">الأكاديمية</span>
-            </button>
+            {/* Academy / Back to Store Button in Header */}
+            {isAcademyPageOpen ? (
+              <button
+                onClick={() => {
+                  setIsAcademyPageOpen(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="btn btn-primary"
+                style={{
+                  height: '38px',
+                  padding: '0 14px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: '800',
+                  fontSize: '0.84rem',
+                  borderRadius: '10px'
+                }}
+                title="العودة لمتجر القهوة والتسوق"
+              >
+                <Coffee size={17} />
+                <span>العودة للمتجر 🛍️</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setIsAcademyPageOpen(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="btn btn-outline"
+                style={{
+                  height: '38px',
+                  padding: '0 12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
+                  borderColor: '#f59e0b',
+                  color: '#b45309',
+                  fontWeight: '800',
+                  fontSize: '0.82rem',
+                  borderRadius: '10px'
+                }}
+                title="أكاديمية كاتورا للقهوة المختصة (صفحة مستقلة)"
+              >
+                <GraduationCap size={17} style={{ color: '#d97706' }} />
+                <span className="btn-text-hide">الأكاديمية</span>
+              </button>
+            )}
 
             {/* Shopping Cart Trigger */}
             <button
@@ -760,8 +786,10 @@ export const ClientStorefront = () => {
         </div>
       </header>
 
-      {/* HERO BANNER (Full-width background image with overlay text) */}
-      <section
+      {!isAcademyPageOpen && (
+        <>
+          {/* HERO BANNER (Full-width background image with overlay text) */}
+          <section
         className="store-hero-banner"
         style={{
           position: 'relative',
@@ -987,25 +1015,116 @@ export const ClientStorefront = () => {
           })}
         </div>
       </main>
+        </>
+      )}
 
-      {/* 🎓 CATURRA COFFEE ACADEMY SECTION (أكاديمية كاتورا للقهوة المختصة) 🎓 */}
-      <section className="store-academy-section" id="caturra-academy">
-        <div className="store-academy-container">
+      {/* 🎓 DEDICATED ACADEMY FULL PAGE (صفحة الأكاديمية المستقلة) 🎓 */}
+      {isAcademyPageOpen && (
+        <div className="store-academy-standalone-page">
           
-          <div className="store-academy-header">
-            <div className="store-academy-badge">
-              <GraduationCap size={18} />
-              <span>أكاديمية كاتورا للقهوة المختصة • Caturra Specialty Coffee Academy</span>
-            </div>
-            <h2 className="store-academy-title">
-              أسرار وفنون عالم القهوة المختصة بين يديك
-            </h2>
-            <p className="store-academy-desc">
-              دليلك الاحترافي الشامل: تعلم وصفات التقطير بالميزان، أسرار درجات الطحن لكل أداة، معالجات حبوب البن، وفنون تبخير الحليب ورسم اللاتيه مع خبراء كاتورا.
-            </p>
+          {/* Academy Hero Section */}
+          <section className="academy-standalone-hero" style={{
+            background: 'linear-gradient(135deg, #062b1a 0%, #064e3b 45%, #042416 100%)',
+            color: '#ffffff',
+            padding: '54px 20px 48px',
+            position: 'relative',
+            overflow: 'hidden',
+            borderBottom: '4px solid #d97706'
+          }}>
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at 85% 30%, rgba(217, 119, 6, 0.18) 0%, transparent 60%)',
+              pointerEvents: 'none'
+            }} />
 
+            <div style={{ maxWidth: '960px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(217, 119, 6, 0.25)',
+                color: '#fbbf24',
+                border: '1px solid rgba(251, 191, 36, 0.4)',
+                padding: '6px 18px',
+                borderRadius: '9999px',
+                fontSize: '0.86rem',
+                fontWeight: '800',
+                marginBottom: '16px'
+              }}>
+                <GraduationCap size={20} />
+                <span>أكاديمية كاتورا للقهوة المختصة • Caturra Specialty Coffee Academy</span>
+              </div>
+
+              <h1 style={{ fontSize: '2.4rem', fontWeight: '900', margin: '0 0 14px', lineHeight: '1.25' }}>
+                أسرار وفنون عالم القهوة المختصة بين يديك
+              </h1>
+
+              <p style={{ fontSize: '1.02rem', color: '#cbd5e1', maxWidth: '720px', margin: '0 auto 28px', lineHeight: '1.7' }}>
+                دليلك الاحترافي الشامل: تعلم وصفات التقطير بالميزان، أسرار درجات الطحن لكل أداة، معالجات حبوب البن، وفنون تبخير الحليب ورسم اللاتيه مع خبراء وباريستا كاتورا.
+              </p>
+
+              {/* Academy Search & Back to Store */}
+              <div style={{ maxWidth: '620px', margin: '0 auto', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
+                  <Search size={18} style={{ position: 'absolute', right: '14px', top: '14px', color: '#94a3b8' }} />
+                  <input
+                    type="text"
+                    placeholder="ابحث في مقالات ووصفات الأكاديمية..."
+                    value={academySearchQuery}
+                    onChange={e => setAcademySearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 42px 12px 36px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: 'rgba(255,255,255,0.12)',
+                      color: '#ffffff',
+                      fontSize: '0.94rem',
+                      backdropFilter: 'blur(8px)',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  {academySearchQuery && (
+                    <button
+                      onClick={() => setAcademySearchQuery('')}
+                      style={{ position: 'absolute', left: '12px', top: '12px', background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer' }}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsAcademyPageOpen(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: '12px',
+                    fontWeight: '800',
+                    fontSize: '0.92rem',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Coffee size={18} />
+                  <span>العودة لمتجر القهوة 🛍️</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Academy Main Content Body */}
+          <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '40px 20px 70px' }}>
+            
             {/* Category Filter Pills */}
-            <div className="store-academy-filters">
+            <div className="store-academy-filters" style={{ marginBottom: '32px' }}>
               {[
                 { id: 'all', label: 'جميع الدروس والمقالات' },
                 { id: 'brewing', label: 'طرق التحضير والتقطير ☕' },
@@ -1022,88 +1141,117 @@ export const ClientStorefront = () => {
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Articles Grid */}
-          <div className="store-academy-grid">
-            {(academyArticles || [])
-              .filter(art => academyCategoryFilter === 'all' || art.category === academyCategoryFilter)
-              .map(article => (
-                <article
-                  key={article.id}
-                  className="academy-card"
-                  onClick={() => setSelectedAcademyArticle(article)}
-                >
-                  <div className="academy-card-img-wrap">
-                    <img
-                      src={article.image || '/caturra_espresso_bag_1791023273322.jpg'}
-                      alt={article.title}
-                      className="academy-card-img"
-                      loading="lazy"
-                    />
-                    <span className="academy-card-level-badge">
-                      {article.level || 'لجميع المستويات'}
-                    </span>
-                    <span className="academy-card-cat-badge">
-                      {article.category === 'brewing' ? 'طرق تحضير' :
-                       article.category === 'grind' ? 'درجات طحن' :
-                       article.category === 'beans' ? 'محاصيل ومعالجة' : 'مهارات باريستا'}
-                    </span>
+            {/* Articles Grid */}
+            {(() => {
+              const filtered = (academyArticles || []).filter(art => {
+                const matchCategory = academyCategoryFilter === 'all' || art.category === academyCategoryFilter;
+                const matchQuery = !academySearchQuery.trim() ||
+                  art.title.toLowerCase().includes(academySearchQuery.toLowerCase()) ||
+                  (art.summary && art.summary.toLowerCase().includes(academySearchQuery.toLowerCase())) ||
+                  (art.content && art.content.toLowerCase().includes(academySearchQuery.toLowerCase()));
+                return matchCategory && matchQuery;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', margin: '20px 0' }}>
+                    <BookOpen size={48} style={{ color: '#d97706', marginBottom: '12px' }} />
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#1e293b', margin: '0 0 6px' }}>لم يتم العثور على مقالات مطابقة</h3>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 16px' }}>جرب البحث بكلمة أخرى أو اختر تصنيفاً مختلفاً</p>
+                    <button
+                      onClick={() => { setAcademySearchQuery(''); setAcademyCategoryFilter('all'); }}
+                      className="btn btn-outline"
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      إعادة ضبط التصفية
+                    </button>
                   </div>
+                );
+              }
 
-                  <div className="academy-card-body">
-                    <div className="academy-card-meta">
-                      <span className="academy-meta-item">
-                        <Clock size={13} />
-                        <span>{article.readTime || '4 دقائق قراءة'}</span>
-                      </span>
-                      <span className="academy-meta-item">
-                        <Award size={13} />
-                        <span>{article.author || 'خبراء كاتورا'}</span>
-                      </span>
-                    </div>
+              return (
+                <div className="store-academy-grid">
+                  {filtered.map(article => (
+                    <article
+                      key={article.id}
+                      className="academy-card"
+                      onClick={() => setSelectedAcademyArticle(article)}
+                    >
+                      <div className="academy-card-img-wrap">
+                        <img
+                          src={article.image || '/caturra_espresso_bag_1791023273322.jpg'}
+                          alt={article.title}
+                          className="academy-card-img"
+                          loading="lazy"
+                        />
+                        <span className="academy-card-level-badge">
+                          {article.level || 'لجميع المستويات'}
+                        </span>
+                        <span className="academy-card-cat-badge">
+                          {article.category === 'brewing' ? 'طرق تحضير' :
+                           article.category === 'grind' ? 'درجات طحن' :
+                           article.category === 'beans' ? 'محاصيل ومعالجة' : 'مهارات باريستا'}
+                        </span>
+                      </div>
 
-                    <h3 className="academy-card-title">{article.title}</h3>
-                    <p className="academy-card-summary">{article.summary}</p>
+                      <div className="academy-card-body">
+                        <div className="academy-card-meta">
+                          <span className="academy-meta-item">
+                            <Clock size={13} />
+                            <span>{article.readTime || '4 دقائق قراءة'}</span>
+                          </span>
+                          <span className="academy-meta-item">
+                            <Award size={13} />
+                            <span>{article.author || 'خبراء كاتورا'}</span>
+                          </span>
+                        </div>
 
-                    <div className="academy-card-footer">
-                      <span className="academy-read-more-btn">
-                        <span>قراءة الدليل والوصفة</span>
-                        <ChevronLeft size={16} />
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-          </div>
+                        <h3 className="academy-card-title">{article.title}</h3>
+                        <p className="academy-card-summary">{article.summary}</p>
 
-          {/* Quick Shop Callout Banner */}
-          <div className="academy-cta-banner">
-            <div className="academy-cta-content">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontWeight: '800', marginBottom: '6px' }}>
-                <Sparkles size={18} />
-                <span>جرّب ما تعلمته الآن بأفضل مذاق</span>
+                        <div className="academy-card-footer">
+                          <span className="academy-read-more-btn">
+                            <span>قراءة الدليل والوصفة</span>
+                            <ChevronLeft size={16} />
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Quick Shop Callout Banner */}
+            <div className="academy-cta-banner">
+              <div className="academy-cta-content">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontWeight: '800', marginBottom: '6px' }}>
+                  <Sparkles size={18} />
+                  <span>جرّب ما تعلمته الآن بأفضل مذاق</span>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#ffffff' }}>
+                  جاهز لتحضير كوبك المميز بحبوب كاتورا؟
+                </h3>
+                <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem' }}>
+                  اختر حبوبك المحمصة طازجاً وحدد درجة الطحن التي تناسب أداتك، وسنوصلها لك في أسرع وقت.
+                </p>
               </div>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#ffffff' }}>
-                جاهز لتحضير كوبك المميز بحبوب كاتورا؟
-              </h3>
-              <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem' }}>
-                اختر حبوبك المحمصة طازجاً وحدد درجة الطحن التي تناسب أداتك، وسنوصلها لك في أسرع وقت.
-              </p>
+              <button
+                onClick={() => {
+                  setIsAcademyPageOpen(false);
+                  window.scrollTo({ top: 380, behavior: 'smooth' });
+                }}
+                className="academy-cta-btn"
+              >
+                <Coffee size={18} />
+                <span>العودة لمتجر الحبوب والمحاصيل 🛍️</span>
+              </button>
             </div>
-            <button
-              onClick={() => {
-                window.scrollTo({ top: 380, behavior: 'smooth' });
-              }}
-              className="academy-cta-btn"
-            >
-              <Coffee size={18} />
-              <span>تصفح حبوب ومحاصيل كاتورا</span>
-            </button>
-          </div>
 
+          </main>
         </div>
-      </section>
+      )}
 
       {/* 🌟 LUXURY STORE FOOTER (من نحن - العنوان - تواصل معنا - السوشيال ميديا) 🌟 */}
       <footer className="store-footer" id="store-footer">
@@ -1358,6 +1506,81 @@ export const ClientStorefront = () => {
                   >
                     بوكسات الهدايا
                   </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 5: أكاديمية القهوة (Coffee Academy) */}
+            <div className="store-footer-col">
+              <h3 className="store-footer-title">
+                <GraduationCap size={18} color="#4ade80" />
+                <span>أكاديمية كاتورا</span>
+              </h3>
+              
+              <p style={{ fontSize: '0.84rem', lineHeight: '1.6', color: '#cbd5e1', marginBottom: '12px' }}>
+                دليلك التعليمي المجاني لتعلم أسرار القهوة المختصة، درجات الطحن، وطرق التقطير باحترافية.
+              </p>
+
+              {/* Direct Button to Open Dedicated Academy Page */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAcademyPageOpen(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="store-footer-action-link"
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.25) 0%, rgba(5, 150, 105, 0.2) 100%)',
+                  border: '1px solid rgba(217, 119, 6, 0.45)',
+                  cursor: 'pointer',
+                  marginBottom: '14px',
+                  textAlign: 'right'
+                }}
+              >
+                <div className="store-footer-icon-wrap" style={{ background: 'rgba(217, 119, 6, 0.3)', color: '#fbbf24' }}>
+                  <GraduationCap size={17} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.72rem', color: '#fde68a', fontWeight: '700' }}>محتوى تعليمي وباريستا</div>
+                  <div style={{ fontWeight: '900', color: '#ffffff', fontSize: '0.9rem' }}>دخول صفحة الأكاديمية 🎓 ←</div>
+                </div>
+              </button>
+
+              {/* Quick Links to Featured Articles */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
+                <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginBottom: '6px', fontWeight: '700' }}>دروس مختارة:</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {(academyArticles || []).slice(0, 4).map(art => (
+                    <div
+                      key={art.id}
+                      onClick={() => {
+                        setIsAcademyPageOpen(true);
+                        setSelectedAcademyArticle(art);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      style={{
+                        fontSize: '0.8rem',
+                        color: '#cbd5e1',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 180ms ease'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.color = '#4ade80';
+                        e.currentTarget.style.paddingRight = '4px';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.color = '#cbd5e1';
+                        e.currentTarget.style.paddingRight = '0px';
+                      }}
+                    >
+                      <span style={{ color: '#d97706', fontSize: '0.75rem' }}>☕</span>
+                      <span>{art.title}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
