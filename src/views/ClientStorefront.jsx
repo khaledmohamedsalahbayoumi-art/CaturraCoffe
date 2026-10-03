@@ -1022,21 +1022,36 @@ export const ClientStorefront = () => {
       {isAcademyPageOpen && (
         <div className="store-academy-standalone-page">
           
-          {/* Academy Hero Section */}
-          <section className="academy-standalone-hero" style={{
-            background: 'linear-gradient(135deg, #062b1a 0%, #064e3b 45%, #042416 100%)',
-            color: '#ffffff',
-            padding: '54px 20px 48px',
-            position: 'relative',
-            overflow: 'hidden',
-            borderBottom: '4px solid #d97706'
-          }}>
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(ellipse at 85% 30%, rgba(217, 119, 6, 0.18) 0%, transparent 60%)',
-              pointerEvents: 'none'
-            }} />
+          {/* Academy Hero Section with Cinematic Background Image */}
+          <section
+            className="academy-standalone-hero"
+            style={{
+              position: 'relative',
+              width: '100%',
+              minHeight: '440px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              backgroundImage: `linear-gradient(to bottom, rgba(1, 28, 16, 0.88) 0%, rgba(2, 42, 24, 0.8) 50%, rgba(1, 20, 12, 0.92) 100%), url('/caturra_academy_hero.jpg')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 35%',
+              backgroundRepeat: 'no-repeat',
+              color: '#ffffff',
+              padding: '64px 20px 56px',
+              borderBottom: '4px solid #d97706',
+              boxSizing: 'border-box'
+            }}
+          >
+            {/* Subtle atmospheric glow */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(ellipse at 50% 40%, rgba(217, 119, 6, 0.15) 0%, transparent 70%)',
+                pointerEvents: 'none'
+              }}
+            />
 
             <div style={{ maxWidth: '960px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
               <div style={{
@@ -1056,18 +1071,18 @@ export const ClientStorefront = () => {
                 <span>أكاديمية كاتورا للقهوة المختصة • Caturra Specialty Coffee Academy</span>
               </div>
 
-              <h1 style={{ fontSize: '2.4rem', fontWeight: '900', margin: '0 0 14px', lineHeight: '1.25' }}>
+              <h1 style={{ fontSize: '2.4rem', fontWeight: '900', margin: '0 0 14px', lineHeight: '1.25', textShadow: '0 3px 14px rgba(0,0,0,0.8)' }}>
                 أسرار وفنون عالم القهوة المختصة بين يديك
               </h1>
 
-              <p style={{ fontSize: '1.02rem', color: '#cbd5e1', maxWidth: '720px', margin: '0 auto 28px', lineHeight: '1.7' }}>
+              <p style={{ fontSize: '1.02rem', color: '#e2e8f0', maxWidth: '720px', margin: '0 auto 28px', lineHeight: '1.7', textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
                 دليلك الاحترافي الشامل: تعلم وصفات التقطير بالميزان، أسرار درجات الطحن لكل أداة، معالجات حبوب البن، وفنون تبخير الحليب ورسم اللاتيه مع خبراء وباريستا كاتورا.
               </p>
 
               {/* Academy Search & Back to Store */}
               <div style={{ maxWidth: '620px', margin: '0 auto', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
-                  <Search size={18} style={{ position: 'absolute', right: '14px', top: '14px', color: '#94a3b8' }} />
+                  <Search size={18} style={{ position: 'absolute', right: '14px', top: '14px', color: '#cbd5e1' }} />
                   <input
                     type="text"
                     placeholder="ابحث في مقالات ووصفات الأكاديمية..."
@@ -1077,11 +1092,11 @@ export const ClientStorefront = () => {
                       width: '100%',
                       padding: '12px 42px 12px 36px',
                       borderRadius: '12px',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      background: 'rgba(255,255,255,0.12)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      background: 'rgba(0, 0, 0, 0.45)',
                       color: '#ffffff',
                       fontSize: '0.94rem',
-                      backdropFilter: 'blur(8px)',
+                      backdropFilter: 'blur(10px)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
