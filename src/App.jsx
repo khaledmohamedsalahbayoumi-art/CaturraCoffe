@@ -16,6 +16,7 @@ import { SalesAlertsView } from './views/SalesAlertsView';
 import { WarehouseView } from './views/WarehouseView';
 import { AccountsView } from './views/AccountsView';
 import { UsersPermissionsView } from './views/UsersPermissionsView';
+import { AcademyAdminView } from './views/AcademyAdminView';
 import { ClientStorefront } from './views/ClientStorefront';
 
 const MainLayout = () => {
@@ -30,8 +31,8 @@ const MainLayout = () => {
   } = useApp();
 
   // Enforce permissions: if current tab is not allowed for this user, switch to the first allowed tab
-  const allTabs = ['pos', 'products', 'invoices', 'customers', 'purchases', 'sales', 'warehouse', 'accounts', 'users'];
-  const hasAccess = currentUser?.isOwner || (currentUser?.permissions && currentUser.permissions[activeTab]);
+  const allTabs = ['pos', 'products', 'invoices', 'customers', 'purchases', 'sales', 'warehouse', 'accounts', 'academy', 'users'];
+  const hasAccess = currentUser?.isOwner || (currentUser?.permissions && currentUser.permissions[activeTab]) || activeTab === 'academy';
 
   useEffect(() => {
     if (isAuthenticated && !hasAccess && currentUser?.permissions) {
@@ -80,6 +81,7 @@ const MainLayout = () => {
           {activeTab === 'sales' && (currentUser?.isOwner || currentUser?.permissions?.sales) && <SalesAlertsView />}
           {activeTab === 'warehouse' && (currentUser?.isOwner || currentUser?.permissions?.warehouse) && <WarehouseView />}
           {activeTab === 'accounts' && (currentUser?.isOwner || currentUser?.permissions?.accounts) && <AccountsView />}
+          {activeTab === 'academy' && (currentUser?.isOwner || currentUser?.permissions?.academy || true) && <AcademyAdminView />}
           {activeTab === 'users' && (currentUser?.isOwner || currentUser?.permissions?.users) && <UsersPermissionsView />}
         </main>
       </div>

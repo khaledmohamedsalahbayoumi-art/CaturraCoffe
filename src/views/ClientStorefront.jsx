@@ -29,7 +29,9 @@ import {
   MessageCircle,
   ExternalLink,
   CreditCard,
-  Lock
+  Lock,
+  GraduationCap,
+  BookOpen
 } from 'lucide-react';
 import { StoreAiAssistant } from '../components/StoreAiAssistant';
 import { STORE_WHATSAPP_NUMBER, generateWhatsAppOrderUrl } from '../utils/whatsapp';
@@ -41,7 +43,8 @@ export const ClientStorefront = () => {
     createSale,
     openInvoiceModal,
     setViewMode,
-    openNotificationSettings
+    openNotificationSettings,
+    academyArticles = []
   } = useApp();
 
   const [hasEnteredStore, setHasEnteredStore] = useState(() => {
@@ -58,6 +61,8 @@ export const ClientStorefront = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [selectedAcademyArticle, setSelectedAcademyArticle] = useState(null);
+  const [academyCategoryFilter, setAcademyCategoryFilter] = useState('all');
 
   const handleProductSelectFromAi = (product) => {
     setHasEnteredStore(true);
@@ -693,6 +698,32 @@ export const ClientStorefront = () => {
               <Sparkles size={13} style={{ color: '#b45309' }} />
             </button>
 
+            {/* Academy Shortcut Button in Header */}
+            <button
+              onClick={() => {
+                const el = document.getElementById('caturra-academy');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="btn btn-outline"
+              style={{
+                height: '38px',
+                padding: '0 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
+                borderColor: '#f59e0b',
+                color: '#b45309',
+                fontWeight: '800',
+                fontSize: '0.82rem',
+                borderRadius: '10px'
+              }}
+              title="أكاديمية كاتورا للقهوة المختصة (وصفات ودروس)"
+            >
+              <GraduationCap size={17} style={{ color: '#d97706' }} />
+              <span className="btn-text-hide">الأكاديمية</span>
+            </button>
+
             {/* Shopping Cart Trigger */}
             <button
               onClick={() => setIsCartOpen(true)}
@@ -956,6 +987,123 @@ export const ClientStorefront = () => {
           })}
         </div>
       </main>
+
+      {/* 🎓 CATURRA COFFEE ACADEMY SECTION (أكاديمية كاتورا للقهوة المختصة) 🎓 */}
+      <section className="store-academy-section" id="caturra-academy">
+        <div className="store-academy-container">
+          
+          <div className="store-academy-header">
+            <div className="store-academy-badge">
+              <GraduationCap size={18} />
+              <span>أكاديمية كاتورا للقهوة المختصة • Caturra Specialty Coffee Academy</span>
+            </div>
+            <h2 className="store-academy-title">
+              أسرار وفنون عالم القهوة المختصة بين يديك
+            </h2>
+            <p className="store-academy-desc">
+              دليلك الاحترافي الشامل: تعلم وصفات التقطير بالميزان، أسرار درجات الطحن لكل أداة، معالجات حبوب البن، وفنون تبخير الحليب ورسم اللاتيه مع خبراء كاتورا.
+            </p>
+
+            {/* Category Filter Pills */}
+            <div className="store-academy-filters">
+              {[
+                { id: 'all', label: 'جميع الدروس والمقالات' },
+                { id: 'brewing', label: 'طرق التحضير والتقطير ☕' },
+                { id: 'grind', label: 'درجات الطحن والمطاحن ⚙️' },
+                { id: 'beans', label: 'المحاصيل والمعالجات 🌱' },
+                { id: 'barista', label: 'مهارات الباريستا واللاتيه 🥛' }
+              ].map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setAcademyCategoryFilter(cat.id)}
+                  className={`store-academy-filter-btn ${academyCategoryFilter === cat.id ? 'active' : ''}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Articles Grid */}
+          <div className="store-academy-grid">
+            {(academyArticles || [])
+              .filter(art => academyCategoryFilter === 'all' || art.category === academyCategoryFilter)
+              .map(article => (
+                <article
+                  key={article.id}
+                  className="academy-card"
+                  onClick={() => setSelectedAcademyArticle(article)}
+                >
+                  <div className="academy-card-img-wrap">
+                    <img
+                      src={article.image || '/caturra_espresso_bag_1791023273322.jpg'}
+                      alt={article.title}
+                      className="academy-card-img"
+                      loading="lazy"
+                    />
+                    <span className="academy-card-level-badge">
+                      {article.level || 'لجميع المستويات'}
+                    </span>
+                    <span className="academy-card-cat-badge">
+                      {article.category === 'brewing' ? 'طرق تحضير' :
+                       article.category === 'grind' ? 'درجات طحن' :
+                       article.category === 'beans' ? 'محاصيل ومعالجة' : 'مهارات باريستا'}
+                    </span>
+                  </div>
+
+                  <div className="academy-card-body">
+                    <div className="academy-card-meta">
+                      <span className="academy-meta-item">
+                        <Clock size={13} />
+                        <span>{article.readTime || '4 دقائق قراءة'}</span>
+                      </span>
+                      <span className="academy-meta-item">
+                        <Award size={13} />
+                        <span>{article.author || 'خبراء كاتورا'}</span>
+                      </span>
+                    </div>
+
+                    <h3 className="academy-card-title">{article.title}</h3>
+                    <p className="academy-card-summary">{article.summary}</p>
+
+                    <div className="academy-card-footer">
+                      <span className="academy-read-more-btn">
+                        <span>قراءة الدليل والوصفة</span>
+                        <ChevronLeft size={16} />
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+          </div>
+
+          {/* Quick Shop Callout Banner */}
+          <div className="academy-cta-banner">
+            <div className="academy-cta-content">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontWeight: '800', marginBottom: '6px' }}>
+                <Sparkles size={18} />
+                <span>جرّب ما تعلمته الآن بأفضل مذاق</span>
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#ffffff' }}>
+                جاهز لتحضير كوبك المميز بحبوب كاتورا؟
+              </h3>
+              <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem' }}>
+                اختر حبوبك المحمصة طازجاً وحدد درجة الطحن التي تناسب أداتك، وسنوصلها لك في أسرع وقت.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                window.scrollTo({ top: 380, behavior: 'smooth' });
+              }}
+              className="academy-cta-btn"
+            >
+              <Coffee size={18} />
+              <span>تصفح حبوب ومحاصيل كاتورا</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
 
       {/* 🌟 LUXURY STORE FOOTER (من نحن - العنوان - تواصل معنا - السوشيال ميديا) 🌟 */}
       <footer className="store-footer" id="store-footer">
@@ -1996,6 +2144,229 @@ export const ClientStorefront = () => {
                 style={{ flex: 1 }}
               >
                 العودة للتسوق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📖 ACADEMY ARTICLE READING MODAL (مودال قراءة مقالات الأكاديمية للعميل) 📖 */}
+      {selectedAcademyArticle && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setSelectedAcademyArticle(null)}
+          style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        >
+          <div
+            className="modal-card academy-reader-modal"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '780px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: 0,
+              borderRadius: '24px',
+              border: '1px solid rgba(217, 119, 6, 0.25)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)'
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 22px',
+                borderBottom: '1px solid var(--border-light)',
+                background: '#ffffff'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  background: '#fef3c7',
+                  color: '#d97706',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <GraduationCap size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '900', fontSize: '1.05rem', color: 'var(--mint-950)' }}>
+                    أكاديمية كاتورا للقهوة المختصة
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#6b7280' }}>
+                    دروس ووصفات باريستا معتمدة
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedAcademyArticle(null)}
+                className="btn btn-outline"
+                style={{ width: '36px', height: '36px', padding: 0, borderRadius: '50%', color: '#6b7280' }}
+                aria-label="إغلاق"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+              {/* Cover Hero Image */}
+              <div style={{
+                position: 'relative',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                height: '240px',
+                marginBottom: '20px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
+              }}>
+                <img
+                  src={selectedAcademyArticle.image}
+                  alt={selectedAcademyArticle.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  padding: '20px'
+                }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      background: 'rgba(217, 119, 6, 0.9)',
+                      color: '#ffffff',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '0.75rem',
+                      fontWeight: '800'
+                    }}>
+                      {selectedAcademyArticle.level}
+                    </span>
+                    <span style={{
+                      background: 'rgba(5, 150, 105, 0.9)',
+                      color: '#ffffff',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '0.75rem',
+                      fontWeight: '800'
+                    }}>
+                      {selectedAcademyArticle.category === 'brewing' ? 'طرق تحضير' :
+                       selectedAcademyArticle.category === 'grind' ? 'درجات طحن' :
+                       selectedAcademyArticle.category === 'beans' ? 'محاصيل ومعالجة' : 'مهارات باريستا'}
+                    </span>
+                  </div>
+
+                  <h1 style={{ color: '#ffffff', fontSize: '1.45rem', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.3' }}>
+                    {selectedAcademyArticle.title}
+                  </h1>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Clock size={14} />
+                      {selectedAcademyArticle.readTime}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Award size={14} />
+                      {selectedAcademyArticle.author}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary lead */}
+              <div style={{
+                background: '#f8fafc',
+                borderRight: '4px solid #d97706',
+                padding: '14px 18px',
+                borderRadius: '8px',
+                fontSize: '0.98rem',
+                color: '#334155',
+                lineHeight: '1.6',
+                fontWeight: '600',
+                marginBottom: '20px'
+              }}>
+                {selectedAcademyArticle.summary}
+              </div>
+
+              {/* Content Formatted */}
+              <div className="academy-modal-content" style={{ fontSize: '0.96rem', lineHeight: '1.8', color: '#1e293b' }}>
+                {selectedAcademyArticle.content.split('\n\n').map((block, i) => {
+                  if (block.startsWith('### ')) {
+                    return (
+                      <h3 key={i} style={{ color: '#0f172a', fontWeight: '800', fontSize: '1.18rem', margin: '22px 0 10px', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px' }}>
+                        {block.replace('### ', '')}
+                      </h3>
+                    );
+                  } else if (block.startsWith('## ')) {
+                    return (
+                      <h2 key={i} style={{ color: '#0f172a', fontWeight: '900', fontSize: '1.3rem', margin: '26px 0 12px' }}>
+                        {block.replace('## ', '')}
+                      </h2>
+                    );
+                  } else if (block.startsWith('💡') || block.startsWith('📌') || block.startsWith('⚠️')) {
+                    return (
+                      <div key={i} style={{
+                        background: '#fffbeb',
+                        border: '1px solid #fde68a',
+                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        margin: '16px 0',
+                        color: '#92400e',
+                        fontWeight: '600'
+                      }}>
+                        {block}
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <p key={i} style={{ margin: '0 0 14px', whiteSpace: 'pre-line' }}>
+                        {block}
+                      </p>
+                    );
+                  }
+                })}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                padding: '16px 24px',
+                borderTop: '1px solid var(--border-light)',
+                background: '#f8fafc'
+              }}
+            >
+              <button
+                onClick={() => {
+                  setSelectedAcademyArticle(null);
+                  window.scrollTo({ top: 380, behavior: 'smooth' });
+                }}
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Coffee size={18} />
+                <span>تسوق حبوب مناسبة لهذا التحضير ☕</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedAcademyArticle(null)}
+                className="btn btn-outline"
+                style={{ padding: '12px 24px', fontWeight: '700' }}
+              >
+                إغلاق
               </button>
             </div>
           </div>

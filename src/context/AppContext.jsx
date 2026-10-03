@@ -7,7 +7,8 @@ import {
   initialPurchases,
   initialBatches,
   initialExpenses,
-  initialUsers
+  initialUsers,
+  initialAcademyArticles
 } from '../data/initialData';
 import { dispatchStoreAlert } from '../utils/notifications';
 
@@ -53,6 +54,7 @@ export const AppProvider = ({ children }) => {
   const [batches, setBatches] = useState(() => loadState('batches', initialBatches));
   const [expenses, setExpenses] = useState(() => loadState('expenses', initialExpenses));
   const [users, setUsers] = useState(() => loadState('users', initialUsers));
+  const [academyArticles, setAcademyArticles] = useState(() => loadState('academy', initialAcademyArticles));
 
   // Authentication & Session
   const [isAuthenticated, setIsAuthenticated] = useState(() => loadState('auth', true));
@@ -118,6 +120,10 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('caturra_eg_current_user_id', JSON.stringify(currentUserId));
   }, [currentUserId]);
+
+  useEffect(() => {
+    localStorage.setItem('caturra_eg_academy', JSON.stringify(academyArticles));
+  }, [academyArticles]);
 
   // Current active user object
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
@@ -850,6 +856,35 @@ export const AppProvider = ({ children }) => {
   const pendingOrders = invoices.filter(inv => inv.status === 'pending');
   const pendingOrdersCount = pendingOrders.length;
 
+  // Academy Actions
+  const addAcademyArticle = (articleData) => {
+    const newArticle = {
+      id: `acad-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      readTime: '4 دقائق',
+      level: 'جميع المستويات',
+      image: '/v60_set.jpg',
+      author: currentUser?.fullName || 'أكاديمية كاتورا',
+      featured: false,
+      ...articleData
+    };
+    setAcademyArticles(prev => [newArticle, ...prev]);
+    dispatchStoreAlert({
+      title: 'أكاديمية كاتورا للقهوة المختصة',
+      body: `تم نشر درس تعليمي جديد: ${newArticle.title}`,
+      sound: true
+    });
+    return newArticle;
+  };
+
+  const updateAcademyArticle = (id, updatedData) => {
+    setAcademyArticles(prev => prev.map(a => a.id === id ? { ...a, ...updatedData } : a));
+  };
+
+  const deleteAcademyArticle = (id) => {
+    setAcademyArticles(prev => prev.filter(a => a.id !== id));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -892,6 +927,11 @@ export const AppProvider = ({ children }) => {
         deleteUser,
         applyPromoDiscount,
         recordStockWaste,
+        // Academy Educational Actions
+        academyArticles,
+        addAcademyArticle,
+        updateAcademyArticle,
+        deleteAcademyArticle,
         // Alerts, Notifications & Pending Orders
         lowStockAlerts,
         nearExpiryBatches,

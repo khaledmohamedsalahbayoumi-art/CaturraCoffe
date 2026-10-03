@@ -16,7 +16,8 @@ import {
   Coffee,
   Sparkles,
   ExternalLink,
-  Store
+  Store,
+  GraduationCap
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -90,6 +91,12 @@ export const Sidebar = () => {
       badge: null
     },
     {
+      id: 'academy',
+      label: 'أكاديمية القهوة',
+      icon: GraduationCap,
+      badge: 'محتوى تعليمي'
+    },
+    {
       id: 'users',
       label: 'الصلاحيات والمستخدمين',
       icon: ShieldCheck,
@@ -100,6 +107,7 @@ export const Sidebar = () => {
   // Filter items based strictly on current user permissions
   const visibleNavItems = navItems.filter(item => {
     if (currentUser?.isOwner) return true;
+    if (item.id === 'academy') return currentUser?.permissions?.academy ?? true;
     return Boolean(currentUser?.permissions && currentUser.permissions[item.id]);
   });
 
