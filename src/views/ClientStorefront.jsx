@@ -27,7 +27,9 @@ import {
   Clock,
   Award,
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  CreditCard,
+  Lock
 } from 'lucide-react';
 import { StoreAiAssistant } from '../components/StoreAiAssistant';
 import { STORE_WHATSAPP_NUMBER, generateWhatsAppOrderUrl } from '../utils/whatsapp';
@@ -76,8 +78,39 @@ export const ClientStorefront = () => {
     city: 'القاهرة',
     address: '',
     notes: '',
-    paymentMethod: 'cash'
+    paymentMethod: 'cash',
+    cardNumber: '',
+    cardHolder: '',
+    cardExpiry: '',
+    cardCvv: ''
   });
+
+  const handleCardNumberChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
+    const formatted = raw.match(/.{1,4}/g)?.join(' ') || raw;
+    setCustForm(prev => ({ ...prev, cardNumber: formatted }));
+  };
+
+  const handleCardExpiryChange = (e) => {
+    let raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (raw.length >= 2) {
+      raw = raw.slice(0, 2) + '/' + raw.slice(2);
+    }
+    setCustForm(prev => ({ ...prev, cardExpiry: raw }));
+  };
+
+  const handleCardCvvChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCustForm(prev => ({ ...prev, cardCvv: raw }));
+  };
+
+  const getCardBrand = (num = '') => {
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('4')) return 'visa';
+    if (/^(5[1-5]|2[2-7])/.test(clean)) return 'mastercard';
+    if (/^3[47]/.test(clean)) return 'amex';
+    return 'generic';
+  };
 
   // Filter products
   const filteredProducts = products.filter(p => {
@@ -215,6 +248,22 @@ export const ClientStorefront = () => {
       return;
     }
 
+    if (custForm.paymentMethod === 'card') {
+      const cleanCard = (custForm.cardNumber || '').replace(/\s+/g, '');
+      if (cleanCard.length < 16) {
+        alert('يرجى إدخال رقم بطاقة فيزا / ماستركارد صحيح مكون من 16 رقماً');
+        return;
+      }
+      if (!custForm.cardExpiry || custForm.cardExpiry.length < 5) {
+        alert('يرجى إدخال تاريخ انتهاء البطاقة بصيغة (MM/YY)');
+        return;
+      }
+      if (!custForm.cardCvv || custForm.cardCvv.length < 3) {
+        alert('يرجى إدخال رمز الأمان (CVV) المكون من 3 أرقام خلف البطاقة');
+        return;
+      }
+    }
+
     const salePayload = {
       items: cart.map(it => ({
         productId: it.productId,
@@ -233,6 +282,11 @@ export const ClientStorefront = () => {
       customerAddress: `${custForm.city} - ${custForm.address}`,
       paymentMethod: custForm.paymentMethod,
       paidAmount: custForm.paymentMethod === 'card' ? cartTotal : 0,
+      paymentDetails: custForm.paymentMethod === 'card' ? {
+        cardType: (custForm.cardNumber || '').replace(/\s+/g, '').startsWith('5') ? 'Mastercard' : 'Visa',
+        last4: (custForm.cardNumber || '').replace(/\s+/g, '').slice(-4),
+        cardHolder: custForm.cardHolder || custForm.name
+      } : null,
       source: 'online',
       status: 'pending' // Enters Admin ERP as a pending order
     };
@@ -1575,10 +1629,228 @@ export const ClientStorefront = () => {
                       checked={custForm.paymentMethod === 'card'}
                       onChange={() => setCustForm({ ...custForm, paymentMethod: 'card' })}
                     />
-                    <span>إنستاباي / فيزا</span>
+                    <span>بطاقة بنكية / فيزا 💳</span>
                   </label>
                 </div>
               </div>
+
+              {/* 💳 DYNAMIC CREDIT CARD FORM (يظهر عند اختيار بطاقة بنكية / فيزا) 💳 */}
+              {custForm.paymentMethod === 'card' && (
+                <div
+                  className="store-card-payment-box"
+                  style={{
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                    border: '1.5px solid var(--border-mint)',
+                    borderRadius: '16px',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                    animation: 'fadeIn 250ms ease'
+                  }}
+                >
+                  {/* Interactive Virtual Card Preview */}
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, #022e1b 0%, #064e3b 50%, #011f12 100%)',
+                      borderRadius: '14px',
+                      padding: '16px 18px',
+                      color: '#ffffff',
+                      boxShadow: '0 8px 24px rgba(2, 46, 27, 0.25)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: '170px'
+                    }}
+                  >
+                    {/* Background watermarks */}
+                    <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(34, 203, 124, 0.08)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', left: '-30px', top: '-30px', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)', pointerEvents: 'none' }} />
+
+                    {/* Card Top: Logo & Brand Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img src="/caturra_logo.jpg" alt="Caturra" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#fff' }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.5px', color: '#86efac' }}>CATURRA PAY</span>
+                      </div>
+                      
+                      {/* Brand Logo (Visa or Mastercard) */}
+                      {getCardBrand(custForm.cardNumber) === 'mastercard' ? (
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#eb001b' }} />
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#f79e1b', marginLeft: '-10px', opacity: 0.88 }} />
+                        </div>
+                      ) : (
+                        <div style={{ fontWeight: '900', fontStyle: 'italic', fontSize: '1.35rem', color: '#ffffff', letterSpacing: '2px' }}>
+                          VISA
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chip & Contactless */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0' }}>
+                      <div style={{ width: '36px', height: '26px', borderRadius: '5px', background: 'linear-gradient(135deg, #fcd34d 0%, #d97706 100%)', border: '1px solid #b45309' }} />
+                      <span style={{ fontSize: '1rem', opacity: 0.7 }}>🛜</span>
+                    </div>
+
+                    {/* Card Number */}
+                    <div style={{
+                      fontSize: '1.25rem',
+                      fontFamily: 'monospace',
+                      letterSpacing: '2.5px',
+                      color: '#ffffff',
+                      fontWeight: '700',
+                      direction: 'ltr',
+                      textAlign: 'left'
+                    }}>
+                      {custForm.cardNumber || '•••• •••• •••• ••••'}
+                    </div>
+
+                    {/* Cardholder & Expiry */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '6px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>حامل البطاقة</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#e2e8f0', textTransform: 'uppercase', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {custForm.cardHolder || custForm.name || 'CARDHOLDER NAME'}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right', direction: 'ltr' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>ينتهي في</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#e2e8f0' }}>
+                          {custForm.cardExpiry || 'MM/YY'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Form Inputs */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '2px' }}>
+                    
+                    {/* Card Number Input */}
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: '800' }}>
+                        رقم البطاقة (16 رقماً) *
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0000 0000 0000 0000"
+                          value={custForm.cardNumber}
+                          onChange={handleCardNumberChange}
+                          maxLength={19}
+                          className="form-input"
+                          style={{
+                            direction: 'ltr',
+                            textAlign: 'left',
+                            fontSize: '0.96rem',
+                            fontWeight: '700',
+                            paddingLeft: '40px',
+                            letterSpacing: '1px'
+                          }}
+                        />
+                        <CreditCard
+                          size={18}
+                          style={{
+                            position: 'absolute',
+                            left: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: 'var(--mint-700)'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Cardholder Name Input */}
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: '800' }}>
+                        الاسم كما هو مدون على البطاقة *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="مثال: MOHAMED AHMED"
+                        value={custForm.cardHolder}
+                        onChange={e => setCustForm({ ...custForm, cardHolder: e.target.value.toUpperCase() })}
+                        className="form-input"
+                        style={{ fontSize: '0.88rem', fontWeight: '700' }}
+                      />
+                    </div>
+
+                    {/* Expiry & CVV Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      
+                      {/* Expiry */}
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: '800' }}>
+                          تاريخ الانتهاء *
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="MM/YY"
+                          value={custForm.cardExpiry}
+                          onChange={handleCardExpiryChange}
+                          maxLength={5}
+                          className="form-input"
+                          style={{ direction: 'ltr', textAlign: 'center', fontWeight: '700' }}
+                        />
+                      </div>
+
+                      {/* CVV */}
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: '800', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>رمز الأمان (CVV) *</span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>3 أرقام خلف الكارت</span>
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="password"
+                            inputMode="numeric"
+                            placeholder="•••"
+                            value={custForm.cardCvv}
+                            onChange={handleCardCvvChange}
+                            maxLength={4}
+                            className="form-input"
+                            style={{ direction: 'ltr', textAlign: 'center', fontWeight: '800', paddingLeft: '32px' }}
+                          />
+                          <Lock
+                            size={16}
+                            style={{
+                              position: 'absolute',
+                              left: '10px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: 'var(--text-muted)'
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Security Notice */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      border: '1px solid rgba(34, 197, 94, 0.25)',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '0.76rem',
+                      color: 'var(--mint-900)'
+                    }}>
+                      <Shield size={16} color="var(--mint-700)" style={{ flexShrink: 0 }} />
+                      <span>معاملة مشفرة وآمنة 100% بنظام الحماية البنكي الثلاثي (3D Secure).</span>
+                    </div>
+
+                  </div>
+                </div>
+              )}
 
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '800' }}>
                 <span>إجمالي الطلب:</span>
@@ -1598,9 +1870,24 @@ export const ClientStorefront = () => {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    style={{ flex: 2, padding: '12px', fontWeight: '800' }}
+                    style={{
+                      flex: 2,
+                      padding: '12px',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
-                    تأكيد وإرسال الطلب الآن ☕
+                    {custForm.paymentMethod === 'card' ? (
+                      <>
+                        <Lock size={16} />
+                        <span>دفع {cartTotal.toLocaleString()} ج.م وتأكيد الطلب 💳</span>
+                      </>
+                    ) : (
+                      <span>تأكيد وإرسال الطلب الآن ☕</span>
+                    )}
                   </button>
                 </div>
 
