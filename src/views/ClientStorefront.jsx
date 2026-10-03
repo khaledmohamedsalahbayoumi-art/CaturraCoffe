@@ -1071,7 +1071,7 @@ export const ClientStorefront = () => {
                 <span>أكاديمية كاتورا للقهوة المختصة • Caturra Specialty Coffee Academy</span>
               </div>
 
-              <h1 style={{ fontSize: '2.4rem', fontWeight: '900', margin: '0 0 14px', lineHeight: '1.25', textShadow: '0 3px 14px rgba(0,0,0,0.8)' }}>
+              <h1 style={{ color: '#ffffff', fontSize: '2.4rem', fontWeight: '900', margin: '0 0 14px', lineHeight: '1.25', textShadow: '0 3px 14px rgba(0,0,0,0.9)' }}>
                 أسرار وفنون عالم القهوة المختصة بين يديك
               </h1>
 
