@@ -517,7 +517,19 @@ export const ClientStorefront = () => {
               textShadow: '0 4px 25px rgba(0, 0, 0, 0.7)'
             }}
           >
-            مرحباً بكم في متجر كاتورا
+            مرحباً بكم في متجر{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #fef08a 0%, #fbbf24 40%, #ea580c 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                color: '#fbbf24',
+                filter: 'drop-shadow(0 3px 15px rgba(245, 158, 11, 0.6))',
+                display: 'inline-block'
+              }}
+            >
+              كاتورا
+            </span>
           </h1>
 
           {/* Description */}
@@ -965,7 +977,19 @@ export const ClientStorefront = () => {
 
             {/* Title */}
             <h1 className="store-hero-title">
-              اكتشف رحلة النكهات الاستثنائية مع قهوة كاتورا
+              اكتشف رحلة النكهات الاستثنائية مع قهوة{' '}
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #fef08a 0%, #fbbf24 40%, #ea580c 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  color: '#fbbf24',
+                  filter: 'drop-shadow(0 2px 12px rgba(245, 158, 11, 0.45))',
+                  display: 'inline-block'
+                }}
+              >
+                كاتورا
+              </span>
             </h1>
 
             {/* Paragraph */}
