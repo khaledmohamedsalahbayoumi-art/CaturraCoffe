@@ -22,6 +22,15 @@ import {
 } from 'lucide-react';
 import { exportStockAuditToPdf } from '../utils/exportUtils';
 
+// Helper: Convert Eastern Arabic numerals (٠-٩) and Arabic decimal comma (٫) to standard ASCII
+const normalizeArabicNumerals = (str) => {
+  if (str === null || str === undefined) return '';
+  const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  let result = String(str).replace(/[٠-٩]/g, (d) => arabicDigits.indexOf(d));
+  result = result.replace(/٫/g, '.').replace(/,/g, '.');
+  return result;
+};
+
 export const WarehouseView = () => {
   const {
     batches = [],
@@ -54,6 +63,18 @@ export const WarehouseView = () => {
   const [auditSearchQuery, setAuditSearchQuery] = useState('');
   const [auditSavedSuccess, setAuditSavedSuccess] = useState(false);
 
+  // Manual Line Items added in audit
+  const [manualItems, setManualItems] = useState([]);
+  const [isAddManualModalOpen, setIsAddManualModalOpen] = useState(false);
+  const [manualItemForm, setManualItemForm] = useState({
+    name: '',
+    sku: '',
+    unitType: 'piece',
+    actualStock: '',
+    costPrice: '',
+    notes: ''
+  });
+
   // Filter batches
   const filteredBatches = batches.filter(b => {
     const matchesSearch = b.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,10 +106,13 @@ export const WarehouseView = () => {
   // Categories lookup map
   const catMap = Object.fromEntries(categories.map(c => [c.id, c.name]));
 
-  // Audit Calculations
-  const auditItems = products.map(p => {
+  // Audit Calculations: Products from system
+  const standardAuditItems = products.map(p => {
     const systemStock = Number(p.stock) || 0;
-    const actualStock = auditCounts[p.id] !== undefined ? Number(auditCounts[p.id]) : systemStock;
+    const rawVal = auditCounts[p.id];
+    const actualStock = rawVal !== undefined 
+      ? (rawVal === '' ? 0 : Number(normalizeArabicNumerals(rawVal)) || 0) 
+      : systemStock;
     const diff = Number((actualStock - systemStock).toFixed(2));
     const isWeight = p.unitType === 'weight';
     const costPrice = Number(isWeight ? (p.costPerKg || (p.costPrice * 4)) : p.costPrice) || 0;
@@ -103,13 +127,43 @@ export const WarehouseView = () => {
       unitType: p.unitType,
       systemStock,
       actualStock,
+      displayActual: rawVal !== undefined ? rawVal : systemStock,
       diff,
       costPrice,
       diffValue,
       notes: auditNotes[p.id] || '',
-      status: diff === 0 ? 'match' : (diff < 0 ? 'deficit' : 'surplus')
+      status: diff === 0 ? 'match' : (diff < 0 ? 'deficit' : 'surplus'),
+      isManual: false
     };
   });
+
+  // Audit Calculations: Manual unlisted items
+  const customAuditItems = manualItems.map(m => {
+    const rawVal = auditCounts[m.id] !== undefined ? auditCounts[m.id] : m.actualStock;
+    const actualStock = rawVal === '' ? 0 : (Number(normalizeArabicNumerals(rawVal)) || 0);
+    const costPrice = Number(m.costPrice) || 0;
+    const diff = actualStock;
+    const diffValue = Math.round(diff * costPrice);
+
+    return {
+      id: m.id,
+      sku: m.sku || 'يدوي',
+      name: m.name,
+      categoryName: 'صنف يدوي إضافي',
+      unitType: m.unitType,
+      systemStock: 0,
+      actualStock,
+      displayActual: rawVal !== undefined ? rawVal : m.actualStock,
+      diff,
+      costPrice,
+      diffValue,
+      notes: auditNotes[m.id] !== undefined ? auditNotes[m.id] : (m.notes || 'صنف مسجل يدوياً بالجرد'),
+      status: 'surplus',
+      isManual: true
+    };
+  });
+
+  const auditItems = [...standardAuditItems, ...customAuditItems];
 
   // Filtered audit items
   const filteredAuditItems = auditItems.filter(item => {
@@ -130,16 +184,36 @@ export const WarehouseView = () => {
   const auditDiscrepancyCount = auditDeficitCount + auditSurplusCount;
   const totalAuditDiffValue = auditItems.reduce((sum, i) => sum + i.diffValue, 0);
 
-  // Handle Count input changes
-  const handleCountChange = (productId, val) => {
-    const num = Math.max(0, Number(val) || 0);
-    setAuditCounts(prev => ({ ...prev, [productId]: num }));
-    setAuditSavedSuccess(false);
+  // Manual Count typing handler with full Arabic/English numbers & decimal support
+  const handleCountChange = (productId, rawVal) => {
+    const clean = normalizeArabicNumerals(rawVal);
+    // Allow empty string or numbers with optional decimal point (e.g. "", "14", "3.8")
+    if (clean === '' || /^[0-9]*\.?[0-9]*$/.test(clean)) {
+      setAuditCounts(prev => ({ ...prev, [productId]: clean }));
+      setAuditSavedSuccess(false);
+    }
   };
 
-  const handleStepCount = (productId, currentActual, delta) => {
-    const nextVal = Math.max(0, Number((currentActual + delta).toFixed(2)));
-    handleCountChange(productId, nextVal);
+  const handleCountBlur = (productId) => {
+    setAuditCounts(prev => {
+      const current = prev[productId];
+      if (current === '' || current === undefined) {
+        return { ...prev, [productId]: 0 };
+      }
+      const num = Number(normalizeArabicNumerals(current)) || 0;
+      return { ...prev, [productId]: num };
+    });
+  };
+
+  const handleStepCount = (productId, delta) => {
+    setAuditCounts(prev => {
+      const item = auditItems.find(i => i.id === productId);
+      const currentRaw = prev[productId] !== undefined ? prev[productId] : (item ? item.systemStock : 0);
+      const currentNum = Number(normalizeArabicNumerals(currentRaw)) || 0;
+      const nextVal = Math.max(0, Number((currentNum + delta).toFixed(2)));
+      return { ...prev, [productId]: nextVal };
+    });
+    setAuditSavedSuccess(false);
   };
 
   const handleQuickMatch = (productId, systemStock) => {
@@ -154,6 +228,36 @@ export const WarehouseView = () => {
     });
     setAuditCounts(reset);
     setAuditSavedSuccess(false);
+  };
+
+  // Add Manual Item Submit
+  const handleAddManualItem = (e) => {
+    e.preventDefault();
+    if (!manualItemForm.name.trim()) return;
+    const countVal = Number(normalizeArabicNumerals(manualItemForm.actualStock)) || 0;
+    const costVal = Number(normalizeArabicNumerals(manualItemForm.costPrice)) || 0;
+    const newItem = {
+      id: `manual_${Date.now()}`,
+      name: manualItemForm.name.trim(),
+      sku: manualItemForm.sku.trim() || `MAN-${Date.now().toString().slice(-4)}`,
+      unitType: manualItemForm.unitType,
+      actualStock: countVal,
+      costPrice: costVal,
+      notes: manualItemForm.notes.trim() || 'صنف يدوي بالجرد'
+    };
+    setManualItems(prev => [...prev, newItem]);
+    setAuditCounts(prev => ({ ...prev, [newItem.id]: countVal }));
+    setManualItemForm({ name: '', sku: '', unitType: 'piece', actualStock: '', costPrice: '', notes: '' });
+    setIsAddManualModalOpen(false);
+  };
+
+  const handleRemoveManualItem = (id) => {
+    setManualItems(prev => prev.filter(m => m.id !== id));
+    setAuditCounts(prev => {
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
   };
 
   // Reconcile and save audit to actual system stock
@@ -321,7 +425,7 @@ export const WarehouseView = () => {
                 {totalAuditItems} <span style={{ fontSize: '0.85rem', fontWeight: '500' }}>صنف</span>
               </div>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                جميع المنتجات المسجلة
+                {manualItems.length > 0 ? `منها ${manualItems.length} صنف يدوي` : 'جميع المنتجات المسجلة'}
               </div>
             </div>
 
@@ -394,7 +498,7 @@ export const WarehouseView = () => {
                 onChange={e => setAuditorName(e.target.value)}
                 placeholder="اسم مسؤول الجرد..."
                 className="form-input"
-                style={{ height: '36px', width: '220px', fontSize: '0.85rem', borderRadius: '8px' }}
+                style={{ height: '36px', width: '200px', fontSize: '0.85rem', borderRadius: '8px' }}
               />
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 📅 {new Date().toLocaleDateString('ar-EG')}
@@ -402,6 +506,26 @@ export const WarehouseView = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {/* Add Manual Item Button */}
+              <button
+                type="button"
+                onClick={() => setIsAddManualModalOpen(true)}
+                className="btn btn-outline"
+                style={{
+                  height: '36px',
+                  fontSize: '0.82rem',
+                  gap: '6px',
+                  borderColor: '#0284c7',
+                  color: '#0369a1',
+                  background: '#f0f9ff',
+                  fontWeight: '800'
+                }}
+                title="إضافة بند أو صنف يدوي لمحضر الجرد"
+              >
+                <Plus size={15} />
+                <span>+ إضافة صنف يدوي للجرد</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleMatchAll}
@@ -410,7 +534,7 @@ export const WarehouseView = () => {
                 title="تعبئة حقول الجرد الفعلي بالرصيد الدفتري الحالي"
               >
                 <RotateCcw size={14} />
-                <span>إعادة ضبط للأرصدة الدفترية</span>
+                <span>إعادة ضبط للأرصدة</span>
               </button>
 
               <button
@@ -532,12 +656,13 @@ export const WarehouseView = () => {
                   <th>كود الصنف (SKU)</th>
                   <th>اسم المنتج والتصنيف</th>
                   <th style={{ textAlign: 'center' }}>الرصيد الدفتري</th>
-                  <th style={{ textAlign: 'center', width: '210px' }}>الجرد الفعلي المحصور</th>
+                  <th style={{ textAlign: 'center', width: '220px' }}>الجرد الفعلي (كتابة يدوية)</th>
                   <th style={{ textAlign: 'center' }}>الفارق</th>
                   <th style={{ textAlign: 'center' }}>حالة البند</th>
                   <th style={{ textAlign: 'center' }}>سعر التكلفة</th>
                   <th style={{ textAlign: 'center' }}>قيمة الفارق</th>
                   <th>ملاحظات وتبريرات الجرد</th>
+                  <th style={{ width: '40px', textAlign: 'center' }}>إجراء</th>
                 </tr>
               </thead>
               <tbody>
@@ -550,7 +675,7 @@ export const WarehouseView = () => {
                     <tr 
                       key={item.id}
                       style={{
-                        background: isDeficit ? '#fff5f5' : (isSurplus ? '#f0f9ff' : undefined)
+                        background: item.isManual ? '#f8fafc' : (isDeficit ? '#fff5f5' : (isSurplus ? '#f0f9ff' : undefined))
                       }}
                     >
                       <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
@@ -558,9 +683,14 @@ export const WarehouseView = () => {
                       </td>
 
                       <td>
-                        <strong style={{ fontFamily: 'monospace', color: 'var(--mint-900)' }}>
+                        <strong style={{ fontFamily: 'monospace', color: item.isManual ? '#0284c7' : 'var(--mint-900)' }}>
                           {item.sku}
                         </strong>
+                        {item.isManual && (
+                          <span style={{ fontSize: '0.68rem', display: 'block', color: '#0369a1', fontWeight: '700' }}>
+                            يدوي إضافي
+                          </span>
+                        )}
                       </td>
 
                       <td>
@@ -576,15 +706,15 @@ export const WarehouseView = () => {
                         {item.systemStock} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{item.unitType === 'weight' ? 'كجم' : 'ق'}</span>
                       </td>
 
-                      {/* Actual Count Input with Step Buttons */}
+                      {/* Actual Count Input with FULL MANUAL TYPING + Stepper */}
                       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <button
                             type="button"
-                            onClick={() => handleStepCount(item.id, item.actualStock, -1)}
+                            onClick={() => handleStepCount(item.id, -1)}
                             style={{
-                              width: '26px',
-                              height: '32px',
+                              width: '28px',
+                              height: '34px',
                               borderRadius: '6px',
                               border: '1px solid var(--border-light)',
                               background: '#ffffff',
@@ -599,30 +729,35 @@ export const WarehouseView = () => {
                           </button>
 
                           <input
-                            type="number"
-                            min="0"
-                            step={item.unitType === 'weight' ? '0.25' : '1'}
-                            value={item.actualStock}
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
+                            value={item.displayActual !== undefined ? item.displayActual : item.systemStock}
                             onChange={(e) => handleCountChange(item.id, e.target.value)}
+                            onBlur={() => handleCountBlur(item.id)}
+                            placeholder="0"
                             style={{
-                              width: '74px',
-                              height: '32px',
+                              width: '82px',
+                              height: '34px',
                               textAlign: 'center',
                               fontWeight: '900',
-                              fontSize: '0.95rem',
-                              borderRadius: '6px',
+                              fontSize: '1rem',
+                              borderRadius: '8px',
                               border: isDeficit ? '2px solid #ef4444' : (isSurplus ? '2px solid #0284c7' : '1.5px solid #10b981'),
                               background: '#ffffff',
-                              color: isDeficit ? '#b91c1c' : (isSurplus ? '#0369a1' : '#047857')
+                              color: isDeficit ? '#b91c1c' : (isSurplus ? '#0369a1' : '#047857'),
+                              boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)',
+                              outline: 'none',
+                              fontFamily: 'system-ui, -apple-system, sans-serif'
                             }}
                           />
 
                           <button
                             type="button"
-                            onClick={() => handleStepCount(item.id, item.actualStock, 1)}
+                            onClick={() => handleStepCount(item.id, 1)}
                             style={{
-                              width: '26px',
-                              height: '32px',
+                              width: '28px',
+                              height: '34px',
                               borderRadius: '6px',
                               border: '1px solid var(--border-light)',
                               background: '#ffffff',
@@ -636,7 +771,7 @@ export const WarehouseView = () => {
                             <Plus size={13} />
                           </button>
 
-                          {!isMatch && (
+                          {!isMatch && !item.isManual && (
                             <button
                               type="button"
                               onClick={() => handleQuickMatch(item.id, item.systemStock)}
@@ -699,15 +834,34 @@ export const WarehouseView = () => {
                       <td>
                         <input
                           type="text"
-                          placeholder="ملاحظات الجرد أو سبب الفارق..."
+                          placeholder="ملاحظات الجرد..."
                           value={item.notes}
                           onChange={(e) => {
                             const val = e.target.value;
                             setAuditNotes(prev => ({ ...prev, [item.id]: val }));
                           }}
                           className="form-input"
-                          style={{ height: '32px', fontSize: '0.78rem', borderRadius: '6px', minWidth: '160px' }}
+                          style={{ height: '32px', fontSize: '0.78rem', borderRadius: '6px', minWidth: '150px' }}
                         />
+                      </td>
+
+                      <td style={{ textAlign: 'center' }}>
+                        {item.isManual && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveManualItem(item.id)}
+                            style={{
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              padding: '4px'
+                            }}
+                            title="حذف هذا الصنف اليدوي من الجرد"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -942,7 +1096,118 @@ export const WarehouseView = () => {
         </>
       )}
 
-      {/* MODAL: RECORD STOCK WASTE */}
+      {/* ========================================================== */}
+      {/* MODAL: ADD MANUAL ITEM TO AUDIT (إضافة صنف يدوي للجرد)     */}
+      {/* ========================================================== */}
+      {isAddManualModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsAddManualModalOpen(false)}>
+          <div className="modal-content" style={{ maxWidth: '480px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={18} />
+                <span>إضافة صنف / بند يدوي لمحضر الجرد</span>
+              </h3>
+              <button onClick={() => setIsAddManualModalOpen(false)} className="btn-icon" style={{ width: '30px', height: '30px' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddManualItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">اسم الصنف والمنتج *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: حبوب قهوة كولومبيا سوبريمو..."
+                  value={manualItemForm.name}
+                  onChange={e => setManualItemForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">كود الصنف / SKU (اختياري)</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: COL-SUP-01"
+                    value={manualItemForm.sku}
+                    onChange={e => setManualItemForm(prev => ({ ...prev, sku: e.target.value }))}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">نوع الوحدة</label>
+                  <select
+                    value={manualItemForm.unitType}
+                    onChange={e => setManualItemForm(prev => ({ ...prev, unitType: e.target.value }))}
+                    className="form-select"
+                  >
+                    <option value="piece">بالقطعة / بالعبوة</option>
+                    <option value="weight">بالوزن (كجم)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">الكمية الفعلية المحصورة *</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    placeholder="مثال: 15 أو 3.5"
+                    value={manualItemForm.actualStock}
+                    onChange={e => setManualItemForm(prev => ({ ...prev, actualStock: normalizeArabicNumerals(e.target.value) }))}
+                    className="form-input"
+                    dir="ltr"
+                    style={{ textAlign: 'center', fontWeight: '800' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">سعر التكلفة التقديري (ج.م)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="مثال: 180"
+                    value={manualItemForm.costPrice}
+                    onChange={e => setManualItemForm(prev => ({ ...prev, costPrice: normalizeArabicNumerals(e.target.value) }))}
+                    className="form-input"
+                    dir="ltr"
+                    style={{ textAlign: 'center', fontWeight: '700' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">سبب أو ملاحظة الإضافة اليدوية</label>
+                <input
+                  type="text"
+                  placeholder="مثال: صنف جديد لم يدرج بعد في النظام أو عينة تجريبية..."
+                  value={manualItemForm.notes}
+                  onChange={e => setManualItemForm(prev => ({ ...prev, notes: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setIsAddManualModalOpen(false)} className="btn btn-outline">
+                  إلغاء
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ background: '#0284c7', borderColor: '#0284c7' }}>
+                  إضافة البند للمحضر ✓
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================== */}
+      {/* MODAL: RECORD STOCK WASTE (تسجيل هالك من دفعة)             */}
+      {/* ========================================================== */}
       {wasteModalBatch && (
         <div className="modal-overlay" onClick={() => setWasteModalBatch(null)}>
           <div className="modal-content" style={{ maxWidth: '440px', padding: '24px' }} onClick={e => e.stopPropagation()}>
