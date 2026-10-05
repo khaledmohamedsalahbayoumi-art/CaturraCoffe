@@ -791,56 +791,6 @@ export const ClientStorefront = () => {
               <Home size={18} />
             </button>
 
-            {/* Phone Notifications Settings Trigger */}
-            <button
-              onClick={openNotificationSettings}
-              className="btn btn-outline"
-              style={{
-                height: '38px',
-                width: '38px',
-                padding: 0,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '10px',
-                borderColor: 'var(--mint-400)',
-                background: 'var(--mint-50)',
-                color: 'var(--mint-800)'
-              }}
-              title="تفعيل وضبط إشعارات الهاتف 🔔"
-            >
-              <Bell size={17} />
-            </button>
-
-            {/* Link to Admin ERP / Login */}
-            <a
-              href="/admin"
-              onClick={(e) => {
-                if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-                  e.preventDefault();
-                  setViewMode('admin');
-                }
-              }}
-              className="btn btn-outline"
-              style={{
-                textDecoration: 'none',
-                height: '38px',
-                padding: '0 12px',
-                fontSize: '0.82rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderColor: isAuthenticated ? 'var(--border-light)' : 'rgba(217, 119, 6, 0.45)',
-                background: isAuthenticated ? 'transparent' : 'rgba(254, 243, 199, 0.5)',
-                color: isAuthenticated ? 'var(--text-main)' : '#92400e',
-                fontWeight: '700'
-              }}
-              title={isAuthenticated ? 'دخول لوحة تحكم الإدارة ونقاط البيع' : 'تسجيل الدخول للنظام الإداري'}
-            >
-              {isAuthenticated ? <Store size={15} /> : <Lock size={14} color="#b45309" />}
-              <span className="btn-text-hide">{isAuthenticated ? 'لوحة الإدارة' : 'دخول الإدارة 🔐'}</span>
-            </a>
-
             {/* Track Order Button */}
             <button
               onClick={() => openTrackingModal()}
