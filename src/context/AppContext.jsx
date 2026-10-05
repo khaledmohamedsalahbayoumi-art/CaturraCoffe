@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   initialCategories,
   initialProducts,
@@ -17,6 +17,74 @@ import {
   getPdfFromStorage,
   deletePdfFromStorage
 } from '../utils/pdfStorage';
+
+// URL Routing helper to distinguish between Customer Storefront (/) and Admin ERP Dashboard (/admin)
+export const getRouteFromUrl = () => {
+  if (typeof window === 'undefined') return 'client';
+
+  try {
+    const rawPath = window.location.pathname.toLowerCase();
+    const path = rawPath.replace(/\/+$/, '') || '/';
+    const hash = (window.location.hash || '').toLowerCase();
+    const search = new URLSearchParams(window.location.search);
+
+    // Direct check for admin route (/admin, /dashboard, #admin, ?admin)
+    const isAdminPath =
+      path.endsWith('/admin') ||
+      path === '/admin' ||
+      path.endsWith('/dashboard') ||
+      path === '/dashboard';
+
+    const isAdminHash =
+      hash === '#admin' ||
+      hash === '#/admin' ||
+      hash === '#dashboard' ||
+      hash === '#/dashboard' ||
+      hash === '#login' ||
+      hash === '#/login';
+
+    const isAdminSearch =
+      search.get('mode') === 'admin' ||
+      search.has('admin') ||
+      search.has('login');
+
+    if (isAdminPath || isAdminHash || isAdminSearch) {
+      return 'admin';
+    }
+
+    // Direct check for explicit store route (/store, /client, #store)
+    const isClientPath =
+      path.endsWith('/store') ||
+      path === '/store' ||
+      path.endsWith('/client') ||
+      path === '/client';
+
+    const isClientHash =
+      hash === '#store' ||
+      hash === '#/store' ||
+      hash === '#client' ||
+      hash === '#/client';
+
+    const isClientSearch =
+      search.get('mode') === 'client' ||
+      search.has('store');
+
+    if (isClientPath || isClientHash || isClientSearch) {
+      return 'client';
+    }
+
+    // If on general path and user has an active authenticated session in admin
+    const isAuth = localStorage.getItem('caturra_eg_auth');
+    const sessionMode = sessionStorage.getItem('caturra_view_mode');
+    if (isAuth === 'true' && sessionMode === 'admin') {
+      return 'admin';
+    }
+  } catch {
+    // ignore
+  }
+
+  return 'client';
+};
 
 const AppContext = createContext();
 
@@ -83,44 +151,93 @@ export const AppProvider = ({ children }) => {
   });
   const [currentUserId, setCurrentUserId] = useState(() => loadState('current_user_id', initialUsers[0].id));
 
-  // App UI State: Default is ALWAYS 'client' (Customer Storefront)
+  // App UI State: Default is determined by current URL path/hash
   const [activeTab, setActiveTab] = useState('pos');
-  const [viewMode, setViewMode] = useState(() => {
+  const [viewMode, setViewModeState] = useState(() => {
     if (typeof window !== 'undefined') {
-      // Remove any legacy persistent localStorage viewMode so regular link visits always open the store first
       try {
         localStorage.removeItem('caturra_view_mode');
       } catch {
         // ignore
       }
+    }
+    return getRouteFromUrl();
+  });
 
-      const p = new URLSearchParams(window.location.search);
-      const hash = window.location.hash || '';
+  // Navigate helper that synchronizes React state with the browser address bar
+  const navigateTo = useCallback((mode, pushHistory = true) => {
+    setViewModeState(mode);
 
-      // Direct explicit links to admin / login via URL parameters or hash
-      if (p.get('mode') === 'admin' || p.has('admin') || p.has('login') || hash === '#admin' || hash === '#login') {
-        return 'admin';
+    if (typeof window === 'undefined') return;
+
+    try {
+      if (mode === 'admin') {
+        sessionStorage.setItem('caturra_view_mode', 'admin');
+      } else {
+        sessionStorage.removeItem('caturra_view_mode');
       }
+      localStorage.removeItem('caturra_view_mode');
+    } catch {
+      // ignore
+    }
 
-      // If URL explicitly requests client / store
-      if (p.get('mode') === 'client' || hash === '#store') {
-        return 'client';
-      }
-
-      // If active session in the current tab is in admin and user is actively authenticated
+    if (pushHistory) {
       try {
-        const isAuth = localStorage.getItem('caturra_eg_auth');
-        const sessionMode = sessionStorage.getItem('caturra_view_mode');
-        if (isAuth === 'true' && sessionMode === 'admin') {
-          return 'admin';
+        const currentPath = window.location.pathname;
+        let basePath = '';
+        if (
+          currentPath.endsWith('/admin') ||
+          currentPath.endsWith('/dashboard') ||
+          currentPath.endsWith('/store') ||
+          currentPath.endsWith('/client')
+        ) {
+          basePath = currentPath.replace(/\/(admin|dashboard|store|client)\/?$/, '');
+        } else {
+          basePath = currentPath === '/' ? '' : currentPath.replace(/\/+$/, '');
         }
-      } catch {
-        // ignore
+
+        const targetPath = mode === 'admin' ? `${basePath}/admin` : (basePath ? `${basePath}/` : '/');
+
+        if (window.location.pathname !== targetPath) {
+          window.history.pushState({ mode }, '', targetPath);
+        }
+      } catch (err) {
+        console.warn('Navigation history error:', err);
       }
     }
-    // Default is always client storefront
-    return 'client';
-  });
+  }, []);
+
+  // setViewMode wrapper supporting both string values and updater functions
+  const setViewMode = useCallback((modeOrFn, pushHistory = true) => {
+    if (typeof modeOrFn === 'function') {
+      setViewModeState(prev => {
+        const next = modeOrFn(prev);
+        navigateTo(next, pushHistory);
+        return next;
+      });
+    } else {
+      navigateTo(modeOrFn, pushHistory);
+    }
+  }, [navigateTo]);
+
+  // Sync with browser back/forward buttons and hash changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleLocationChange = () => {
+      const targetMode = getRouteFromUrl();
+      setViewModeState(targetMode);
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeInvoiceForModal, setActiveInvoiceForModal] = useState(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -149,19 +266,6 @@ export const AppProvider = ({ children }) => {
     setIsTrackingModalOpen(false);
     setTrackingInvoiceNumber('');
   };
-
-  useEffect(() => {
-    try {
-      if (viewMode === 'admin') {
-        sessionStorage.setItem('caturra_view_mode', 'admin');
-      } else {
-        sessionStorage.removeItem('caturra_view_mode');
-      }
-      localStorage.removeItem('caturra_view_mode');
-    } catch {
-      // ignore
-    }
-  }, [viewMode]);
 
   // Handle scanned QR code invoice preview (?invoice=...)
   useEffect(() => {
@@ -367,14 +471,10 @@ export const AppProvider = ({ children }) => {
 
   const logout = () => {
     setIsAuthenticated(false);
-    setViewMode('client');
     try {
       localStorage.setItem('caturra_eg_auth', JSON.stringify(false));
       sessionStorage.removeItem('caturra_view_mode');
       localStorage.removeItem('caturra_view_mode');
-      if (typeof window !== 'undefined' && (window.location.search.includes('admin') || window.location.hash.includes('admin') || window.location.search.includes('login') || window.location.hash.includes('login'))) {
-        window.history.replaceState(null, '', window.location.pathname);
-      }
     } catch {
       // ignore
     }
@@ -1147,6 +1247,7 @@ export const AppProvider = ({ children }) => {
         setActiveTab,
         viewMode,
         setViewMode,
+        navigateTo,
         sidebarCollapsed,
         setSidebarCollapsed,
         openInvoiceModal,

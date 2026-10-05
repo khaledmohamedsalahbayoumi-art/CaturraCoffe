@@ -234,10 +234,17 @@ export const Sidebar = () => {
           gap: '5px'
         }}
       >
-        {/* Switch to Client Storefront Button */}
-        <button
-          onClick={() => setViewMode(viewMode === 'admin' ? 'client' : 'admin')}
+        {/* Switch to Client Storefront Link */}
+        <a
+          href="/"
+          onClick={(e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+              e.preventDefault();
+              setViewMode('client');
+            }
+          }}
           style={{
+            textDecoration: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
@@ -253,16 +260,16 @@ export const Sidebar = () => {
             marginBottom: '8px',
             transition: 'all 200ms ease'
           }}
-          title="الانتقال إلى متجر العملاء"
+          title="الانتقال إلى متجر العملاء الإلكتروني"
         >
           <Store size={20} color="var(--mint-700)" />
           {!sidebarCollapsed && (
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <span>متجر العملاء</span>
-              <span className="badge badge-mint" style={{ fontSize: '0.7rem' }}>عرض</span>
+              <span className="badge badge-mint" style={{ fontSize: '0.7rem' }}>زيارة 🛍️</span>
             </span>
           )}
-        </button>
+        </a>
 
         {visibleNavItems.map((item) => {
           const Icon = item.icon;

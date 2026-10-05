@@ -207,14 +207,21 @@ export const AcademyAdminView = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setViewMode('client')}
+          <a
+            href="/"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                setViewMode('client');
+              }
+            }}
             className="btn btn-outline"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="معاينة محتوى الأكاديمية كما يظهر للعملاء في المتجر"
           >
             <Eye size={16} />
             <span>معاينة في المتجر</span>
-          </button>
+          </a>
 
           <button
             onClick={handleOpenAdd}

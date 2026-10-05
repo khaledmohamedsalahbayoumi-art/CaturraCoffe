@@ -386,21 +386,16 @@ export const LoginView = () => {
 
         {/* Bottom Navigation: Return to Client Store */}
         <div style={{ marginTop: '26px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
-          <button
-            type="button"
-            onClick={() => {
-              setViewMode('client');
-              try {
-                sessionStorage.removeItem('caturra_view_mode');
-                localStorage.removeItem('caturra_view_mode');
-                if (typeof window !== 'undefined' && (window.location.search || window.location.hash)) {
-                  window.history.replaceState(null, '', window.location.pathname);
-                }
-              } catch {
-                // ignore
+          <a
+            href="/"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                setViewMode('client');
               }
             }}
             style={{
+              textDecoration: 'none',
               background: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '12px',
@@ -425,7 +420,7 @@ export const LoginView = () => {
           >
             <Store size={18} color="#34d399" />
             <span>العودة لمتجر العملاء الإلكتروني 🛍️</span>
-          </button>
+          </a>
         </div>
 
         {/* Micro Status Bar */}

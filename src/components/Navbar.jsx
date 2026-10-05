@@ -148,11 +148,18 @@ export const Navbar = () => {
       {/* Right Actions & Utilities */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px', flexShrink: 0 }}>
         
-        {/* Toggle to Client Store */}
-        <button
-          onClick={() => setViewMode(viewMode === 'admin' ? 'client' : 'admin')}
+        {/* Direct Link to Customer Storefront */}
+        <a
+          href="/"
+          onClick={(e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+              e.preventDefault();
+              setViewMode('client');
+            }
+          }}
           className="btn"
           style={{
+            textDecoration: 'none',
             fontSize: isMobile ? '0.76rem' : '0.86rem',
             padding: isMobile ? '6px 8px' : '8px 16px',
             borderRadius: '10px',
@@ -163,16 +170,16 @@ export const Navbar = () => {
             boxShadow: '0 2px 8px rgba(4, 136, 75, 0.12)',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '6px',
             flexShrink: 0,
             cursor: 'pointer',
             whiteSpace: 'nowrap'
           }}
-          title="معاينة واجهة المتجر كما يراها العميل"
+          title="الانتقال إلى متجر العملاء الإلكتروني"
         >
           <Store size={isMobile ? 15 : 18} color="var(--mint-700)" />
-          <span>{isMobile ? 'المتجر' : 'واجهة المتجر للعملاء'}</span>
-        </button>
+          <span>{isMobile ? 'المتجر' : 'زيارة متجر العملاء 🛍️'}</span>
+        </a>
 
         {/* Smart Alerts Bell Notification */}
         <div style={{ position: 'relative', flexShrink: 0 }}>

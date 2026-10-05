@@ -414,10 +414,17 @@ export const ClientStorefront = () => {
           </div>
 
           {/* Quick link to Admin ERP / Login */}
-          <button
-            onClick={() => setViewMode('admin')}
+          <a
+            href="/admin"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                setViewMode('admin');
+              }
+            }}
             className="welcome-splash-erp"
             style={{
+              textDecoration: 'none',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -437,7 +444,7 @@ export const ClientStorefront = () => {
           >
             {isAuthenticated ? <Store size={15} color="var(--mint-300)" /> : <Lock size={14} color="#fde68a" />}
             <span>{isAuthenticated ? 'لوحة الإدارة (ERP)' : 'تسجيل دخول الإدارة 🔐'}</span>
-          </button>
+          </a>
         </div>
 
         {/* CENTER CONTENT */}
@@ -806,10 +813,17 @@ export const ClientStorefront = () => {
             </button>
 
             {/* Link to Admin ERP / Login */}
-            <button
-              onClick={() => setViewMode('admin')}
+            <a
+              href="/admin"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                  e.preventDefault();
+                  setViewMode('admin');
+                }
+              }}
               className="btn btn-outline"
               style={{
+                textDecoration: 'none',
                 height: '38px',
                 padding: '0 12px',
                 fontSize: '0.82rem',
@@ -825,7 +839,7 @@ export const ClientStorefront = () => {
             >
               {isAuthenticated ? <Store size={15} /> : <Lock size={14} color="#b45309" />}
               <span className="btn-text-hide">{isAuthenticated ? 'لوحة الإدارة' : 'دخول الإدارة 🔐'}</span>
-            </button>
+            </a>
 
             {/* Track Order Button */}
             <button
@@ -1830,7 +1844,7 @@ export const ClientStorefront = () => {
               جميع الحقوق محفوظة © {new Date().getFullYear()} <strong>كاتورا للقهوة المختصة (Caturra Coffee)</strong> • صُنع بكل شغف في مصر 🇪🇬
             </div>
 
-            {/* Accepted Payment Badges & Track Order */}
+            {/* Accepted Payment Badges, Track Order & Admin Portal */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -1854,6 +1868,35 @@ export const ClientStorefront = () => {
                 <Truck size={14} />
                 <span>تتبع حالة شحنتك 🚚</span>
               </button>
+
+              <a
+                href="/admin"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    setViewMode('admin');
+                  }
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  color: '#e2e8f0',
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 150ms ease'
+                }}
+                title="لوحة تحكم إدارة المتجر ونقاط البيع"
+              >
+                <Lock size={13} color="#fbbf24" />
+                <span>لوحة الإدارة 🔐</span>
+              </a>
 
               <span style={{ fontSize: '0.74rem', color: '#64748b' }}>وسائل الدفع:</span>
               <span className="payment-chip">InstaPay</span>

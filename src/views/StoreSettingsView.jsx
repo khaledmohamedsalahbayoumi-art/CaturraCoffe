@@ -20,11 +20,32 @@ import {
   Shield,
   Coffee,
   Globe,
-  Megaphone
+  Megaphone,
+  Copy,
+  Check,
+  Link,
+  Store
 } from 'lucide-react';
 
 export const StoreSettingsView = () => {
   const { contactInfo, updateContactInfo, resetContactInfo, setViewMode } = useApp();
+  const [copiedKey, setCopiedKey] = useState('');
+
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com';
+  const storeUrl = `${currentOrigin}/`;
+  const adminUrl = `${currentOrigin}/admin`;
+
+  const handleCopyUrl = (url, key) => {
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(''), 2000);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   // Local form state initialized from current contactInfo
   const [formData, setFormData] = useState({
@@ -131,11 +152,17 @@ export const StoreSettingsView = () => {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setViewMode('client')}
+          <a
+            href="/"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                setViewMode('client');
+              }
+            }}
             className="btn btn-outline"
             style={{
+              textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
@@ -148,7 +175,7 @@ export const StoreSettingsView = () => {
           >
             <Eye size={17} />
             <span>معاينة المتجر كعميل</span>
-          </button>
+          </a>
 
           <button
             type="button"
@@ -210,10 +237,16 @@ export const StoreSettingsView = () => {
               تم تطبيق كافة بيانات التواصل المحدثة وتظهر الآن فوراً في واجهة المتجر، أسفل الفوتر، وفي إيصالات الفواتير.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setViewMode('client')}
+          <a
+            href="/"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                setViewMode('client');
+              }
+            }}
             style={{
+              textDecoration: 'none',
               background: '#059669',
               color: '#ffffff',
               border: 'none',
@@ -225,9 +258,200 @@ export const StoreSettingsView = () => {
             }}
           >
             مشاهدة في المتجر ↗
-          </button>
+          </a>
         </div>
       )}
+
+      {/* 🌐 Domain & Links Card (روابط المنظومة على الدومين) 🌐 */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)',
+          borderRadius: '16px',
+          padding: '20px',
+          color: '#ffffff',
+          boxShadow: '0 8px 24px rgba(2, 44, 34, 0.25)',
+          border: '1px solid rgba(52, 211, 153, 0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
+          marginBottom: '4px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              background: 'rgba(52, 211, 153, 0.2)',
+              borderRadius: '10px',
+              padding: '8px',
+              color: '#34d399',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Globe size={20} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#ffffff' }}>
+                روابط المتجر ولوحة التحكم على الدومين
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#a7f3d0' }}>
+                المتجر ولوحة الإدارة مربوطان معاً على نفس قاعدة البيانات المشتركة بشكل فوري وتلقائي
+              </p>
+            </div>
+          </div>
+          <span style={{
+            background: 'rgba(52, 211, 153, 0.15)',
+            border: '1px solid rgba(52, 211, 153, 0.4)',
+            color: '#34d399',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            fontSize: '0.74rem',
+            fontWeight: '800'
+          }}>
+            ⚡ تزامن لحظي Realtime
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+          
+          {/* Storefront Link */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: '800', color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Store size={15} />
+                <span>رابط متجر العملاء (Storefront)</span>
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>للجمهور والمشترين</span>
+            </div>
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.25)',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              fontSize: '0.86rem',
+              fontWeight: '700',
+              fontFamily: 'monospace',
+              direction: 'ltr',
+              color: '#38bdf8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              overflow: 'hidden'
+            }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{storeUrl}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => handleCopyUrl(storeUrl, 'store')}
+                  style={{
+                    background: copiedKey === 'store' ? '#059669' : 'rgba(255, 255, 255, 0.15)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#ffffff',
+                    padding: '4px 8px',
+                    fontSize: '0.74rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="نسخ رابط المتجر"
+                >
+                  {copiedKey === 'store' ? <Check size={12} /> : <Copy size={12} />}
+                  <span>{copiedKey === 'store' ? 'تم النسخ!' : 'نسخ'}</span>
+                </button>
+                <a
+                  href="/"
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                      e.preventDefault();
+                      setViewMode('client');
+                    }
+                  }}
+                  style={{
+                    color: '#a7f3d0',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px',
+                    cursor: 'pointer'
+                  }}
+                  title="زيارة المتجر"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Dashboard Link */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: '800', color: '#fde047', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={15} />
+                <span>رابط لوحة التحكم والإدارة (ERP & POS)</span>
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>للإدارة والموظفين</span>
+            </div>
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.25)',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              fontSize: '0.86rem',
+              fontWeight: '700',
+              fontFamily: 'monospace',
+              direction: 'ltr',
+              color: '#facc15',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              overflow: 'hidden'
+            }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adminUrl}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => handleCopyUrl(adminUrl, 'admin')}
+                  style={{
+                    background: copiedKey === 'admin' ? '#059669' : 'rgba(255, 255, 255, 0.15)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#ffffff',
+                    padding: '4px 8px',
+                    fontSize: '0.74rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="نسخ رابط لوحة الإدارة"
+                >
+                  {copiedKey === 'admin' ? <Check size={12} /> : <Copy size={12} />}
+                  <span>{copiedKey === 'admin' ? 'تم النسخ!' : 'نسخ'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
       {/* Main Settings Form */}
       <form onSubmit={handleSave}>
