@@ -17,7 +17,8 @@ import {
   Sparkles,
   ExternalLink,
   Store,
-  GraduationCap
+  GraduationCap,
+  Settings
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -97,6 +98,12 @@ export const Sidebar = () => {
       badge: 'محتوى تعليمي'
     },
     {
+      id: 'settings',
+      label: 'بيانات التواصل والمتجر',
+      icon: Settings,
+      badge: 'جديد'
+    },
+    {
       id: 'users',
       label: 'الصلاحيات والمستخدمين',
       icon: ShieldCheck,
@@ -108,6 +115,7 @@ export const Sidebar = () => {
   const visibleNavItems = navItems.filter(item => {
     if (currentUser?.isOwner) return true;
     if (item.id === 'academy') return currentUser?.permissions?.academy ?? true;
+    if (item.id === 'settings') return currentUser?.isOwner || currentUser?.role === 'owner' || currentUser?.role === 'admin' || (currentUser?.permissions?.settings ?? true);
     return Boolean(currentUser?.permissions && currentUser.permissions[item.id]);
   });
 

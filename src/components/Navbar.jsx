@@ -14,7 +14,8 @@ import {
   Plus,
   Package,
   Menu,
-  Smartphone
+  Smartphone,
+  LogOut
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -28,6 +29,7 @@ export const Navbar = () => {
     currentUser,
     users,
     loginAsUser,
+    logout,
     lowStockAlerts,
     nearExpiryBatches,
     pendingOrders,
@@ -57,7 +59,8 @@ export const Navbar = () => {
     sales: { title: 'تقارير المبيعات والتنبيهات الذكية', desc: 'الأصناف الأكثر مبيعاً وتنبيهات الركود والهالك' },
     warehouse: { title: 'إدارة المخزن وتشغيل الدفعات', desc: 'متابعة الدفعات بتواريخ الصلاحية وتنبيهات النقص' },
     accounts: { title: 'الحسابات والمصروفات والربحية', desc: 'مقارنات المبيعات والمصروفات والأرباح الصافية' },
-    users: { title: 'إدارة المستخدمين والصلاحيات', desc: 'حسابات الإدارة، صلاحيات الكاشير، وحساب المالك' }
+    users: { title: 'إدارة المستخدمين والصلاحيات', desc: 'حسابات الإدارة، صلاحيات الكاشير، وحساب المالك' },
+    storeSettings: { title: 'بيانات التواصل وإعدادات المتجر', desc: 'أرقام الهواتف، الواتساب، العناوين، وشريط الإعلانات الترويجية' }
   };
 
   const totalAlerts = lowStockAlerts.length + nearExpiryBatches.length + (pendingOrdersCount || 0);
@@ -485,6 +488,33 @@ export const Navbar = () => {
                   {u.isOwner && <span style={{ fontSize: '0.7rem', color: '#b45309' }}>👑</span>}
                 </div>
               ))}
+
+              {/* Logout Option */}
+              <div
+                onClick={() => {
+                  logout();
+                  setShowUserDropdown(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '9px 10px',
+                  marginTop: '6px',
+                  borderTop: '1px solid var(--border-light)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: '#dc2626',
+                  fontSize: '0.84rem',
+                  fontWeight: '700',
+                  transition: 'background 150ms ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <LogOut size={15} />
+                <span>تسجيل الخروج من النظام</span>
+              </div>
             </div>
           )}
         </div>

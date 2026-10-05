@@ -15,8 +15,14 @@ import {
   CheckCircle,
   X,
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  FileText,
+  UploadCloud,
+  Download,
+  Paperclip
 } from 'lucide-react';
+import { convertFileToBase64, formatFileSize, downloadPdfFile } from '../utils/pdfStorage';
+import { PdfReaderModal } from '../components/PdfReaderModal';
 
 export const AcademyAdminView = () => {
   const {
@@ -34,6 +40,9 @@ export const AcademyAdminView = () => {
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
   const [previewArticle, setPreviewArticle] = useState(null);
+  const [activePdfForReader, setActivePdfForReader] = useState(null);
+  const [externalPdfUrl, setExternalPdfUrl] = useState('');
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -47,7 +56,8 @@ export const AcademyAdminView = () => {
     author: 'أكاديمية كاتورا',
     summary: '',
     content: '',
-    featured: false
+    featured: false,
+    pdfFile: null
   });
 
   // Filter articles
@@ -59,9 +69,46 @@ export const AcademyAdminView = () => {
     return matchesCat && matchesSearch;
   });
 
+  // Handle PDF file upload from local machine
+  const handlePdfUpload = async (file) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      alert('يرجى اختيار ملف بصيغة PDF فقط.');
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      alert('حجم الملف كبير جداً. الحد الأقصى الموصى به هو 25 ميجابايت.');
+      return;
+    }
+
+    try {
+      setIsUploadingPdf(true);
+      const base64Data = await convertFileToBase64(file);
+      const newPdf = {
+        id: `pdf-${Date.now()}`,
+        name: file.name,
+        size: formatFileSize(file.size),
+        sizeBytes: file.size,
+        data: base64Data,
+        uploadedAt: new Date().toISOString()
+      };
+      setFormData(prev => ({
+        ...prev,
+        pdfFile: newPdf
+      }));
+    } catch (err) {
+      console.error('Error reading PDF file:', err);
+      alert('حدث خطأ أثناء قراءة ملف الـ PDF. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  };
+
   // Open modal for add
   const handleOpenAdd = () => {
     setEditingArticle(null);
+    setExternalPdfUrl('');
     setFormData({
       title: '',
       titleEn: '',
@@ -73,7 +120,8 @@ export const AcademyAdminView = () => {
       author: 'كابتن باريستا كاتورا',
       summary: '',
       content: `### الأدوات المطلوبة:\n- 18 جرام بن مختص طازج\n- 300 مل ماء نقي بدرجة حرارة 92°C\n\n### خطوات التحضير:\n1. خطوة الترطيب الأولي لمده 30 ثانية\n2. الصب التدريجي مع مراقبة التدفق\n3. الاستمتاع بالنكهات والإيحاءات الطبيعية`,
-      featured: true
+      featured: true,
+      pdfFile: null
     });
     setIsAddEditModalOpen(true);
   };
@@ -81,6 +129,7 @@ export const AcademyAdminView = () => {
   // Open modal for edit
   const handleOpenEdit = (art) => {
     setEditingArticle(art);
+    setExternalPdfUrl('');
     setFormData({
       title: art.title || '',
       titleEn: art.titleEn || '',
@@ -92,7 +141,8 @@ export const AcademyAdminView = () => {
       author: art.author || 'أكاديمية كاتورا',
       summary: art.summary || '',
       content: art.content || '',
-      featured: Boolean(art.featured)
+      featured: Boolean(art.featured),
+      pdfFile: art.pdfFile || null
     });
     setIsAddEditModalOpen(true);
   };
@@ -291,6 +341,28 @@ export const AcademyAdminView = () => {
                 {art.categoryLabel || art.category}
               </span>
 
+              {/* PDF Badge if attached */}
+              {art.pdfFile && (
+                <span style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  background: 'rgba(220, 38, 38, 0.92)',
+                  color: '#ffffff',
+                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.35)',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '0.72rem',
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}>
+                  <FileText size={13} />
+                  <span>كتيب PDF</span>
+                </span>
+              )}
+
               {/* Read Time & Level */}
               <div style={{
                 position: 'absolute',
@@ -351,6 +423,18 @@ export const AcademyAdminView = () => {
                   <Eye size={14} />
                   <span>معاينة</span>
                 </button>
+
+                {art.pdfFile && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePdfForReader({ pdf: art.pdfFile, title: art.title })}
+                    className="btn btn-outline"
+                    style={{ padding: '7px 11px', color: '#dc2626', borderColor: '#fca5a5' }}
+                    title="فتح وقراءة ملف الـ PDF المرفق"
+                  >
+                    <FileText size={15} />
+                  </button>
+                )}
 
                 <button
                   onClick={() => handleOpenEdit(art)}
@@ -538,6 +622,199 @@ export const AcademyAdminView = () => {
                 />
               </div>
 
+              {/* 📄 PDF ATTACHMENT SECTION (رفع وإرفاق ملف PDF للدرس) 📄 */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', color: '#1e293b' }}>
+                    <FileText size={18} style={{ color: '#dc2626' }} />
+                    <span>ملف PDF مرفق للدرس (كتيب إرشادي / دليل عملي)</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>اختياري (Optional)</span>
+                </div>
+
+                {formData.pdfFile ? (
+                  /* Attached PDF Preview Card */
+                  <div style={{
+                    background: '#ffffff',
+                    border: '1.5px solid #fecdd3',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '220px' }}>
+                      <div style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '10px',
+                        background: 'rgba(220, 38, 38, 0.12)',
+                        color: '#dc2626',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <FileText size={22} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: '800', fontSize: '0.88rem', color: '#0f172a', wordBreak: 'break-all' }}>
+                          {formData.pdfFile.name}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                          الحجم: <strong style={{ color: '#dc2626' }}>{formData.pdfFile.size || 'ملف رقمي'}</strong>
+                          {formData.pdfFile.url ? ' • (رابط سحابي مباشر)' : ' • (ملف مرفوع)'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setActivePdfForReader({ pdf: formData.pdfFile, title: formData.title || formData.pdfFile.name })}
+                        className="btn btn-outline"
+                        style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      >
+                        <Eye size={14} />
+                        <span>معاينة الـ PDF</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => downloadPdfFile(formData.pdfFile)}
+                        className="btn btn-outline"
+                        style={{ padding: '6px 10px', fontSize: '0.78rem' }}
+                        title="تحميل الملف"
+                      >
+                        <Download size={14} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, pdfFile: null })}
+                        className="btn btn-outline"
+                        style={{ padding: '6px 10px', color: '#dc2626', borderColor: '#fca5a5' }}
+                        title="إزالة ملف الـ PDF"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Upload Dropzone & External Link */
+                  <div>
+                    <div
+                      style={{
+                        border: '2px dashed #cbd5e1',
+                        borderRadius: '10px',
+                        padding: '20px 16px',
+                        textAlign: 'center',
+                        background: '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        marginBottom: '10px'
+                      }}
+                      onClick={() => document.getElementById('academy-admin-pdf-input')?.click()}
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--mint-600)'; e.currentTarget.style.background = '#f0fdf4'; }}
+                      onDragLeave={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; }}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.background = '#ffffff';
+                        const file = e.dataTransfer.files?.[0];
+                        if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+                          await handlePdfUpload(file);
+                        } else {
+                          alert('يرجى سحب وإفلات ملف بصيغة PDF فقط (.pdf)');
+                        }
+                      }}
+                    >
+                      <input
+                        id="academy-admin-pdf-input"
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        style={{ display: 'none' }}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            await handlePdfUpload(file);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                      
+                      <div style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '50%',
+                        background: 'rgba(34, 203, 124, 0.12)',
+                        color: 'var(--mint-700)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 10px'
+                      }}>
+                        <UploadCloud size={24} />
+                      </div>
+
+                      <div style={{ fontWeight: '800', fontSize: '0.92rem', color: '#0f172a' }}>
+                        {isUploadingPdf ? 'جارِ معالجة ملف الـ PDF...' : 'اضغط هنا لرفع ملف PDF من جهازك أو اسحبه وأفلته هنا'}
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '4px' }}>
+                        صيغة PDF فقط (حتى 25 ميجابايت) • يتم حفظ الملف محلياً ومزامنته للعملاء
+                      </div>
+                    </div>
+
+                    {/* Or External Cloud Link */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="url"
+                        placeholder="أو الصق رابط مباشر لملف PDF (مثل Google Drive, Dropbox, رابط موقع)..."
+                        value={externalPdfUrl}
+                        onChange={(e) => setExternalPdfUrl(e.target.value)}
+                        className="form-input"
+                        style={{ fontSize: '0.82rem', height: '38px', flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!externalPdfUrl.trim()) {
+                            alert('يرجى إدخال رابط صالح لملف الـ PDF.');
+                            return;
+                          }
+                          const urlName = externalPdfUrl.split('/').pop()?.split('?')[0] || 'دليل-الأكاديمية.pdf';
+                          setFormData({
+                            ...formData,
+                            pdfFile: {
+                              id: `pdf-${Date.now()}`,
+                              name: urlName.endsWith('.pdf') ? urlName : `${urlName}.pdf`,
+                              size: 'رابط سحابي',
+                              url: externalPdfUrl.trim(),
+                              uploadedAt: new Date().toISOString()
+                            }
+                          });
+                          setExternalPdfUrl('');
+                        }}
+                        className="btn btn-outline"
+                        style={{ padding: '0 16px', height: '38px', fontSize: '0.82rem', whiteSpace: 'nowrap', fontWeight: '700' }}
+                      >
+                        إرفاق الرابط
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Featured Checkbox */}
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.86rem', fontWeight: '700' }}>
                 <input
@@ -641,6 +918,92 @@ export const AcademyAdminView = () => {
                 {previewArticle.summary}
               </div>
 
+              {/* PDF Attached Banner in Preview */}
+              {previewArticle.pdfFile && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)',
+                  border: '1.5px solid #fecdd3',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '10px',
+                      background: '#dc2626',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 10px rgba(220,38,38,0.25)',
+                      flexShrink: 0
+                    }}>
+                      <FileText size={22} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.7rem', background: '#dc2626', color: '#fff', padding: '1px 6px', borderRadius: '4px', fontWeight: '900' }}>PDF</span>
+                        <span style={{ fontWeight: '800', fontSize: '0.92rem', color: '#881337' }}>
+                          {previewArticle.pdfFile.name}
+                        </span>
+                      </div>
+                      <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#9f1239' }}>
+                        كتيب إرشادي مرفق ({previewArticle.pdfFile.size || 'ملف رقمي'})
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setActivePdfForReader({ pdf: previewArticle.pdfFile, title: previewArticle.title })}
+                      className="btn"
+                      style={{
+                        background: '#dc2626',
+                        color: '#ffffff',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        fontWeight: '800',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <Eye size={14} />
+                      <span>قراءة الملف</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => downloadPdfFile(previewArticle.pdfFile)}
+                      className="btn btn-outline"
+                      style={{
+                        color: '#881337',
+                        borderColor: '#f43f5e',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <Download size={14} />
+                      <span>تحميل</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div style={{ whiteSpace: 'pre-line', fontSize: '0.94rem', lineHeight: '1.8', color: 'var(--text-main)' }}>
                 {previewArticle.content}
               </div>
@@ -655,6 +1018,14 @@ export const AcademyAdminView = () => {
           </div>
         </div>
       )}
+
+      {/* 📄 Dedicated In-App PDF Reader Modal 📄 */}
+      <PdfReaderModal
+        isOpen={!!activePdfForReader}
+        onClose={() => setActivePdfForReader(null)}
+        pdf={activePdfForReader?.pdf}
+        title={activePdfForReader?.title}
+      />
 
     </div>
   );

@@ -14,9 +14,13 @@ import {
   MessageSquare,
   Package,
   Check,
-  XCircle
+  XCircle,
+  Truck,
+  QrCode
 } from 'lucide-react';
 import { DebtSettlementModal } from '../components/DebtSettlementModal';
+import { InvoiceMiniQr } from '../components/InvoiceQrCode';
+import { exportInvoicesToPdf } from '../utils/exportUtils';
 
 export const InvoicesView = () => {
   const {
@@ -26,7 +30,10 @@ export const InvoicesView = () => {
     settleCustomerDebt,
     pendingOrdersCount,
     confirmPendingOrder,
-    cancelPendingOrder
+    cancelPendingOrder,
+    openTrackingModal,
+    updateInvoiceTrackingStatus,
+    contactInfo
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -287,6 +294,28 @@ export const InvoicesView = () => {
           >
             آجل / على الحساب
           </button>
+
+          {/* PDF Export Button */}
+          <button
+            onClick={() => exportInvoicesToPdf(filteredInvoices, contactInfo)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1.5px solid #ef4444',
+              background: '#fef2f2',
+              color: '#b91c1c',
+              fontWeight: '800',
+              fontSize: '0.84rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="تصدير الفواتير المعروضة إلى تقرير PDF جاهز للطباعة والحفظ"
+          >
+            <FileText size={16} color="#dc2626" />
+            <span>تصدير PDF 📄</span>
+          </button>
         </div>
       </div>
 
@@ -296,6 +325,7 @@ export const InvoicesView = () => {
           <thead>
             <tr>
               <th>رقم الفاتورة</th>
+              <th style={{ textAlign: 'center', width: '70px' }}>رمز QR</th>
               <th>التاريخ والوقت</th>
               <th>العميل</th>
               <th>طريقة الدفع</th>
@@ -304,6 +334,7 @@ export const InvoicesView = () => {
               <th>المدفوع</th>
               <th>المتبقي</th>
               <th>الحالة</th>
+              <th>حالة الشحن والتتبع</th>
               <th style={{ textAlign: 'center' }}>الإجراءات</th>
             </tr>
           </thead>
@@ -315,6 +346,13 @@ export const InvoicesView = () => {
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     بواسطة: {inv.cashierName || 'الكاشير'}
                   </div>
+                </td>
+                <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                  <InvoiceMiniQr 
+                    invoice={inv} 
+                    size={34} 
+                    onClick={() => openInvoiceModal(inv)} 
+                  />
                 </td>
                 <td style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
                   {inv.date}
@@ -390,6 +428,30 @@ export const InvoicesView = () => {
                       : 'غير مسدد'}
                   </span>
                 </td>
+                {/* Shipping & Tracking Status Dropdown */}
+                <td>
+                  <select
+                    value={inv.trackingStatus || (inv.status === 'paid' ? 'delivered' : 'received')}
+                    onChange={(e) => updateInvoiceTrackingStatus(inv.id, e.target.value)}
+                    style={{
+                      padding: '5px 8px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: '700',
+                      border: '1px solid var(--border-mint)',
+                      background: '#ffffff',
+                      color: 'var(--mint-950)',
+                      cursor: 'pointer'
+                    }}
+                    title="تحديث حالة الشحن والتجهيز مباشرة"
+                  >
+                    <option value="received">📋 تم الاستلام</option>
+                    <option value="processing">☕ قيد التحميص والتجهيز</option>
+                    <option value="shipped">🚚 جاري الشحن والتوصيل</option>
+                    <option value="delivered">✨ تم التوصيل بنجاح</option>
+                    <option value="cancelled">❌ ملغي</option>
+                  </select>
+                </td>
                 <td>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                     {/* Confirm Button for pending online orders */}
@@ -408,6 +470,26 @@ export const InvoicesView = () => {
                         <span>تأكيد</span>
                       </button>
                     )}
+
+                    {/* Order Tracking Preview */}
+                    <button
+                      onClick={() => openTrackingModal(inv.invoiceNumber)}
+                      className="btn btn-outline"
+                      style={{ padding: '6px 10px', fontSize: '0.8rem', color: '#0284c7', borderColor: '#7dd3fc' }}
+                      title="عرض شاشة التتبع والمسار"
+                    >
+                      <Truck size={15} />
+                    </button>
+
+                    {/* QR Code Quick View */}
+                    <button
+                      onClick={() => openInvoiceModal(inv)}
+                      className="btn btn-outline"
+                      style={{ padding: '6px 10px', fontSize: '0.8rem', color: 'var(--mint-700)', borderColor: 'var(--border-mint)' }}
+                      title="عرض رمز QR للفاتورة"
+                    >
+                      <QrCode size={15} />
+                    </button>
 
                     <button
                       onClick={() => openInvoiceModal(inv)}

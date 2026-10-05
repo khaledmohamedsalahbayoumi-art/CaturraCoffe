@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { InvoiceQrCode } from './InvoiceQrCode';
 import { 
   Printer, 
   Share2, 
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const InvoiceModal = () => {
-  const { isInvoiceModalOpen, activeInvoiceForModal, closeInvoiceModal } = useApp();
+  const { isInvoiceModalOpen, activeInvoiceForModal, closeInvoiceModal, contactInfo } = useApp();
   const printAreaRef = useRef(null);
 
   if (!isInvoiceModalOpen || !activeInvoiceForModal) return null;
@@ -37,8 +38,9 @@ export const InvoiceModal = () => {
     }
 
     const itemsList = inv.items.map(it => `• ${it.name} (${it.qty}x) = ${it.total || (it.price * it.qty)} ج.م`).join('\n');
+    const brandTitle = contactInfo?.brandNameAr || 'كاتورا للقهوة المختصة';
     const message = 
-`☕ *فاتورة شراء من كاتورا للقهوة المختصة (Caturra)* 🌿
+`☕ *فاتورة شراء من ${brandTitle}* 🌿
 ━━━━━━━━━━━━━━━━━━━━
 📄 *رقم الفاتورة:* ${inv.invoiceNumber}
 📅 *التاريخ:* ${inv.date}
@@ -175,13 +177,13 @@ ${inv.remainingDebt > 0 ? `⚠️ *المتبقي (آجل / على الحساب)
               }} 
             />
             <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--mint-900)', margin: '0' }}>
-              كاتورا للقهوة المختصة
+              {contactInfo?.brandNameAr || 'كاتورا للقهوة المختصة'}
             </h2>
             <div style={{ fontSize: '0.85rem', color: 'var(--mint-700)', fontWeight: '700', marginTop: '2px' }}>
-              CATURRA SPECIALTY COFFEE ROASTERS
+              {contactInfo?.brandNameEn || 'CATURRA SPECIALTY COFFEE ROASTERS'}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              سجل تجاري: 148920 | بطاقة ضريبية: 582-934-211 | القاهرة - مصر
+              سجل تجاري: {contactInfo?.commercialRegister || '148920'} | بطاقة ضريبية: {contactInfo?.taxNumber || '582-934-211'} | {contactInfo?.address || 'القاهرة - مصر'}
             </div>
           </div>
 
@@ -346,42 +348,27 @@ ${inv.remainingDebt > 0 ? `⚠️ *المتبقي (آجل / على الحساب)
             )}
           </div>
 
-          {/* QR Code compliance preview & Footer */}
+          {/* Dynamic Invoice QR Code & Verification */}
           <div style={{ 
-            marginTop: '24px', 
-            textAlign: 'center', 
+            marginTop: '22px', 
             borderTop: '1px solid var(--border-light)', 
             paddingTop: '16px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '8px'
+            gap: '10px'
           }}>
-            <div style={{
-              width: '84px',
-              height: '84px',
-              background: '#ffffff',
-              border: '2px solid #000000',
-              padding: '4px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gridTemplateRows: 'repeat(7, 1fr)',
-              gap: '2px'
-            }}>
-              {[...Array(49)].map((_, i) => (
-                <div 
-                  key={i} 
-                  style={{ 
-                    background: (i % 2 === 0 || i % 5 === 0 || i < 8 || i > 40) ? '#000000' : '#ffffff',
-                    borderRadius: '1px'
-                  }} 
-                />
-              ))}
-            </div>
+            <InvoiceQrCode 
+              invoice={inv} 
+              contactInfo={contactInfo} 
+              size={115} 
+              showControls={true}
+            />
+
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              فاتورة إلكترونية معتمدة - جمهورية مصر العربية
+              فاتورة إلكترونية معتمدة - جمهورية مصر العربية 🇪🇬
             </div>
-            <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--mint-700)', marginTop: '4px' }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--mint-700)', marginTop: '2px' }}>
               نتمنى لك تجربة تذوق استثنائية مع كاتورا ☕
             </div>
           </div>

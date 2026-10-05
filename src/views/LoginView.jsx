@@ -7,11 +7,9 @@ import {
   EyeOff,
   LogIn,
   ShieldCheck,
-  Coffee,
-  Sparkles,
   AlertCircle,
   Store,
-  CheckCircle2
+  Shield
 } from 'lucide-react';
 
 export const LoginView = () => {
@@ -20,26 +18,30 @@ export const LoginView = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const performLogin = (uName, uPass) => {
+    setErrorMessage('');
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const res = login(uName, uPass);
+      if (!res.success) {
+        setErrorMessage(res.message || 'بيانات الدخول غير صحيحة');
+        setIsLoading(false);
+      }
+    }, 300);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    setErrorMessage('');
-
     if (!username.trim() || !password) {
       setErrorMessage('يرجى إدخال اسم المستخدم وكلمة المرور');
       return;
     }
-
-    setIsLoading(true);
-    setTimeout(() => {
-      const res = login(username, password);
-      if (!res.success) {
-        setErrorMessage(res.message);
-        setIsLoading(false);
-      }
-    }, 250);
+    performLogin(username, password);
   };
 
   return (
@@ -49,162 +51,229 @@ export const LoginView = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'radial-gradient(circle at 10% 20%, var(--mint-100) 0%, #ebf8f1 50%, #d8f3e3 100%)',
-        padding: '24px',
+        background: 'radial-gradient(ellipse at 50% 20%, #063820 0%, #021a10 50%, #010d08 100%)',
+        padding: '24px 16px',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        fontFamily: 'inherit'
       }}
     >
-      {/* Decorative background coffee rings */}
+      {/* Decorative ambient lights & coffee rings */}
       <div
         style={{
           position: 'absolute',
-          top: '-10%',
-          right: '-5%',
-          width: '500px',
-          height: '500px',
+          top: '-15%',
+          right: '-10%',
+          width: '600px',
+          height: '600px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgba(4, 136, 75, 0.16) 0%, rgba(34, 203, 124, 0.05) 100%)',
+          background: 'radial-gradient(circle, rgba(34, 203, 124, 0.18) 0%, transparent 70%)',
+          filter: 'blur(50px)',
           pointerEvents: 'none'
         }}
       />
       <div
         style={{
           position: 'absolute',
-          bottom: '-12%',
-          left: '-8%',
-          width: '450px',
-          height: '450px',
+          bottom: '-15%',
+          left: '-10%',
+          width: '550px',
+          height: '550px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgba(4, 136, 75, 0.12) 0%, rgba(10, 178, 103, 0.03) 100%)',
+          background: 'radial-gradient(circle, rgba(217, 119, 6, 0.12) 0%, transparent 70%)',
+          filter: 'blur(60px)',
           pointerEvents: 'none'
         }}
       />
 
-      {/* Main Login Card */}
+      {/* Main Glassmorphic Container */}
       <div
         style={{
           width: '100%',
-          maxWidth: '460px',
-          background: '#ffffff',
-          borderRadius: '24px',
-          boxShadow: '0 20px 40px -15px rgba(4, 136, 75, 0.22), 0 0 1px rgba(0, 0, 0, 0.1)',
-          border: '1.5px solid var(--border-mint)',
-          borderTop: '5px solid var(--mint-600)',
-          padding: '36px 32px',
+          maxWidth: '520px',
+          background: 'rgba(10, 31, 21, 0.88)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '28px',
+          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(52, 211, 153, 0.25)',
+          padding: '38px 32px',
           zIndex: 10,
-          position: 'relative'
+          position: 'relative',
+          color: '#ffffff'
         }}
       >
-        {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        {/* Top Floating Badge */}
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
             style={{
               display: 'inline-flex',
-              padding: '6px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, var(--mint-100) 0%, #ffffff 100%)',
-              border: '2px solid var(--mint-300)',
-              marginBottom: '14px',
-              boxShadow: '0 8px 16px rgba(4, 136, 75, 0.18)'
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 16px',
+              borderRadius: '30px',
+              background: 'rgba(34, 203, 124, 0.12)',
+              border: '1px solid rgba(34, 203, 124, 0.3)',
+              color: '#6ee7b7',
+              fontSize: '0.8rem',
+              fontWeight: '800',
+              marginBottom: '16px'
             }}
           >
+            <ShieldCheck size={16} color="#34d399" />
+            <span>بوابة الإدارة السحابية الموحدة • ERP & POS</span>
+          </div>
+
+          {/* Logo with Ambient Glow */}
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '14px' }}>
+            <div
+              style={{
+                position: 'absolute',
+                inset: '-4px',
+                borderRadius: '24px',
+                background: 'linear-gradient(135deg, #10b981 0%, #d97706 100%)',
+                opacity: 0.6,
+                filter: 'blur(8px)'
+              }}
+            />
             <img
               src="/caturra_logo.jpg"
-              alt="Caturra"
+              alt="Caturra Coffee"
               style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                objectFit: 'cover'
+                width: '74px',
+                height: '74px',
+                borderRadius: '20px',
+                objectFit: 'cover',
+                position: 'relative',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+                background: '#ffffff'
               }}
             />
           </div>
 
           <h1
             style={{
-              fontSize: '1.6rem',
+              fontSize: '1.65rem',
               fontWeight: '900',
-              color: 'var(--mint-950)',
-              margin: '0 0 6px'
+              color: '#ffffff',
+              margin: '0 0 6px',
+              letterSpacing: '-0.3px'
             }}
           >
             كاتورا للقهوة المختصة
           </h1>
           <p
             style={{
-              fontSize: '0.88rem',
-              color: 'var(--mint-700)',
-              fontWeight: '600',
-              margin: 0
+              fontSize: '0.86rem',
+              color: '#a7f3d0',
+              margin: 0,
+              fontWeight: '600'
             }}
           >
-            بوابة تسجيل الدخول للنظام الإداري ونقاط البيع (ERP)
+            Caturra Specialty Coffee Management System
           </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error Alert Banner */}
         {errorMessage && (
           <div
             style={{
-              padding: '12px 14px',
-              borderRadius: '12px',
-              background: '#fef2f2',
-              border: '1px solid #fecaca',
-              color: '#dc2626',
-              fontSize: '0.85rem',
+              padding: '12px 16px',
+              borderRadius: '14px',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              color: '#fca5a5',
+              fontSize: '0.86rem',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              marginBottom: '20px'
+              marginBottom: '20px',
+              animation: 'shake 0.3s ease'
             }}
           >
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-            <span>{errorMessage}</span>
+            <AlertCircle size={20} style={{ flexShrink: 0, color: '#ef4444' }} />
+            <span style={{ fontWeight: '700' }}>{errorMessage}</span>
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Username */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontWeight: '700', color: 'var(--mint-900)' }}>
-              اسم المستخدم (Username)
+        {/* Credentials Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* Username Input */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.84rem',
+                fontWeight: '800',
+                color: '#d1fae5',
+                marginBottom: '6px'
+              }}
+            >
+              اسم المستخدم أو البريد الإلكتروني
             </label>
             <div style={{ position: 'relative' }}>
               <User
                 size={18}
-                color="var(--mint-600)"
-                style={{ position: 'absolute', right: '14px', top: '13px' }}
+                style={{
+                  position: 'absolute',
+                  right: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#6ee7b7'
+                }}
               />
               <input
                 type="text"
                 required
                 autoFocus
-                placeholder="أدخل اسم المستخدم (مثال: owner, cashier)"
+                placeholder="owner, manager, cashier..."
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="form-input"
                 style={{
-                  paddingRight: '42px',
+                  width: '100%',
                   height: '46px',
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  border: '1.5px solid rgba(52, 211, 153, 0.3)',
                   borderRadius: '12px',
-                  fontSize: '0.95rem'
+                  padding: '0 44px 0 14px',
+                  color: '#ffffff',
+                  fontSize: '0.92rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s'
                 }}
+                onFocus={(e) => (e.target.style.borderColor = '#10b981')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(52, 211, 153, 0.3)')}
               />
             </div>
           </div>
 
-          {/* Password */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontWeight: '700', color: 'var(--mint-900)' }}>
-              كلمة المرور (Password)
-            </label>
+          {/* Password Input */}
+          <div>
+            <div style={{ marginBottom: '6px' }}>
+              <label
+                style={{
+                  fontSize: '0.84rem',
+                  fontWeight: '800',
+                  color: '#d1fae5',
+                  margin: 0
+                }}
+              >
+                كلمة المرور
+              </label>
+            </div>
+
             <div style={{ position: 'relative' }}>
               <Lock
                 size={18}
-                color="var(--mint-600)"
-                style={{ position: 'absolute', right: '14px', top: '13px' }}
+                style={{
+                  position: 'absolute',
+                  right: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#6ee7b7'
+                }}
               />
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -212,14 +281,21 @@ export const LoginView = () => {
                 placeholder="••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="form-input"
                 style={{
-                  paddingRight: '42px',
-                  paddingLeft: '42px',
+                  width: '100%',
                   height: '46px',
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  border: '1.5px solid rgba(52, 211, 153, 0.3)',
                   borderRadius: '12px',
-                  fontSize: '0.95rem'
+                  padding: '0 44px',
+                  color: '#ffffff',
+                  fontSize: '0.92rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s'
                 }}
+                onFocus={(e) => (e.target.style.borderColor = '#10b981')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(52, 211, 153, 0.3)')}
               />
               <button
                 type="button"
@@ -227,11 +303,16 @@ export const LoginView = () => {
                 style={{
                   position: 'absolute',
                   left: '12px',
-                  top: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: 'var(--text-muted)'
+                  color: '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4px'
                 }}
                 tabIndex={-1}
               >
@@ -240,51 +321,116 @@ export const LoginView = () => {
             </div>
           </div>
 
+          {/* Remember Me */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#cbd5e1' }}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ accentColor: '#10b981', cursor: 'pointer', width: '16px', height: '16px' }}
+              />
+              <span>تذكر تسجيل دخولي على هذا الجهاز</span>
+            </label>
+
+            <span style={{ color: '#34d399', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Shield size={13} />
+              <span>جلسة مؤمنة SSL</span>
+            </span>
+          </div>
+
           {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
-            className="btn btn-primary"
             style={{
-              height: '48px',
-              fontSize: '1rem',
-              fontWeight: '800',
-              borderRadius: '12px',
-              marginTop: '6px',
-              boxShadow: '0 8px 18px rgba(4, 136, 75, 0.35)'
+              height: '50px',
+              fontSize: '1.02rem',
+              fontWeight: '900',
+              borderRadius: '14px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#ffffff',
+              cursor: isLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+              transition: 'all 0.2s ease',
+              marginTop: '4px'
             }}
           >
             {isLoading ? (
-              <span>جاري التحقق والدخول...</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTopColor: '#ffffff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite'
+                  }}
+                />
+                <span>جاري التحقق وتطبيق الصلاحيات...</span>
+              </div>
             ) : (
               <>
                 <LogIn size={20} />
-                <span>دخول النظام وتطبيق الصلاحيات</span>
+                <span>دخول لوحة الإدارة ونقاط البيع 🚀</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Back to Client Store Link */}
-        <div style={{ marginTop: '22px', textAlign: 'center' }}>
+        {/* Bottom Navigation: Return to Client Store */}
+        <div style={{ marginTop: '26px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
           <button
             type="button"
-            onClick={() => setViewMode('client')}
+            onClick={() => {
+              setViewMode('client');
+              try {
+                sessionStorage.removeItem('caturra_view_mode');
+                localStorage.removeItem('caturra_view_mode');
+                if (typeof window !== 'undefined' && (window.location.search || window.location.hash)) {
+                  window.history.replaceState(null, '', window.location.pathname);
+                }
+              } catch {
+                // ignore
+              }
+            }}
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--mint-700)',
-              fontSize: '0.85rem',
-              fontWeight: '700',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '10px 20px',
+              color: '#a7f3d0',
+              fontSize: '0.88rem',
+              fontWeight: '800',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.color = '#a7f3d0';
             }}
           >
-            <Store size={16} />
-            <span>العودة إلى متجر العملاء الإلكتروني</span>
+            <Store size={18} color="#34d399" />
+            <span>العودة لمتجر العملاء الإلكتروني 🛍️</span>
           </button>
+        </div>
+
+        {/* Micro Status Bar */}
+        <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '0.74rem', color: '#64748b' }}>
+          <span>نظام كاتورا للتحميص والتوزيع v2.4 • مشفر ومحمي بنظام الصلاحيات المتقدم</span>
         </div>
       </div>
     </div>

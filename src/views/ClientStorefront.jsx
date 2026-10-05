@@ -31,10 +31,15 @@ import {
   CreditCard,
   Lock,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  FileText,
+  Download,
+  Truck
 } from 'lucide-react';
 import { StoreAiAssistant } from '../components/StoreAiAssistant';
-import { STORE_WHATSAPP_NUMBER, generateWhatsAppOrderUrl } from '../utils/whatsapp';
+import { STORE_WHATSAPP_NUMBER, generateWhatsAppOrderUrl, formatWhatsAppNumber } from '../utils/whatsapp';
+import { downloadPdfFile } from '../utils/pdfStorage';
+import { PdfReaderModal } from '../components/PdfReaderModal';
 
 export const ClientStorefront = () => {
   const {
@@ -44,8 +49,23 @@ export const ClientStorefront = () => {
     openInvoiceModal,
     setViewMode,
     openNotificationSettings,
-    academyArticles = []
+    isAuthenticated,
+    academyArticles = [],
+    contactInfo,
+    openTrackingModal
   } = useApp();
+
+  const activeWhatsApp = contactInfo?.whatsapp || STORE_WHATSAPP_NUMBER;
+  const cleanStoreWhatsApp = formatWhatsAppNumber(activeWhatsApp);
+  const activePhone = contactInfo?.phone || '01012345678';
+  const activeEmail = contactInfo?.email || 'contact@caturracoffee.com';
+  const activeAddress = contactInfo?.address || 'القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام';
+  const activeHours = contactInfo?.workingHours || 'يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل';
+  const activeShipping = contactInfo?.shippingInfo || 'شحن لجميع المحافظات خلال 24-48 ساعة 🚚';
+  const activeAboutUs = contactInfo?.aboutUs || 'كاتورا (Caturra) محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.';
+  const activeInstagram = contactInfo?.instagram || 'https://instagram.com';
+  const activeFacebook = contactInfo?.facebook || 'https://facebook.com';
+  const activeTiktok = contactInfo?.tiktok || 'https://tiktok.com';
 
   const [hasEnteredStore, setHasEnteredStore] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -65,6 +85,8 @@ export const ClientStorefront = () => {
   const [academySearchQuery, setAcademySearchQuery] = useState('');
   const [selectedAcademyArticle, setSelectedAcademyArticle] = useState(null);
   const [academyCategoryFilter, setAcademyCategoryFilter] = useState('all');
+  const [viewingAcademyPdf, setViewingAcademyPdf] = useState(null);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   const handleProductSelectFromAi = (product) => {
     setHasEnteredStore(true);
@@ -304,7 +326,7 @@ export const ClientStorefront = () => {
     setIsCheckoutOpen(false);
 
     if (sendViaWhatsApp) {
-      const waUrl = generateWhatsAppOrderUrl(newInvoice, STORE_WHATSAPP_NUMBER);
+      const waUrl = generateWhatsAppOrderUrl(newInvoice, activeWhatsApp);
       window.open(waUrl, '_blank');
     }
   };
@@ -391,7 +413,7 @@ export const ClientStorefront = () => {
             <span>كاتورا للقهوة المختصة</span>
           </div>
 
-          {/* Quick link to Admin ERP */}
+          {/* Quick link to Admin ERP / Login */}
           <button
             onClick={() => setViewMode('admin')}
             className="welcome-splash-erp"
@@ -401,9 +423,9 @@ export const ClientStorefront = () => {
               gap: '6px',
               padding: '6px 14px',
               borderRadius: '9999px',
-              background: 'rgba(255, 255, 255, 0.12)',
+              background: isAuthenticated ? 'rgba(255, 255, 255, 0.12)' : 'rgba(217, 119, 6, 0.25)',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.22)',
+              border: isAuthenticated ? '1px solid rgba(255, 255, 255, 0.22)' : '1px solid rgba(251, 191, 36, 0.4)',
               color: '#ffffff',
               fontSize: '0.8rem',
               fontWeight: '700',
@@ -411,10 +433,10 @@ export const ClientStorefront = () => {
               transition: 'all 0.2s ease',
               whiteSpace: 'nowrap'
             }}
-            title="دخول لوحة تحكم الإدارة ونقاط البيع"
+            title={isAuthenticated ? 'دخول لوحة تحكم الإدارة ونقاط البيع' : 'تسجيل الدخول للنظام الإداري'}
           >
-            <Store size={15} color="var(--mint-300)" />
-            <span>لوحة الإدارة (ERP)</span>
+            {isAuthenticated ? <Store size={15} color="var(--mint-300)" /> : <Lock size={14} color="#fde68a" />}
+            <span>{isAuthenticated ? 'لوحة الإدارة (ERP)' : 'تسجيل دخول الإدارة 🔐'}</span>
           </button>
         </div>
 
@@ -582,6 +604,124 @@ export const ClientStorefront = () => {
   return (
     <div className="storefront-page">
       
+      {/* 📢 TOP ANNOUNCEMENT BANNER (قابل للإدارة من لوحة التحكم) 📢 */}
+      {contactInfo?.bannerEnabled && !isBannerDismissed && (
+        <div
+          className="store-announcement-banner"
+          style={{
+            width: '100%',
+            padding: '9px 16px',
+            position: 'relative',
+            zIndex: 45,
+            fontSize: '0.86rem',
+            fontWeight: '700',
+            letterSpacing: '0.2px',
+            background:
+              contactInfo?.bannerTheme === 'gold' ? 'linear-gradient(90deg, #78350f 0%, #b45309 50%, #92400e 100%)' :
+              contactInfo?.bannerTheme === 'dark' ? 'linear-gradient(90deg, #090d16 0%, #1e293b 50%, #0f172a 100%)' :
+              contactInfo?.bannerTheme === 'crimson' ? 'linear-gradient(90deg, #881337 0%, #be123c 50%, #9f1239 100%)' :
+              'linear-gradient(90deg, #064e3b 0%, #047857 50%, #065f46 100%)',
+            color: contactInfo?.bannerTheme === 'gold' ? '#fef3c7' : '#ffffff',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'slideDown 250ms ease'
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: '10px',
+            maxWidth: '1200px',
+            width: '100%',
+            padding: '0 28px'
+          }}>
+            {contactInfo?.bannerBadge && (
+              <span style={{
+                background: 'rgba(255, 255, 255, 0.22)',
+                backdropFilter: 'blur(6px)',
+                padding: '2px 10px',
+                borderRadius: '20px',
+                fontSize: '0.74rem',
+                fontWeight: '800',
+                letterSpacing: '0.3px',
+                whiteSpace: 'nowrap'
+              }}>
+                {contactInfo.bannerBadge}
+              </span>
+            )}
+
+            <span style={{ textAlign: 'center', lineHeight: '1.4' }}>
+              {contactInfo?.bannerText || 'شحن مجاني لكافة محافظات مصر للطلبات التي تزيد عن 500 جنيه | كود CATURRA10'}
+            </span>
+
+            {contactInfo?.bannerLinkText && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isAcademyPageOpen) setIsAcademyPageOpen(false);
+                  const el = document.getElementById('products-section') || document.querySelector('.storefront-products-grid');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  border: 'none',
+                  background: '#ffffff',
+                  color:
+                    contactInfo?.bannerTheme === 'gold' ? '#78350f' :
+                    contactInfo?.bannerTheme === 'dark' ? '#0f172a' :
+                    contactInfo?.bannerTheme === 'crimson' ? '#881337' :
+                    '#064e3b',
+                  padding: '3px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.76rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  transition: 'transform 150ms ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {contactInfo.bannerLinkText}
+              </button>
+            )}
+          </div>
+
+          {/* Dismiss button */}
+          <button
+            type="button"
+            onClick={() => setIsBannerDismissed(true)}
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '22px',
+              height: '22px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.75rem',
+              transition: 'background 150ms ease'
+            }}
+            title="إخفاء الشريط"
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
       {/* STORE HEADER */}
       <header
         style={{
@@ -665,15 +805,49 @@ export const ClientStorefront = () => {
               <Bell size={17} />
             </button>
 
-            {/* Link to Admin ERP */}
+            {/* Link to Admin ERP / Login */}
             <button
               onClick={() => setViewMode('admin')}
               className="btn btn-outline"
-              style={{ height: '38px', padding: '0 12px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              title="دخول لوحة تحكم الإدارة ونقاط البيع"
+              style={{
+                height: '38px',
+                padding: '0 12px',
+                fontSize: '0.82rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderColor: isAuthenticated ? 'var(--border-light)' : 'rgba(217, 119, 6, 0.45)',
+                background: isAuthenticated ? 'transparent' : 'rgba(254, 243, 199, 0.5)',
+                color: isAuthenticated ? 'var(--text-main)' : '#92400e',
+                fontWeight: '700'
+              }}
+              title={isAuthenticated ? 'دخول لوحة تحكم الإدارة ونقاط البيع' : 'تسجيل الدخول للنظام الإداري'}
             >
-              <Store size={15} />
-              <span className="btn-text-hide">لوحة الإدارة</span>
+              {isAuthenticated ? <Store size={15} /> : <Lock size={14} color="#b45309" />}
+              <span className="btn-text-hide">{isAuthenticated ? 'لوحة الإدارة' : 'دخول الإدارة 🔐'}</span>
+            </button>
+
+            {/* Track Order Button */}
+            <button
+              onClick={() => openTrackingModal()}
+              className="btn btn-outline"
+              style={{
+                height: '38px',
+                padding: '0 12px',
+                fontSize: '0.82rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderColor: 'var(--mint-400)',
+                background: 'var(--mint-50)',
+                color: 'var(--mint-800)',
+                fontWeight: '800',
+                borderRadius: '10px'
+              }}
+              title="تتبع مسار وحالة طلبك برقم الفاتورة أو الموبايل"
+            >
+              <Truck size={16} color="var(--mint-600)" />
+              <span className="btn-text-hide">تتبع الطلب</span>
             </button>
 
             {/* AI Assistant Trigger Button in Header */}
@@ -1210,6 +1384,27 @@ export const ClientStorefront = () => {
                            article.category === 'grind' ? 'درجات طحن' :
                            article.category === 'beans' ? 'محاصيل ومعالجة' : 'مهارات باريستا'}
                         </span>
+                        {article.pdfFile && (
+                          <span style={{
+                            position: 'absolute',
+                            bottom: '10px',
+                            left: '10px',
+                            background: 'rgba(220, 38, 38, 0.94)',
+                            color: '#ffffff',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem',
+                            fontWeight: '800',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                            zIndex: 2
+                          }}>
+                            <FileText size={12} />
+                            <span>كتيب PDF</span>
+                          </span>
+                        )}
                       </div>
 
                       <div className="academy-card-body">
@@ -1227,11 +1422,24 @@ export const ClientStorefront = () => {
                         <h3 className="academy-card-title">{article.title}</h3>
                         <p className="academy-card-summary">{article.summary}</p>
 
-                        <div className="academy-card-footer">
+                        <div className="academy-card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span className="academy-read-more-btn">
                             <span>قراءة الدليل والوصفة</span>
                             <ChevronLeft size={16} />
                           </span>
+                          {article.pdfFile && (
+                            <span style={{
+                              fontSize: '0.75rem',
+                              fontWeight: '800',
+                              color: '#dc2626',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              <FileText size={13} />
+                              <span>PDF متاح</span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </article>
@@ -1320,7 +1528,7 @@ export const ClientStorefront = () => {
                 <span>من نحن</span>
               </h3>
               <p style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1', marginBottom: '14px' }}>
-                <strong>كاتورا (Caturra)</strong> محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.
+                {activeAboutUs}
               </p>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '6px 12px', borderRadius: '10px', fontSize: '0.78rem', color: '#86efac', border: '1px solid rgba(134,239,172,0.2)' }}>
                 <span>🌱 تحميص محلي بحرفية عالمية</span>
@@ -1341,7 +1549,7 @@ export const ClientStorefront = () => {
                 <div>
                   <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.88rem' }}>مقر المحمصة والمتجر:</div>
                   <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
-                    القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام
+                    {activeAddress}
                   </div>
                 </div>
               </div>
@@ -1353,7 +1561,7 @@ export const ClientStorefront = () => {
                 <div>
                   <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.88rem' }}>ساعات العمل والخدمة:</div>
                   <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
-                    يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل
+                    {activeHours}
                   </div>
                 </div>
               </div>
@@ -1365,7 +1573,7 @@ export const ClientStorefront = () => {
                 <div>
                   <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.88rem' }}>خدمة الشحن والتوصيل:</div>
                   <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
-                    شحن لجميع المحافظات خلال 24-48 ساعة 🚚
+                    {activeShipping}
                   </div>
                 </div>
               </div>
@@ -1380,7 +1588,7 @@ export const ClientStorefront = () => {
 
               {/* Direct Call */}
               <a
-                href="tel:01012345678"
+                href={`tel:${activePhone}`}
                 className="store-footer-action-link"
               >
                 <div className="store-footer-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
@@ -1388,13 +1596,13 @@ export const ClientStorefront = () => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>الاتصال الهاتفي المباشر</div>
-                  <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.92rem', direction: 'ltr', textAlign: 'right' }}>01012345678</div>
+                  <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.92rem', direction: 'ltr', textAlign: 'right' }}>{activePhone}</div>
                 </div>
               </a>
 
               {/* Direct WhatsApp */}
               <a
-                href={`https://wa.me/${STORE_WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن منتجاتكم وطلبات القهوة.')}`}
+                href={`https://wa.me/${cleanStoreWhatsApp}?text=${encodeURIComponent('مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن منتجاتكم وطلبات القهوة.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="store-footer-action-link"
@@ -1411,7 +1619,7 @@ export const ClientStorefront = () => {
 
               {/* Email */}
               <a
-                href="mailto:contact@caturracoffee.com"
+                href={`mailto:${activeEmail}`}
                 className="store-footer-action-link"
                 style={{ marginTop: '10px' }}
               >
@@ -1420,7 +1628,7 @@ export const ClientStorefront = () => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>البريد الإلكتروني للطلبات</div>
-                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.84rem' }}>contact@caturracoffee.com</div>
+                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.84rem' }}>{activeEmail}</div>
                 </div>
               </a>
             </div>
@@ -1439,7 +1647,7 @@ export const ClientStorefront = () => {
               {/* Social Icons Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
                 <a
-                  href="https://instagram.com"
+                  href={activeInstagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="store-footer-social-card"
@@ -1454,7 +1662,7 @@ export const ClientStorefront = () => {
                 </a>
 
                 <a
-                  href="https://facebook.com"
+                  href={activeFacebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="store-footer-social-card"
@@ -1467,7 +1675,7 @@ export const ClientStorefront = () => {
                 </a>
 
                 <a
-                  href="https://tiktok.com"
+                  href={activeTiktok}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="store-footer-social-card"
@@ -1478,7 +1686,7 @@ export const ClientStorefront = () => {
                 </a>
 
                 <a
-                  href={`https://wa.me/${STORE_WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}`}
+                  href={`https://wa.me/${cleanStoreWhatsApp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="store-footer-social-card"
@@ -1595,7 +1803,19 @@ export const ClientStorefront = () => {
                       }}
                     >
                       <span style={{ color: '#d97706', fontSize: '0.75rem' }}>☕</span>
-                      <span>{art.title}</span>
+                      <span style={{ flex: 1 }}>{art.title}</span>
+                      {art.pdfFile && (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          background: '#dc2626',
+                          color: '#fff',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          fontWeight: '800'
+                        }}>
+                          PDF
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1610,9 +1830,32 @@ export const ClientStorefront = () => {
               جميع الحقوق محفوظة © {new Date().getFullYear()} <strong>كاتورا للقهوة المختصة (Caturra Coffee)</strong> • صُنع بكل شغف في مصر 🇪🇬
             </div>
 
-            {/* Accepted Payment Badges */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>وسائل الدفع المقبولة:</span>
+            {/* Accepted Payment Badges & Track Order */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => openTrackingModal()}
+                style={{
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(74, 222, 128, 0.4)',
+                  color: '#4ade80',
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 150ms ease'
+                }}
+                title="تتبع شحنتك وطلبك برقم الفاتورة"
+              >
+                <Truck size={14} />
+                <span>تتبع حالة شحنتك 🚚</span>
+              </button>
+
+              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>وسائل الدفع:</span>
               <span className="payment-chip">InstaPay</span>
               <span className="payment-chip">فودافون كاش</span>
               <span className="payment-chip">فيزا / ماستركارد</span>
@@ -2339,7 +2582,7 @@ export const ClientStorefront = () => {
             {/* Direct WhatsApp Share Button */}
             <button
               onClick={() => {
-                const waUrl = generateWhatsAppOrderUrl(completedOrder, STORE_WHATSAPP_NUMBER);
+                const waUrl = generateWhatsAppOrderUrl(completedOrder, activeWhatsApp);
                 window.open(waUrl, '_blank');
               }}
               style={{
@@ -2364,7 +2607,7 @@ export const ClientStorefront = () => {
               <span>إرسال تفاصيل الطلب عبر واتساب 💬</span>
             </button>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
               <button
                 onClick={() => {
                   const inv = completedOrder;
@@ -2372,20 +2615,33 @@ export const ClientStorefront = () => {
                   openInvoiceModal(inv);
                 }}
                 className="btn btn-outline"
-                style={{ flex: 1 }}
+                style={{ height: '42px', gap: '6px' }}
               >
                 <Printer size={16} />
                 <span>عرض الفاتورة</span>
               </button>
 
               <button
-                onClick={() => setCompletedOrder(null)}
-                className="btn btn-primary"
-                style={{ flex: 1 }}
+                onClick={() => {
+                  const orderNum = completedOrder.invoiceNumber;
+                  setCompletedOrder(null);
+                  openTrackingModal(orderNum);
+                }}
+                className="btn btn-outline"
+                style={{ height: '42px', gap: '6px', borderColor: 'var(--mint-500)', color: 'var(--mint-800)', background: 'var(--mint-50)', fontWeight: '800' }}
               >
-                العودة للتسوق
+                <Truck size={16} color="var(--mint-600)" />
+                <span>تتبع الطلب 🚚</span>
               </button>
             </div>
+
+            <button
+              onClick={() => setCompletedOrder(null)}
+              className="btn btn-primary"
+              style={{ width: '100%', height: '42px', fontWeight: '800' }}
+            >
+              العودة للمتجر والتسوق
+            </button>
           </div>
         </div>
       )}
@@ -2539,6 +2795,107 @@ export const ClientStorefront = () => {
                 {selectedAcademyArticle.summary}
               </div>
 
+              {/* 📄 ATTACHED PDF SECTION (كتيب إرشادي بصيغة PDF) 📄 */}
+              {selectedAcademyArticle.pdfFile && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%)',
+                  border: '1.5px solid #fecdd3',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  marginBottom: '24px',
+                  boxShadow: '0 4px 14px rgba(220, 38, 38, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '240px' }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: '#dc2626',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 6px 16px rgba(220, 38, 38, 0.25)',
+                      flexShrink: 0
+                    }}>
+                      <FileText size={26} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          background: '#dc2626',
+                          color: '#fff',
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          fontWeight: '900'
+                        }}>
+                          PDF
+                        </span>
+                        <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: '800', color: '#881337' }}>
+                          {selectedAcademyArticle.pdfFile.name}
+                        </h4>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#9f1239' }}>
+                        دليل إرشادي مصور جاهز للقراءة والطباعة {selectedAcademyArticle.pdfFile.size ? `(${selectedAcademyArticle.pdfFile.size})` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setViewingAcademyPdf({ pdf: selectedAcademyArticle.pdfFile, title: selectedAcademyArticle.title })}
+                      style={{
+                        background: '#dc2626',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '10px 18px',
+                        borderRadius: '10px',
+                        fontWeight: '800',
+                        fontSize: '0.86rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 10px rgba(220, 38, 38, 0.25)',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <BookOpen size={16} />
+                      <span>تصفح وقراءة الـ PDF</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => downloadPdfFile(selectedAcademyArticle.pdfFile)}
+                      style={{
+                        background: '#ffffff',
+                        color: '#881337',
+                        border: '1.5px solid #fecdd3',
+                        padding: '10px 16px',
+                        borderRadius: '10px',
+                        fontWeight: '800',
+                        fontSize: '0.86rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Download size={16} />
+                      <span>تحميل مباشر</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Content Formatted */}
               <div className="academy-modal-content" style={{ fontSize: '0.96rem', lineHeight: '1.8', color: '#1e293b' }}>
                 {selectedAcademyArticle.content.split('\n\n').map((block, i) => {
@@ -2654,6 +3011,14 @@ export const ClientStorefront = () => {
         isOpen={isAiAssistantOpen}
         setIsOpen={setIsAiAssistantOpen}
         hasCart={totalCartCount > 0}
+      />
+
+      {/* 📄 Dedicated In-App PDF Reader Modal for Customers 📄 */}
+      <PdfReaderModal
+        isOpen={!!viewingAcademyPdf}
+        onClose={() => setViewingAcademyPdf(null)}
+        pdf={viewingAcademyPdf?.pdf}
+        title={viewingAcademyPdf?.title}
       />
 
     </div>

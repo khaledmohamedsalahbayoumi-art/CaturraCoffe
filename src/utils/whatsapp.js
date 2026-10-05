@@ -1,6 +1,15 @@
 // WhatsApp helper utilities for Caturra Specialty Coffee
 export const STORE_WHATSAPP_NUMBER = '201000000000';
 
+export const formatWhatsAppNumber = (phone) => {
+  if (!phone) return '201000000000';
+  let cleaned = String(phone).replace(/[^0-9]/g, '');
+  if (cleaned.startsWith('0020')) cleaned = cleaned.substring(2);
+  if (cleaned.startsWith('01')) cleaned = '20' + cleaned;
+  if (!cleaned.startsWith('20') && (cleaned.length === 10 || cleaned.length === 11) && cleaned.startsWith('1')) cleaned = '20' + cleaned;
+  return cleaned;
+};
+
 export const generateWhatsAppOrderUrl = (invoice, storeNumber = STORE_WHATSAPP_NUMBER) => {
   const itemsDetails = (invoice.items || []).map((it, idx) => {
     const extraParts = [];
@@ -33,7 +42,7 @@ ${itemsDetails}
 
 برجاء تأكيد استلام الطلب وتحديد موعد الشحن والتوصيل. شكراً لكم!`;
 
-  const cleanNum = String(storeNumber || '').replace(/[^0-9]/g, '');
+  const cleanNum = formatWhatsAppNumber(storeNumber);
   return cleanNum 
     ? `https://wa.me/${cleanNum}?text=${encodeURIComponent(message)}`
     : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;

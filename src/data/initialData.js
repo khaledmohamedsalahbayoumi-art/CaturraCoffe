@@ -52,7 +52,7 @@ export const initialProducts = [
     image: '/caturra_colombia.jpg',
     origin: 'كولومبيا - مقاطعة ويلا',
     roastLevel: 'تحميص متوسط',
-    notes: 'شوكولاتة داكنة، كراميل، مكسرات محمصة',
+    notes: 'حمضيات، سكر بني، كراميل متوازن',
     weight: '250g',
     description: 'محصول كولومبي متوازن القوام مثالي لمشروبات الإسبريسو ومشروبات الحليب.',
     expiryDate: '2027-03-20',
@@ -582,6 +582,14 @@ export const initialAcademyArticles = [
     date: '2026-09-28',
     summary: 'تعلم كيفية تحضير فنجان V60 مثالي مع ضبط نسبة القهوة للماء (Ratio 1:16)، حرارة 92 مئوية، ومراحل الصب الثلاث للحصول على نقاء استثنائي.',
     featured: true,
+    pdfFile: {
+      id: 'pdf-sample-v60',
+      name: 'دليل-استخلاص-V60-كاتورا.pdf',
+      size: '1.2 MB',
+      sizeBytes: 850,
+      data: 'data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNCAwIFIgL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNSAwIFIgPj4gPj4gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA1MzggPj4Kc3RyZWFtCkJUIC9GMSAyMiBUZiA1MCA3MjAgVGQgKENhdHVycmEgU3BlY2lhbHR5IENvZmZlZSBBY2FkZW15KSBUaiAvRjEgMTYgVGYgMCAtMzUgVGQgKFY2MCBQb3VyLU92ZXIgUmVjaXBlICYgRXh0cmFjdGlvbiBHdWlkZSkgVGogL0YxIDEyIFRmIDAgLTM1IFRkIChDb2ZmZWU6IDE4ZyBTcGVjaWFsdHkgRnJlc2ggQmVhbnMgfCBXYXRlcjogMzAwbWwgQCA5MkMgfCBSYXRpbzogMToxNi42KSBUaiAwIC0yNSBUZCAoU3RlcCAxOiBCbG9vbSB3aXRoIDUwbWwgd2F0ZXIgZm9yIDQwIHNlY29uZHMgdG8gcmVsZWFzZSBuYXR1cmFsIGdhc2VzLikgVGogMCAtMjUgVGQgKFN0ZXAgMjogU21vb3RoIHNwaXJhbCBwb3VyIHVwIHRvIDE4MG1sIGZvY3VzaW5nIG9uIGNlbnRlciBmbG93LikgVGogMCAtMjUgVGQgKFN0ZXAgMzogRmluYWwgcG91ciB0byAzMDBtbC4gVG90YWwgYnJldyB0aW1lOiAyOjQ1IG1pbnV0ZXMuKSBUaiAwIC0zNSBUZCAoQ2F0dXJyYSBTcGVjaWFsdHkgQ29mZmVlIC0gQ2Fpcm8sIEVneXB0IHwgd3d3LmNhdHVycmEtY29mZmVlLmNvbSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYS1Cb2xkID4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDQgMDAwMDAgbiAKMDAwMDAwMDMwMCAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQwMAolJUVPRg==',
+      uploadedAt: '2026-09-28'
+    },
     content: `### الأدوات المطلوبة:
 - 18 جرام بن مختص إثيوبي أو كولومبي طازج التحميص
 - 300 مل ماء نقي بدرجة حرارة 91-93°C
@@ -656,4 +664,28 @@ export const initialAcademyArticles = [
 4. **الحرارة:** أوقف التبخير عند 60-65°C حتى لا تفقد سكريات اللاكتوز حلاوتها الطبيعية.`
   }
 ];
+
+// Initial Contact and Storefront Settings
+export const initialContactInfo = {
+  brandNameAr: 'كاتورا للقهوة المختصة',
+  brandNameEn: 'CATURRA SPECIALTY COFFEE ROASTERS',
+  phone: '01012345678',
+  whatsapp: '01000000000',
+  email: 'contact@caturracoffee.com',
+  address: 'القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام',
+  workingHours: 'يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل',
+  shippingInfo: 'شحن لجميع المحافظات خلال 24-48 ساعة 🚚',
+  instagram: 'https://instagram.com',
+  facebook: 'https://facebook.com',
+  tiktok: 'https://tiktok.com',
+  aboutUs: 'كاتورا (Caturra) محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.',
+  commercialRegister: '148920',
+  taxNumber: '582-934-211',
+  // Top Announcement Banner Settings
+  bannerEnabled: true,
+  bannerText: '🚚 شحن سريع لكافة المحافظات خلال 24-48 ساعة | حبوب بن طازجة محمصة بحرفية عالية ☕',
+  bannerBadge: 'عرض حصري',
+  bannerTheme: 'mint', // 'mint' | 'gold' | 'dark' | 'crimson'
+  bannerLinkText: 'تصفح المحاصيل'
+};
 

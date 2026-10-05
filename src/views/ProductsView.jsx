@@ -188,7 +188,7 @@ export const ProductsView = () => {
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setIsAddCategoryOpen(true)}
             className="btn btn-outline"

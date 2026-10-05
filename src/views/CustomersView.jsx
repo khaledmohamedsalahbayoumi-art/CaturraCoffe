@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { DebtSettlementModal } from '../components/DebtSettlementModal';
+import { exportCustomersToPdf } from '../utils/exportUtils';
 
 export const CustomersView = () => {
   const {
@@ -25,7 +26,8 @@ export const CustomersView = () => {
     openInvoiceModal,
     addCustomer,
     updateCustomer,
-    settleCustomerDebt
+    settleCustomerDebt,
+    contactInfo
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,14 +132,33 @@ export const CustomersView = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary"
-          style={{ height: '42px' }}
-        >
-          <UserPlus size={18} />
-          <span>إضافة عميل جديد</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={() => exportCustomersToPdf(filteredCustomers, contactInfo)}
+            className="btn btn-outline"
+            style={{ 
+              height: '42px', 
+              gap: '8px', 
+              borderColor: '#ef4444', 
+              color: '#b91c1c', 
+              background: '#fef2f2',
+              fontWeight: '800'
+            }}
+            title="تصدير كشف العملاء المفلتر إلى ملف PDF جاهز للحفظ والطباعة"
+          >
+            <FileText size={18} color="#dc2626" />
+            <span>تصدير PDF ({filteredCustomers.length})</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="btn btn-primary"
+            style={{ height: '42px' }}
+          >
+            <UserPlus size={18} />
+            <span>إضافة عميل جديد</span>
+          </button>
+        </div>
       </div>
 
       {/* Customers List & Selected Customer Details Panel */}

@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { InvoiceModal } from './components/InvoiceModal';
 import { NotificationSettingsModal } from './components/NotificationSettingsModal';
+import { OrderTrackingModal } from './components/OrderTrackingModal';
 
 // Views
 import { LoginView } from './views/LoginView';
@@ -17,6 +18,7 @@ import { WarehouseView } from './views/WarehouseView';
 import { AccountsView } from './views/AccountsView';
 import { UsersPermissionsView } from './views/UsersPermissionsView';
 import { AcademyAdminView } from './views/AcademyAdminView';
+import { StoreSettingsView } from './views/StoreSettingsView';
 import { ClientStorefront } from './views/ClientStorefront';
 
 const MainLayout = () => {
@@ -27,12 +29,15 @@ const MainLayout = () => {
     isAuthenticated,
     currentUser,
     isNotificationSettingsOpen,
-    closeNotificationSettings
+    closeNotificationSettings,
+    isTrackingModalOpen,
+    closeTrackingModal,
+    trackingInvoiceNumber
   } = useApp();
 
   // Enforce permissions: if current tab is not allowed for this user, switch to the first allowed tab
-  const allTabs = ['pos', 'products', 'invoices', 'customers', 'purchases', 'sales', 'warehouse', 'accounts', 'academy', 'users'];
-  const hasAccess = currentUser?.isOwner || (currentUser?.permissions && currentUser.permissions[activeTab]) || activeTab === 'academy';
+  const allTabs = ['pos', 'products', 'invoices', 'customers', 'purchases', 'sales', 'warehouse', 'accounts', 'academy', 'settings', 'users'];
+  const hasAccess = currentUser?.isOwner || (currentUser?.permissions && currentUser.permissions[activeTab]) || activeTab === 'academy' || activeTab === 'settings';
 
   useEffect(() => {
     if (isAuthenticated && !hasAccess && currentUser?.permissions) {
@@ -52,6 +57,11 @@ const MainLayout = () => {
         <NotificationSettingsModal
           isOpen={isNotificationSettingsOpen}
           onClose={closeNotificationSettings}
+        />
+        <OrderTrackingModal
+          isOpen={isTrackingModalOpen}
+          onClose={closeTrackingModal}
+          initialInvoiceNumber={trackingInvoiceNumber}
         />
       </>
     );
@@ -82,6 +92,7 @@ const MainLayout = () => {
           {activeTab === 'warehouse' && (currentUser?.isOwner || currentUser?.permissions?.warehouse) && <WarehouseView />}
           {activeTab === 'accounts' && (currentUser?.isOwner || currentUser?.permissions?.accounts) && <AccountsView />}
           {activeTab === 'academy' && (currentUser?.isOwner || currentUser?.permissions?.academy || true) && <AcademyAdminView />}
+          {activeTab === 'settings' && <StoreSettingsView />}
           {activeTab === 'users' && (currentUser?.isOwner || currentUser?.permissions?.users) && <UsersPermissionsView />}
         </main>
       </div>
@@ -93,6 +104,13 @@ const MainLayout = () => {
       <NotificationSettingsModal
         isOpen={isNotificationSettingsOpen}
         onClose={closeNotificationSettings}
+      />
+
+      {/* Global Order Tracking & Shipping Modal */}
+      <OrderTrackingModal
+        isOpen={isTrackingModalOpen}
+        onClose={closeTrackingModal}
+        initialInvoiceNumber={trackingInvoiceNumber}
       />
     </div>
   );

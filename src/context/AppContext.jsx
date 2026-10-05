@@ -8,9 +8,15 @@ import {
   initialBatches,
   initialExpenses,
   initialUsers,
-  initialAcademyArticles
+  initialAcademyArticles,
+  initialContactInfo
 } from '../data/initialData';
 import { dispatchStoreAlert } from '../utils/notifications';
+import {
+  savePdfToStorage,
+  getPdfFromStorage,
+  deletePdfFromStorage
+} from '../utils/pdfStorage';
 
 const AppContext = createContext();
 
@@ -54,31 +60,123 @@ export const AppProvider = ({ children }) => {
   const [batches, setBatches] = useState(() => loadState('batches', initialBatches));
   const [expenses, setExpenses] = useState(() => loadState('expenses', initialExpenses));
   const [users, setUsers] = useState(() => loadState('users', initialUsers));
-  const [academyArticles, setAcademyArticles] = useState(() => loadState('academy', initialAcademyArticles));
+  const [academyArticles, setAcademyArticles] = useState(() => {
+    const loaded = loadState('academy', initialAcademyArticles);
+    return loaded.map(art => {
+      const initArt = initialAcademyArticles.find(ia => ia.id === art.id);
+      if (initArt?.pdfFile && !art.pdfFile) {
+        return { ...art, pdfFile: initArt.pdfFile };
+      }
+      return art;
+    });
+  });
+
+  const [contactInfo, setContactInfo] = useState(() => loadState('contact_info', initialContactInfo));
 
   // Authentication & Session
-  const [isAuthenticated, setIsAuthenticated] = useState(() => loadState('auth', true));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('login') === 'true') return false;
+    }
+    return loadState('auth', false);
+  });
   const [currentUserId, setCurrentUserId] = useState(() => loadState('current_user_id', initialUsers[0].id));
 
-  // App UI State
+  // App UI State: Default is ALWAYS 'client' (Customer Storefront)
   const [activeTab, setActiveTab] = useState('pos');
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== 'undefined') {
+      // Remove any legacy persistent localStorage viewMode so regular link visits always open the store first
+      try {
+        localStorage.removeItem('caturra_view_mode');
+      } catch {
+        // ignore
+      }
+
       const p = new URLSearchParams(window.location.search);
-      if (p.get('mode') === 'client' || p.get('mode') === 'admin') return p.get('mode');
-      const saved = localStorage.getItem('caturra_view_mode');
-      if (saved) return saved;
+      const hash = window.location.hash || '';
+
+      // Direct explicit links to admin / login via URL parameters or hash
+      if (p.get('mode') === 'admin' || p.has('admin') || p.has('login') || hash === '#admin' || hash === '#login') {
+        return 'admin';
+      }
+
+      // If URL explicitly requests client / store
+      if (p.get('mode') === 'client' || hash === '#store') {
+        return 'client';
+      }
+
+      // If active session in the current tab is in admin and user is actively authenticated
+      try {
+        const isAuth = localStorage.getItem('caturra_eg_auth');
+        const sessionMode = sessionStorage.getItem('caturra_view_mode');
+        if (isAuth === 'true' && sessionMode === 'admin') {
+          return 'admin';
+        }
+      } catch {
+        // ignore
+      }
     }
+    // Default is always client storefront
     return 'client';
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeInvoiceForModal, setActiveInvoiceForModal] = useState(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      return !!p.get('track');
+    }
+    return false;
+  });
+  const [trackingInvoiceNumber, setTrackingInvoiceNumber] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('track') || p.get('invoice') || '';
+    }
+    return '';
+  });
+
+  const openTrackingModal = (invNumber = '') => {
+    setTrackingInvoiceNumber(invNumber);
+    setIsTrackingModalOpen(true);
+  };
+
+  const closeTrackingModal = () => {
+    setIsTrackingModalOpen(false);
+    setTrackingInvoiceNumber('');
+  };
 
   useEffect(() => {
-    localStorage.setItem('caturra_view_mode', viewMode);
+    try {
+      if (viewMode === 'admin') {
+        sessionStorage.setItem('caturra_view_mode', 'admin');
+      } else {
+        sessionStorage.removeItem('caturra_view_mode');
+      }
+      localStorage.removeItem('caturra_view_mode');
+    } catch {
+      // ignore
+    }
   }, [viewMode]);
+
+  // Handle scanned QR code invoice preview (?invoice=...)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const invoiceParam = p.get('invoice');
+      if (invoiceParam && invoices.length > 0) {
+        const found = invoices.find(i => i.invoiceNumber === invoiceParam || i.id === invoiceParam);
+        if (found) {
+          setActiveInvoiceForModal(found);
+          setIsInvoiceModalOpen(true);
+        }
+      }
+    }
+  }, [invoices]);
 
   // Sync to localStorage
   useEffect(() => {
@@ -122,7 +220,58 @@ export const AppProvider = ({ children }) => {
   }, [currentUserId]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_academy', JSON.stringify(academyArticles));
+    localStorage.setItem('caturra_eg_contact_info', JSON.stringify(contactInfo));
+  }, [contactInfo]);
+
+  // Hydrate large PDFs from IndexedDB if stripped from localStorage
+  useEffect(() => {
+    let isMounted = true;
+    const hydratePdfs = async () => {
+      const needsHydration = academyArticles.some(a => a.pdfFile && a.pdfFile.id && !a.pdfFile.data && !a.pdfFile.url);
+      if (!needsHydration) return;
+
+      const updated = await Promise.all(
+        academyArticles.map(async (art) => {
+          if (art.pdfFile && art.pdfFile.id && !art.pdfFile.data && !art.pdfFile.url) {
+            const stored = await getPdfFromStorage(art.pdfFile.id);
+            if (stored && stored.data) {
+              return { ...art, pdfFile: { ...art.pdfFile, data: stored.data } };
+            }
+          }
+          return art;
+        })
+      );
+      if (isMounted) {
+        setAcademyArticles(updated);
+      }
+    };
+    hydratePdfs();
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('caturra_eg_academy', JSON.stringify(academyArticles));
+    } catch (err) {
+      console.warn('LocalStorage quota reached for academy articles, saving lightweight version while IndexedDB retains full files', err);
+      try {
+        const lightweight = academyArticles.map(art => {
+          if (art.pdfFile && art.pdfFile.data && art.pdfFile.data.length > 20000) {
+            return {
+              ...art,
+              pdfFile: {
+                ...art.pdfFile,
+                data: '' // stripped from localStorage, persistent in IndexedDB
+              }
+            };
+          }
+          return art;
+        });
+        localStorage.setItem('caturra_eg_academy', JSON.stringify(lightweight));
+      } catch (innerErr) {
+        console.error('Failed to save academy to localStorage:', innerErr);
+      }
+    }
   }, [academyArticles]);
 
   // Current active user object
@@ -155,17 +304,10 @@ export const AppProvider = ({ children }) => {
       if (!matchUser) return false;
 
       const userPass = String(u.password || '').trim();
-      const matchPass = (
-        userPass === cleanPass ||
-        cleanPass === '123' ||
-        cleanPass === '123456' ||
-        userPass === '••••••••' ||
-        !userPass
-      );
-      return matchPass;
+      return userPass ? (userPass === cleanPass) : (cleanPass === '123');
     });
 
-    // 2. If not found in users state, check initialUsers (in case edited directly in code)
+    // 2. If not found in users state, check initialUsers
     if (!found) {
       const initialFound = initialUsers.find(u => {
         const uName = String(u.username || '').trim().toLowerCase();
@@ -177,7 +319,7 @@ export const AppProvider = ({ children }) => {
         if (!matchUser) return false;
 
         const userPass = String(u.password || '').trim();
-        return (userPass === cleanPass || cleanPass === '123' || cleanPass === '123456');
+        return userPass ? (userPass === cleanPass) : (cleanPass === '123');
       });
 
       if (initialFound) {
@@ -194,29 +336,13 @@ export const AppProvider = ({ children }) => {
       }
     }
 
-    // 3. Fallback: If username exists but custom password didn't match, allow master password '123'
-    if (!found) {
-      const userByName = users.find(u => {
-        const uName = String(u.username || '').trim().toLowerCase();
-        const uFull = String(u.fullName || '').trim().toLowerCase();
-        return uName === cleanUser || uFull === cleanUser;
-      }) || initialUsers.find(u => {
-        const uName = String(u.username || '').trim().toLowerCase();
-        const uFull = String(u.fullName || '').trim().toLowerCase();
-        return uName === cleanUser || uFull === cleanUser;
-      });
-
-      if (userByName && (cleanPass === '123' || cleanPass === '123456')) {
-        found = userByName;
-      }
-    }
-
     if (found) {
       if (found.status === 'inactive') {
         return { success: false, message: 'هذا الحساب موقوف حالياً من قِبل إدارة النظام.' };
       }
       setCurrentUserId(found.id);
       setIsAuthenticated(true);
+      setViewMode('admin');
 
       // Auto route to first allowed tab
       const perms = found.permissions || {};
@@ -235,12 +361,40 @@ export const AppProvider = ({ children }) => {
 
     return { 
       success: false, 
-      message: 'اسم المستخدم أو كلمة المرور غير صحيحة. يمكنك دائماً استخدام الرمز 123 كرمز طوارئ.' 
+      message: 'اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التأكد من صحة البيانات.' 
     };
   };
 
   const logout = () => {
     setIsAuthenticated(false);
+    setViewMode('client');
+    try {
+      localStorage.setItem('caturra_eg_auth', JSON.stringify(false));
+      sessionStorage.removeItem('caturra_view_mode');
+      localStorage.removeItem('caturra_view_mode');
+      if (typeof window !== 'undefined' && (window.location.search.includes('admin') || window.location.hash.includes('admin') || window.location.search.includes('login') || window.location.hash.includes('login'))) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const loginAsUser = (userId) => {
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      setCurrentUserId(target.id);
+      setIsAuthenticated(true);
+      setViewMode('admin');
+      try {
+        localStorage.setItem('caturra_eg_auth', JSON.stringify(true));
+        localStorage.setItem('caturra_eg_current_user_id', JSON.stringify(target.id));
+      } catch {
+        // ignore
+      }
+      return true;
+    }
+    return false;
   };
 
   // 2. PRODUCTS MANAGEMENT (Weight in Grams vs Pieces)
@@ -589,6 +743,14 @@ export const AppProvider = ({ children }) => {
       remainingDebt,
       paymentMethod,
       status, // 'pending' if online order
+      trackingStatus: isOnlineOrder ? 'received' : 'delivered',
+      trackingHistory: [
+        {
+          status: isOnlineOrder ? 'received' : 'delivered',
+          time: formattedDate,
+          note: isOnlineOrder ? 'تم استلام وتأكيد الطلب عبر المتجر الإلكتروني' : 'تم البيع والتسليم المباشر في المحل (POS)'
+        }
+      ],
       source: source || 'pos',
       cashierName: source === 'online' ? 'المتجر الإلكتروني (Online Order)' : currentUser.fullName,
       orderNotes: saleData.notes || '',
@@ -841,6 +1003,74 @@ export const AppProvider = ({ children }) => {
     );
   };
 
+  const reconcileInventoryAudit = (auditItems) => {
+    setProducts(prevProducts =>
+      prevProducts.map(p => {
+        const item = auditItems.find(a => a.id === p.id);
+        if (item && item.actualStock !== undefined && item.actualStock !== null) {
+          const newQty = Math.max(0, Number(item.actualStock));
+          const isWeight = p.unitType === 'weight';
+          return {
+            ...p,
+            stock: newQty,
+            stockGram: isWeight ? newQty * 1000 : undefined
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  const updateContactInfo = (newInfo) => {
+    setContactInfo(prev => ({ ...prev, ...newInfo }));
+  };
+
+  const resetContactInfo = () => {
+    setContactInfo(initialContactInfo);
+  };
+
+  // Order & Shipping Tracking Status Actions
+  const updateInvoiceTrackingStatus = (invoiceId, newStatus, note = '') => {
+    const now = new Date();
+    const formattedDate = `${now.toISOString().split('T')[0]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    setInvoices(prev =>
+      prev.map(inv => {
+        if (inv.id === invoiceId) {
+          const history = inv.trackingHistory || [
+            {
+              status: inv.trackingStatus || (inv.status === 'paid' ? 'delivered' : 'received'),
+              time: inv.date,
+              note: 'تم تسجيل الطلب في النظام'
+            }
+          ];
+
+          const defaultNotes = {
+            received: 'تم استلام وتأكيد الطلب في نظام المحمصة',
+            processing: 'جاري فرز وتحميص حبوب البن والتغليف المفرغ من الهواء',
+            shipped: 'تم تسليم الشحنة لشركة الشحن ومندوب التوصيل',
+            delivered: 'تم توصيل الطلب بنجاح للعميل',
+            cancelled: 'تم إلغاء الطلب من قبل الإدارة'
+          };
+
+          return {
+            ...inv,
+            trackingStatus: newStatus,
+            trackingHistory: [
+              ...history,
+              {
+                status: newStatus,
+                time: formattedDate,
+                note: note || defaultNotes[newStatus] || 'تحديث حالة الشحنة'
+              }
+            ]
+          };
+        }
+        return inv;
+      })
+    );
+  };
+
   // Computed Smart Alerts
   const lowStockAlerts = products.filter(p => p.stock <= p.minStockAlert);
   
@@ -857,7 +1087,7 @@ export const AppProvider = ({ children }) => {
   const pendingOrdersCount = pendingOrders.length;
 
   // Academy Actions
-  const addAcademyArticle = (articleData) => {
+  const addAcademyArticle = async (articleData) => {
     const newArticle = {
       id: `acad-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
@@ -868,6 +1098,11 @@ export const AppProvider = ({ children }) => {
       featured: false,
       ...articleData
     };
+
+    if (newArticle.pdfFile?.id && newArticle.pdfFile?.data) {
+      await savePdfToStorage(newArticle.pdfFile.id, newArticle.pdfFile);
+    }
+
     setAcademyArticles(prev => [newArticle, ...prev]);
     dispatchStoreAlert({
       title: 'أكاديمية كاتورا للقهوة المختصة',
@@ -877,11 +1112,18 @@ export const AppProvider = ({ children }) => {
     return newArticle;
   };
 
-  const updateAcademyArticle = (id, updatedData) => {
+  const updateAcademyArticle = async (id, updatedData) => {
+    if (updatedData.pdfFile?.id && updatedData.pdfFile?.data) {
+      await savePdfToStorage(updatedData.pdfFile.id, updatedData.pdfFile);
+    }
     setAcademyArticles(prev => prev.map(a => a.id === id ? { ...a, ...updatedData } : a));
   };
 
-  const deleteAcademyArticle = (id) => {
+  const deleteAcademyArticle = async (id) => {
+    const target = academyArticles.find(a => a.id === id);
+    if (target?.pdfFile?.id) {
+      await deletePdfFromStorage(target.pdfFile.id);
+    }
     setAcademyArticles(prev => prev.filter(a => a.id !== id));
   };
 
@@ -900,6 +1142,7 @@ export const AppProvider = ({ children }) => {
         isAuthenticated,
         login,
         logout,
+        loginAsUser,
         activeTab,
         setActiveTab,
         viewMode,
@@ -927,6 +1170,7 @@ export const AppProvider = ({ children }) => {
         deleteUser,
         applyPromoDiscount,
         recordStockWaste,
+        reconcileInventoryAudit,
         // Academy Educational Actions
         academyArticles,
         addAcademyArticle,
@@ -944,7 +1188,17 @@ export const AppProvider = ({ children }) => {
         setIsNotificationSettingsOpen,
         openNotificationSettings: () => setIsNotificationSettingsOpen(true),
         closeNotificationSettings: () => setIsNotificationSettingsOpen(false),
-        dispatchStoreAlert
+        dispatchStoreAlert,
+        // Store Contact & Brand Settings
+        contactInfo,
+        updateContactInfo,
+        resetContactInfo,
+        // Order Tracking & Shipping Actions
+        isTrackingModalOpen,
+        trackingInvoiceNumber,
+        openTrackingModal,
+        closeTrackingModal,
+        updateInvoiceTrackingStatus
       }}
     >
       {children}
