@@ -76,7 +76,14 @@ export const PosView = () => {
 
   // Filter products for POS
   const filteredProducts = products.filter(p => {
-    const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
+    let matchesCat = true;
+    if (selectedCategory === 'specialty') {
+      matchesCat = p.category === 'specialty' || p.category === 'espresso' || p.category === 'filter';
+    } else if (selectedCategory === 'classic_blends') {
+      matchesCat = p.category === 'classic_blends' || p.category === 'coffee';
+    } else if (selectedCategory !== 'all') {
+      matchesCat = p.category === selectedCategory;
+    }
     const matchesQuery = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (p.barcode && p.barcode.includes(searchQuery)) ||
                          (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -120,7 +127,7 @@ export const PosView = () => {
       return;
     }
 
-    if (product.unitType === 'weight' || product.category === 'coffee') {
+    if (product.unitType === 'weight' || product.category === 'specialty' || product.category === 'classic_blends' || product.category === 'coffee' || product.category === 'espresso' || product.category === 'filter') {
       openWeightModal(product);
     } else {
       // Add standard piece item to cart
@@ -367,7 +374,7 @@ export const PosView = () => {
   const modalTotalCalculated = modalCalculatedPrice * packageCount;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div className="pos-coffee-view pos-natural-view" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       
       {/* 📱 Mobile Segmented Tab Switcher (Visible on mobile/tablet) */}
       <div className="pos-mobile-tabs-bar">
@@ -397,7 +404,7 @@ export const PosView = () => {
                 borderRadius: '9999px',
                 fontSize: '0.74rem',
                 fontWeight: '900',
-                border: mobileTab === 'cart' ? '1px solid var(--mint-200)' : 'none'
+                border: mobileTab === 'cart' ? '1px solid var(--mint-300)' : 'none'
               }}
             >
               {totalCartCount}
@@ -498,7 +505,7 @@ export const PosView = () => {
           <div className="pos-products-grid-container">
           {filteredProducts.map((prod) => {
             const isOutOfStock = prod.stock <= 0;
-            const isWeight = prod.unitType === 'weight' || prod.category === 'coffee';
+            const isWeight = prod.unitType === 'weight' || prod.category === 'specialty' || prod.category === 'classic_blends' || prod.category === 'coffee' || prod.category === 'espresso' || prod.category === 'filter';
             const inCartItems = cart.filter(c => c.productId === prod.id);
             const totalInCartQty = inCartItems.reduce((sum, it) => sum + it.qty, 0);
 
@@ -507,10 +514,10 @@ export const PosView = () => {
                 key={prod.id}
                 onClick={() => !isOutOfStock && handleProductClick(prod)}
                 style={{
-                  backgroundColor: '#ffffff',
+                  backgroundColor: '#FFFDF9',
                   borderRadius: '14px',
-                  border: totalInCartQty > 0 ? '2px solid var(--mint-500)' : '1px solid var(--border-light)',
-                  boxShadow: totalInCartQty > 0 ? '0 4px 14px rgba(11,128,79,0.18)' : 'var(--shadow-sm)',
+                  border: totalInCartQty > 0 ? '2px solid #8B5E34' : '1px solid #EDD9BD',
+                  boxShadow: totalInCartQty > 0 ? '0 4px 16px rgba(139, 94, 52, 0.22)' : 'var(--shadow-sm)',
                   padding: isMobile ? '8px' : '10px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -535,7 +542,7 @@ export const PosView = () => {
                       position: 'absolute',
                       top: '6px',
                       right: '6px',
-                      background: isWeight ? 'rgba(11, 128, 79, 0.9)' : 'rgba(30, 41, 59, 0.85)',
+                      background: isWeight ? 'rgba(139, 94, 52, 0.92)' : 'rgba(45, 24, 16, 0.88)',
                       backdropFilter: 'blur(3px)',
                       color: '#ffffff',
                       fontSize: '0.68rem',
@@ -557,7 +564,7 @@ export const PosView = () => {
                         position: 'absolute',
                         top: '6px',
                         left: '6px',
-                        background: 'var(--mint-600)',
+                        background: '#8B5E34',
                         color: '#ffffff',
                         fontWeight: '800',
                         fontSize: '0.78rem',
@@ -580,7 +587,7 @@ export const PosView = () => {
                       position: 'absolute',
                       bottom: '6px',
                       right: '6px',
-                      background: 'rgba(12, 28, 21, 0.85)',
+                      background: 'rgba(45, 24, 16, 0.88)',
                       backdropFilter: 'blur(3px)',
                       color: '#ffffff',
                       fontSize: '0.68rem',
@@ -665,7 +672,7 @@ export const PosView = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '2px solid #024526'
+                    border: '2px solid #2D1810'
                   }}
                 >
                   {totalCartCount}
@@ -677,7 +684,7 @@ export const PosView = () => {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.05rem', fontWeight: '900', color: '#86efac' }}>{grandTotal} ج.م</span>
+              <span style={{ fontSize: '1.05rem', fontWeight: '900', color: '#F5E6D0' }}>{grandTotal} ج.م</span>
               <ArrowLeft size={18} />
             </div>
           </div>
@@ -688,9 +695,9 @@ export const PosView = () => {
       <div
         className="pos-cart-panel"
         style={{
-          backgroundColor: '#ffffff',
+          backgroundColor: '#FFFDF9',
           borderRadius: '18px',
-          border: '1px solid var(--border-light)',
+          border: '1.5px solid #EDD9BD',
           boxShadow: 'var(--shadow-md)',
           display: (!isMobile || mobileTab === 'cart') ? 'flex' : 'none',
           flexDirection: 'column',
@@ -702,11 +709,11 @@ export const PosView = () => {
         <div
           style={{
             padding: '14px 18px',
-            borderBottom: '1px solid var(--border-light)',
+            borderBottom: '1px solid #EDD9BD',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'var(--mint-50)'
+            background: '#FFF8EE'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -745,7 +752,7 @@ export const PosView = () => {
         )}
 
         {/* 🌟 DIRECT CUSTOMER REGISTRATION BOX IN CASHIER 🌟 */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-mint)', background: 'linear-gradient(180deg, var(--mint-50) 0%, #ffffff 100%)', position: 'relative' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #EDD9BD', background: 'linear-gradient(180deg, #FFF8EE 0%, #FFFDF9 100%)', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800', color: 'var(--mint-900)' }}>
               <User size={15} color="var(--mint-600)" />
@@ -834,7 +841,7 @@ export const PosView = () => {
                   <div>
                     <strong>{cust.name}</strong> - <span dir="ltr">{cust.phone}</span>
                   </div>
-                  {cust.debt > 0 ? (
+                  {Number(cust?.debt) > 0 ? (
                     <span className="badge badge-danger" style={{ fontSize: '0.68rem' }}>عليه: {cust.debt} ج.م</span>
                   ) : (
                     <span className="badge badge-mint" style={{ fontSize: '0.68rem' }}>مسجل</span>
@@ -880,8 +887,8 @@ export const PosView = () => {
                   justifyContent: 'space-between',
                   padding: '9px 11px',
                   borderRadius: '10px',
-                  background: item.unitType === 'weight' ? '#f4fbf7' : '#f8fafc',
-                  border: item.unitType === 'weight' ? '1px solid var(--border-mint)' : '1px solid var(--border-light)'
+                  background: item.unitType === 'weight' ? '#FFF8EE' : '#FAF7F2',
+                  border: item.unitType === 'weight' ? '1.5px solid #EDD9BD' : '1px solid #EDD9BD'
                 }}
               >
                 <div style={{ flex: 1, overflow: 'hidden', paddingLeft: '8px' }}>
@@ -955,7 +962,7 @@ export const PosView = () => {
         </div>
 
         {/* Calculations & Egyptian Payment Methods */}
-        <div style={{ borderTop: '1px solid var(--border-light)', padding: '12px 16px', background: '#fafbfc' }}>
+        <div style={{ borderTop: '1px solid #EDD9BD', padding: '12px 16px', background: '#FAF7F2' }}>
           
           {/* Discount input */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -966,7 +973,7 @@ export const PosView = () => {
               placeholder="0"
               value={discountInput || ''}
               onChange={(e) => setDiscountInput(Number(e.target.value))}
-              style={{ width: '80px', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '0.85rem', textAlign: 'center' }}
+              style={{ width: '80px', padding: '3px 8px', borderRadius: '6px', border: '1px solid #EDD9BD', fontSize: '0.85rem', textAlign: 'center' }}
             />
           </div>
 
@@ -976,9 +983,9 @@ export const PosView = () => {
             <span>{subtotal} ج.م</span>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: '900', color: 'var(--mint-900)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: '900', color: '#2D1810', borderTop: '1px dashed #EDD9BD', paddingTop: '6px', marginBottom: '10px' }}>
             <span>الإجمالي المطلوب:</span>
-            <span>{grandTotal} ج.م</span>
+            <span style={{ color: '#8B5E34' }}>{grandTotal} ج.م</span>
           </div>
 
           {/* Egyptian Payment Method Selector */}
@@ -993,9 +1000,9 @@ export const PosView = () => {
                 style={{
                   padding: '7px 4px',
                   borderRadius: '8px',
-                  border: paymentMethod === 'cash' ? '2px solid var(--mint-600)' : '1px solid var(--border-light)',
-                  background: paymentMethod === 'cash' ? 'var(--mint-50)' : '#ffffff',
-                  color: paymentMethod === 'cash' ? 'var(--mint-900)' : 'var(--text-secondary)',
+                  border: paymentMethod === 'cash' ? '2px solid #8B5E34' : '1px solid #EDD9BD',
+                  background: paymentMethod === 'cash' ? '#FFF8EE' : '#FFFDF9',
+                  color: paymentMethod === 'cash' ? '#2D1810' : 'var(--text-secondary)',
                   fontWeight: '700',
                   fontSize: '0.78rem',
                   cursor: 'pointer'
@@ -1010,9 +1017,9 @@ export const PosView = () => {
                 style={{
                   padding: '7px 4px',
                   borderRadius: '8px',
-                  border: paymentMethod === 'card' ? '2px solid var(--mint-600)' : '1px solid var(--border-light)',
-                  background: paymentMethod === 'card' ? 'var(--mint-50)' : '#ffffff',
-                  color: paymentMethod === 'card' ? 'var(--mint-900)' : 'var(--text-secondary)',
+                  border: paymentMethod === 'card' ? '2px solid #8B5E34' : '1px solid #EDD9BD',
+                  background: paymentMethod === 'card' ? '#FFF8EE' : '#FFFDF9',
+                  color: paymentMethod === 'card' ? '#2D1810' : 'var(--text-secondary)',
                   fontWeight: '700',
                   fontSize: '0.78rem',
                   cursor: 'pointer'
@@ -1027,8 +1034,8 @@ export const PosView = () => {
                 style={{
                   padding: '7px 4px',
                   borderRadius: '8px',
-                  border: paymentMethod === 'instapay' ? '2px solid #ea580c' : '1px solid var(--border-light)',
-                  background: paymentMethod === 'instapay' ? '#fff7ed' : '#ffffff',
+                  border: paymentMethod === 'instapay' ? '2px solid #ea580c' : '1px solid #EDD9BD',
+                  background: paymentMethod === 'instapay' ? '#fff7ed' : '#FFFDF9',
                   color: paymentMethod === 'instapay' ? '#c2410c' : 'var(--text-secondary)',
                   fontWeight: '700',
                   fontSize: '0.78rem',
@@ -1044,8 +1051,8 @@ export const PosView = () => {
                 style={{
                   padding: '7px 4px',
                   borderRadius: '8px',
-                  border: paymentMethod === 'deferred' ? '2px solid #ef4444' : '1px solid var(--border-light)',
-                  background: paymentMethod === 'deferred' ? '#fef2f2' : '#ffffff',
+                  border: paymentMethod === 'deferred' ? '2px solid #ef4444' : '1px solid #EDD9BD',
+                  background: paymentMethod === 'deferred' ? '#fef2f2' : '#FFFDF9',
                   color: paymentMethod === 'deferred' ? '#b91c1c' : 'var(--text-secondary)',
                   fontWeight: '700',
                   fontSize: '0.78rem',
@@ -1095,7 +1102,7 @@ export const PosView = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              boxShadow: '0 4px 14px rgba(11, 128, 79, 0.25)'
+              boxShadow: '0 4px 14px rgba(111, 78, 55, 0.35)'
             }}
           >
             <Printer size={18} />

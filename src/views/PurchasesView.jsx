@@ -15,15 +15,24 @@ import {
   ArrowRight,
   Eye,
   Scale,
-  X
+  X,
+  Printer,
+  Landmark,
+  Wallet
 } from 'lucide-react';
+import { printPurchaseInvoice } from '../utils/exportUtils';
+import { toLatinDigits } from '../utils/numberEnforcer';
 
 export const PurchasesView = () => {
   const {
     purchases,
     products,
     categories,
-    addPurchaseInvoice
+    suppliers = [],
+    contactInfo,
+    addPurchaseInvoice,
+    treasuryAccounts = [],
+    getTreasuryAccountBalance
   } = useApp();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -37,6 +46,14 @@ export const PurchasesView = () => {
   const [notes, setNotes] = useState('');
   const [paymentChoice, setPaymentChoice] = useState('full'); // 'full' | 'partial'
   const [customPaidAmount, setCustomPaidAmount] = useState('');
+  const [selectedTreasuryId, setSelectedTreasuryId] = useState('');
+
+  const selectedTreasuryAccount = treasuryAccounts.find(a => a.id === selectedTreasuryId) ||
+    treasuryAccounts.find(a => a.isDefault) ||
+    treasuryAccounts[0] ||
+    { id: 'acc-cash-main', name: 'الخزينة الرئيسية (درج الكاش)', type: 'cash' };
+
+  const selectedAccountBalance = getTreasuryAccountBalance ? getTreasuryAccountBalance(selectedTreasuryAccount.id) : 0;
 
   // Items rows
   const [items, setItems] = useState([
@@ -44,10 +61,10 @@ export const PurchasesView = () => {
       productId: '',
       name: '',
       unitType: 'weight', // 'weight' | 'piece'
-      category: 'coffee',
+      category: 'specialty',
       costPrice: '',
       suggestedSellingPrice: '',
-      qty: 10,
+      qty: '10',
       entryDate: new Date().toISOString().split('T')[0],
       expiryDate: '2027-06-30',
       image: '/caturra_ethiopia.jpg'
@@ -64,12 +81,12 @@ export const PurchasesView = () => {
       if (field === 'productId') {
         const prod = products.find(p => p.id === value);
         if (prod) {
-          const isWeight = prod.unitType === 'weight' || prod.category === 'coffee';
+          const isWeight = prod.unitType === 'weight' || prod.category === 'specialty' || prod.category === 'classic_blends' || prod.category === 'coffee' || prod.category === 'espresso' || prod.category === 'filter';
           updated[index].name = prod.name;
           updated[index].category = prod.category;
           updated[index].unitType = isWeight ? 'weight' : 'piece';
-          updated[index].costPrice = isWeight ? (prod.costPerKg || prod.costPrice * 4) : prod.costPrice;
-          updated[index].suggestedSellingPrice = isWeight ? (prod.pricePerKg || prod.sellingPrice * 4) : prod.sellingPrice;
+          updated[index].costPrice = String(isWeight ? (prod.costPerKg || prod.costPrice * 4) : prod.costPrice);
+          updated[index].suggestedSellingPrice = String(isWeight ? (prod.pricePerKg || prod.sellingPrice * 4) : prod.sellingPrice);
           updated[index].image = prod.image;
         }
       }
@@ -85,10 +102,10 @@ export const PurchasesView = () => {
         productId: '',
         name: '',
         unitType: 'weight',
-        category: 'coffee',
+        category: 'specialty',
         costPrice: '',
         suggestedSellingPrice: '',
-        qty: 10,
+        qty: '10',
         entryDate: new Date().toISOString().split('T')[0],
         expiryDate: '2027-06-30',
         image: '/caturra_ethiopia.jpg'
@@ -115,9 +132,9 @@ export const PurchasesView = () => {
       return;
     }
 
-    const invalidItem = items.find(it => !it.name || !it.costPrice || !it.qty);
+    const invalidItem = items.find(it => !it.name || !it.costPrice || Number(it.qty || 0) <= 0);
     if (invalidItem) {
-      alert('يرجى إكمال بيانات كافة الأصناف (الاسم، التكلفة، والكمية)');
+      alert('يرجى إكمال بيانات كافة الأصناف (الاسم، التكلفة، والكمية أكبر من صفر)');
       return;
     }
 
@@ -125,12 +142,23 @@ export const PurchasesView = () => {
       supplierName,
       invoiceNumber: supplierInvoiceNo || `PUR-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       date: invoiceDate,
-      items,
+      items: items.map(it => ({
+        ...it,
+        costPrice: Number(it.costPrice || 0),
+        suggestedSellingPrice: Number(it.suggestedSellingPrice || 0),
+        qty: Number(it.qty || 1)
+      })),
       paidAmount,
+      paymentMethod: selectedTreasuryAccount.type || 'cash',
+      treasuryAccountId: selectedTreasuryAccount.id,
       notes
     });
 
-    alert('تم حفظ فاتورة المشتريات وترحيل الأصناف بنجاح للمخزن والمنتجات والمتجر!');
+    if (paidAmount > 0) {
+      alert(`تم حفظ فاتورة المشتريات وترحيل الأصناف للمخزن، وتم خصم مبلغ (${paidAmount.toLocaleString()} ج.م) بنجاح من "${selectedTreasuryAccount.name}".`);
+    } else {
+      alert('تم حفظ فاتورة المشتريات كفاتورة آجلة وترحيل الأصناف بنجاح للمخزن، وتسجيل المديونية لصالح المورد.');
+    }
     setIsAddModalOpen(false);
 
     // Reset Form
@@ -139,15 +167,16 @@ export const PurchasesView = () => {
     setNotes('');
     setPaymentChoice('full');
     setCustomPaidAmount('');
+    setSelectedTreasuryId(treasuryAccounts.find(a => a.isDefault)?.id || treasuryAccounts[0]?.id || 'acc-cash-main');
     setItems([
       {
         productId: '',
         name: '',
         unitType: 'weight',
-        category: 'coffee',
+        category: 'specialty',
         costPrice: '',
         suggestedSellingPrice: '',
-        qty: 10,
+        qty: '10',
         entryDate: new Date().toISOString().split('T')[0],
         expiryDate: '2027-06-30',
         image: '/caturra_ethiopia.jpg'
@@ -276,12 +305,13 @@ export const PurchasesView = () => {
             className="modal-content purchase-modal-container"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #EDD9BD', paddingBottom: '14px', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--mint-900)' }}>
-                  إضافة فاتورة مشتريات جديدة
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#4A3220', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <ShoppingBag size={22} color="#96663B" />
+                  <span>إضافة فاتورة مشتريات جديدة</span>
                 </h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                <p style={{ fontSize: '0.82rem', color: '#6B4A2E', margin: '4px 0 0' }}>
                   الأصناف ستضاف وتحدث في المنتجات والمخزن وتواريخ الصلاحية تلقائياً
                 </p>
               </div>
@@ -295,19 +325,25 @@ export const PurchasesView = () => {
               {/* Header Info */}
               <div className="purchase-header-grid">
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">اسم المورد / الشركة *</label>
+                  <label className="form-label" style={{ color: '#4A3220', fontWeight: '700' }}>اسم المورد / الشركة *</label>
                   <input
                     type="text"
                     required
+                    list="purchases-suppliers-list"
                     placeholder="مثال: شركة النيل لاستيراد البن الأخضر"
                     value={supplierName}
                     onChange={(e) => setSupplierName(e.target.value)}
                     className="form-input"
                   />
+                  <datalist id="purchases-suppliers-list">
+                    {(suppliers || []).map(s => (
+                      <option key={s.id} value={s.name}>{s.category ? `(${s.category})` : ''}</option>
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">رقم فاتورة المورد</label>
+                  <label className="form-label" style={{ color: '#4A3220', fontWeight: '700' }}>رقم فاتورة المورد</label>
                   <input
                     type="text"
                     placeholder="PUR-00..."
@@ -318,7 +354,7 @@ export const PurchasesView = () => {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">تاريخ الفاتورة والتوريد</label>
+                  <label className="form-label" style={{ color: '#4A3220', fontWeight: '700' }}>تاريخ الفاتورة والتوريد</label>
                   <input
                     type="date"
                     required
@@ -332,16 +368,30 @@ export const PurchasesView = () => {
               {/* Items Section */}
               <div className="purchase-items-box">
                 <div className="purchase-items-header">
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--mint-900)', margin: 0 }}>
-                    أصناف الفاتورة والتكلفة وسعر البيع
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Package size={18} color="#96663B" />
+                    <h4 style={{ fontSize: '0.98rem', fontWeight: '800', color: '#4A3220', margin: 0 }}>
+                      أصناف الفاتورة والتكلفة وسعر البيع
+                    </h4>
+                  </div>
                   <button
                     type="button"
                     onClick={addItemRow}
                     className="btn btn-outline"
-                    style={{ padding: '6px 12px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    style={{
+                      padding: '7px 14px',
+                      fontSize: '0.82rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'rgba(150, 102, 59, 0.1)',
+                      borderColor: '#96663B',
+                      color: '#96663B',
+                      fontWeight: '700',
+                      borderRadius: '8px'
+                    }}
                   >
-                    <Plus size={14} />
+                    <Plus size={14} color="#96663B" />
                     <span>+ إضافة صنف آخر</span>
                   </button>
                 </div>
@@ -352,7 +402,7 @@ export const PurchasesView = () => {
                       {/* Row Header with Unit Type Switch & Delete action */}
                       <div className="purchase-item-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--mint-900)' }}>
+                          <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#4A3220' }}>
                             الصنف رقم {idx + 1}
                           </span>
                           {items.length > 1 && (
@@ -360,11 +410,11 @@ export const PurchasesView = () => {
                               type="button"
                               onClick={() => removeItemRow(idx)}
                               style={{
-                                background: '#fef2f2',
-                                color: '#ef4444',
-                                border: '1px solid #fecaca',
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                color: '#dc2626',
+                                border: '1px solid rgba(239, 68, 68, 0.35)',
                                 borderRadius: '6px',
-                                padding: '3px 8px',
+                                padding: '3px 10px',
                                 fontSize: '0.74rem',
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -385,17 +435,19 @@ export const PurchasesView = () => {
                             type="button"
                             onClick={() => handleItemChange(idx, 'unitType', 'weight')}
                             style={{
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              border: item.unitType === 'weight' ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
-                              background: item.unitType === 'weight' ? 'var(--mint-100)' : '#ffffff',
-                              color: item.unitType === 'weight' ? 'var(--mint-950)' : 'var(--text-muted)',
-                              fontWeight: '700',
-                              fontSize: '0.75rem',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: item.unitType === 'weight' ? '1.5px solid #96663B' : '1px solid #EDD9BD',
+                              background: item.unitType === 'weight' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : '#FFF8EE',
+                              color: item.unitType === 'weight' ? '#ffffff' : '#6B4A2E',
+                              fontWeight: '800',
+                              fontSize: '0.76rem',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              boxShadow: item.unitType === 'weight' ? '0 2px 8px rgba(150, 102, 59, 0.25)' : 'none',
+                              transition: 'all 0.15s ease'
                             }}
                           >
                             ⚖️ بالوزن (كجم / جرام)
@@ -404,17 +456,19 @@ export const PurchasesView = () => {
                             type="button"
                             onClick={() => handleItemChange(idx, 'unitType', 'piece')}
                             style={{
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              border: item.unitType === 'piece' ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
-                              background: item.unitType === 'piece' ? 'var(--mint-100)' : '#ffffff',
-                              color: item.unitType === 'piece' ? 'var(--mint-950)' : 'var(--text-muted)',
-                              fontWeight: '700',
-                              fontSize: '0.75rem',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: item.unitType === 'piece' ? '1.5px solid #96663B' : '1px solid #EDD9BD',
+                              background: item.unitType === 'piece' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : '#FFF8EE',
+                              color: item.unitType === 'piece' ? '#ffffff' : '#6B4A2E',
+                              fontWeight: '800',
+                              fontSize: '0.76rem',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              boxShadow: item.unitType === 'piece' ? '0 2px 8px rgba(150, 102, 59, 0.25)' : 'none',
+                              transition: 'all 0.15s ease'
                             }}
                           >
                             📦 بالعدد (قطعة)
@@ -425,7 +479,7 @@ export const PurchasesView = () => {
                       {/* Main Item fields */}
                       <div className="purchase-item-main-grid">
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.78rem' }}>اختر منتج حالي أو اكتب جديداً</label>
+                          <label className="form-label" style={{ fontSize: '0.78rem', color: '#4A3220', fontWeight: '700' }}>اختر منتج حالي أو اكتب جديداً</label>
                           <select
                             value={item.productId}
                             onChange={(e) => handleItemChange(idx, 'productId', e.target.value)}
@@ -442,7 +496,7 @@ export const PurchasesView = () => {
                         </div>
 
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.78rem' }}>اسم الصنف *</label>
+                          <label className="form-label" style={{ fontSize: '0.78rem', color: '#4A3220', fontWeight: '700' }}>اسم الصنف *</label>
                           <input
                             type="text"
                             required
@@ -455,21 +509,27 @@ export const PurchasesView = () => {
                         </div>
 
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.78rem' }}>
+                          <label className="form-label" style={{ fontSize: '0.78rem', color: '#4A3220', fontWeight: '700' }}>
                             {item.unitType === 'weight' ? 'الكمية (بالـ كجم) *' : 'الكمية الموردة (قطع) *'}
                           </label>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
                             required
-                            min="0.5"
-                            step={item.unitType === 'weight' ? '0.5' : '1'}
-                            value={item.qty}
-                            onChange={(e) => handleItemChange(idx, 'qty', Number(e.target.value))}
+                            placeholder={item.unitType === 'weight' ? 'مثال: 25' : 'مثال: 10'}
+                            value={item.qty === undefined || item.qty === null ? '' : item.qty}
+                            onChange={(e) => {
+                              const clean = toLatinDigits(e.target.value);
+                              if (clean === '' || /^\d*\.?\d*$/.test(clean)) {
+                                handleItemChange(idx, 'qty', clean);
+                              }
+                            }}
                             className="form-input"
-                            style={{ padding: '6px 10px', height: '38px', fontSize: '0.84rem' }}
+                            style={{ padding: '6px 10px', height: '38px', fontSize: '0.88rem', fontWeight: '700' }}
                           />
                           {item.unitType === 'weight' && (
-                            <div style={{ fontSize: '0.7rem', color: 'var(--mint-700)', marginTop: '2px', fontWeight: '600' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#96663B', marginTop: '2px', fontWeight: '700' }}>
                               (= {((Number(item.qty) || 0) * 1000).toLocaleString()} جرام)
                             </div>
                           )}
@@ -479,41 +539,51 @@ export const PurchasesView = () => {
                       {/* Pricing & Expiry Grid */}
                       <div className="purchase-item-pricing-grid">
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.76rem' }}>
+                          <label className="form-label" style={{ fontSize: '0.76rem', color: '#4A3220', fontWeight: '700' }}>
                             {item.unitType === 'weight' ? 'تكلفة الكيلو (ج.م) *' : 'تكلفة القطعة (ج.م) *'}
                           </label>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
                             required
-                            min="0"
-                            step="0.5"
                             placeholder="180"
-                            value={item.costPrice}
-                            onChange={(e) => handleItemChange(idx, 'costPrice', e.target.value)}
+                            value={item.costPrice === undefined || item.costPrice === null ? '' : item.costPrice}
+                            onChange={(e) => {
+                              const clean = toLatinDigits(e.target.value);
+                              if (clean === '' || /^\d*\.?\d*$/.test(clean)) {
+                                handleItemChange(idx, 'costPrice', clean);
+                              }
+                            }}
                             className="form-input"
-                            style={{ padding: '6px 8px', height: '36px', fontSize: '0.84rem' }}
+                            style={{ padding: '6px 8px', height: '36px', fontSize: '0.88rem', fontWeight: '700' }}
                           />
                         </div>
 
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.76rem', color: 'var(--mint-800)', fontWeight: '700' }}>
+                          <label className="form-label" style={{ fontSize: '0.76rem', color: '#4A3220', fontWeight: '800' }}>
                             {item.unitType === 'weight' ? 'سعر بيع الكيلو (ج.م) *' : 'سعر بيع القطعة (ج.م) *'}
                           </label>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
                             required
-                            min="0"
-                            step="0.5"
                             placeholder="320"
-                            value={item.suggestedSellingPrice}
-                            onChange={(e) => handleItemChange(idx, 'suggestedSellingPrice', e.target.value)}
+                            value={item.suggestedSellingPrice === undefined || item.suggestedSellingPrice === null ? '' : item.suggestedSellingPrice}
+                            onChange={(e) => {
+                              const clean = toLatinDigits(e.target.value);
+                              if (clean === '' || /^\d*\.?\d*$/.test(clean)) {
+                                handleItemChange(idx, 'suggestedSellingPrice', clean);
+                              }
+                            }}
                             className="form-input"
-                            style={{ padding: '6px 8px', height: '36px', fontSize: '0.84rem', borderColor: 'var(--mint-400)', fontWeight: '700' }}
+                            style={{ padding: '6px 8px', height: '36px', fontSize: '0.88rem', borderColor: '#96663B', fontWeight: '800' }}
                           />
                         </div>
 
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.76rem' }}>تاريخ الصلاحية</label>
+                          <label className="form-label" style={{ fontSize: '0.76rem', color: '#6B4A2E' }}>تاريخ الصلاحية</label>
                           <input
                             type="date"
                             value={item.expiryDate}
@@ -524,7 +594,7 @@ export const PurchasesView = () => {
                         </div>
 
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.76rem' }}>تاريخ دخول المخزن</label>
+                          <label className="form-label" style={{ fontSize: '0.76rem', color: '#6B4A2E' }}>تاريخ دخول المخزن</label>
                           <input
                             type="date"
                             value={item.entryDate}
@@ -542,9 +612,9 @@ export const PurchasesView = () => {
               {/* Payment Settlement Options */}
               <div className="purchase-payment-card">
                 <div className="purchase-payment-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.86rem', color: 'var(--text-muted)', fontWeight: '600' }}>إجمالي الفاتورة:</span>
-                    <span style={{ fontWeight: '900', fontSize: '1.25rem', color: 'var(--mint-900)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.9rem', color: '#6B4A2E', fontWeight: '700' }}>إجمالي الفاتورة:</span>
+                    <span style={{ fontWeight: '900', fontSize: '1.4rem', color: '#96663B' }}>
                       {totalAmount.toLocaleString()} ج.م
                     </span>
                   </div>
@@ -554,16 +624,36 @@ export const PurchasesView = () => {
                     <button
                       type="button"
                       onClick={() => setPaymentChoice('full')}
-                      className={`btn ${paymentChoice === 'full' ? 'btn-primary' : 'btn-outline'}`}
-                      style={{ padding: '7px 14px', fontSize: '0.82rem', borderRadius: '8px' }}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '0.84rem',
+                        borderRadius: '8px',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        border: paymentChoice === 'full' ? '1.5px solid #96663B' : '1px solid #EDD9BD',
+                        background: paymentChoice === 'full' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : '#FFF8EE',
+                        color: paymentChoice === 'full' ? '#ffffff' : '#6B4A2E',
+                        boxShadow: paymentChoice === 'full' ? '0 3px 12px rgba(150, 102, 59, 0.25)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       سداد الفاتورة بالكامل
                     </button>
                     <button
                       type="button"
                       onClick={() => setPaymentChoice('partial')}
-                      className={`btn ${paymentChoice === 'partial' ? 'btn-primary' : 'btn-outline'}`}
-                      style={{ padding: '7px 14px', fontSize: '0.82rem', borderRadius: '8px' }}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '0.84rem',
+                        borderRadius: '8px',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        border: paymentChoice === 'partial' ? '1.5px solid #96663B' : '1px solid #EDD9BD',
+                        background: paymentChoice === 'partial' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : '#FFF8EE',
+                        color: paymentChoice === 'partial' ? '#ffffff' : '#6B4A2E',
+                        boxShadow: paymentChoice === 'partial' ? '0 3px 12px rgba(150, 102, 59, 0.25)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       سداد جزء وتأجيل الباقي
                     </button>
@@ -571,32 +661,133 @@ export const PurchasesView = () => {
                 </div>
 
                 {paymentChoice === 'partial' && (
-                  <div className="purchase-partial-row">
+                  <div className="purchase-partial-row" style={{ marginTop: '12px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                      <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#92400e' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: '800', color: '#4A3220' }}>
                         المبلغ المدفوع للمورد الآن (ج.م):
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        max={totalAmount}
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
                         placeholder="0"
                         value={customPaidAmount}
-                        onChange={(e) => setCustomPaidAmount(e.target.value)}
+                        onChange={(e) => {
+                          const clean = toLatinDigits(e.target.value);
+                          if (clean === '' || /^\d*\.?\d*$/.test(clean)) {
+                            setCustomPaidAmount(clean);
+                          }
+                        }}
                         className="form-input"
-                        style={{ maxWidth: '180px', height: '36px' }}
+                        style={{ maxWidth: '180px', height: '36px', fontWeight: '800' }}
                       />
                     </div>
-                    <div style={{ fontSize: '0.88rem', color: '#b45309', fontWeight: '700', padding: '6px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', border: '1px solid #fde68a' }}>
-                      المتبقي كمديونية للمورد: <span style={{ color: '#dc2626', fontSize: '1.05rem', fontWeight: '900' }}>{remainingAmount.toLocaleString()} ج.م</span>
+                    <div style={{ fontSize: '0.88rem', color: '#4A3220', fontWeight: '700', padding: '8px 14px', background: 'rgba(220, 38, 38, 0.08)', borderRadius: '8px', border: '1px solid rgba(220, 38, 38, 0.25)' }}>
+                      المتبقي كمديونية للمورد: <span style={{ color: '#ef4444', fontSize: '1.1rem', fontWeight: '900' }}>{remainingAmount.toLocaleString()} ج.م</span>
                     </div>
                   </div>
                 )}
+
+                {/* 🏦 Treasury Account Selection & Deduction Block */}
+                <div style={{
+                  marginTop: '16px',
+                  paddingTop: '14px',
+                  borderTop: '1.5px dashed #EDD9BD',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <label style={{ fontSize: '0.86rem', fontWeight: '800', color: '#4A3220', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                      <Landmark size={18} color="#96663B" />
+                      <span>الخزينة المسحوب منها المبلغ للسداد: *</span>
+                    </label>
+
+                    {selectedTreasuryAccount && (
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
+                        color: selectedAccountBalance >= paidAmount ? '#15803D' : '#DC2626',
+                        background: selectedAccountBalance >= paidAmount ? '#F0FDF4' : '#FEF2F2',
+                        border: `1px solid ${selectedAccountBalance >= paidAmount ? '#BBF7D0' : '#FECACA'}`,
+                        padding: '3px 10px',
+                        borderRadius: '20px'
+                      }}>
+                        الرصيد المتاح بالخزينة: {selectedAccountBalance.toLocaleString()} ج.م
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select
+                      value={selectedTreasuryId || selectedTreasuryAccount.id}
+                      onChange={(e) => setSelectedTreasuryId(e.target.value)}
+                      className="form-select"
+                      style={{
+                        flex: '1',
+                        minWidth: '260px',
+                        height: '42px',
+                        fontSize: '0.88rem',
+                        fontWeight: '700',
+                        borderColor: '#EDD9BD',
+                        background: '#FFFDF9'
+                      }}
+                    >
+                      {treasuryAccounts.map((acc) => {
+                        const accBal = getTreasuryAccountBalance ? getTreasuryAccountBalance(acc.id) : 0;
+                        const icon = acc.type === 'cash' ? '💵' : (acc.type === 'instapay' ? '⚡' : (acc.type === 'wallet' ? '📱' : '🏦'));
+                        return (
+                          <option key={acc.id} value={acc.id}>
+                            {icon} {acc.name} — (الرصيد الحالي: {accBal.toLocaleString()} ج.م)
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* Deduction Status Note */}
+                  {paidAmount > 0 ? (
+                    <div style={{
+                      fontSize: '0.82rem',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      background: selectedAccountBalance >= paidAmount ? '#F0FDF4' : '#FFFBEB',
+                      border: `1px solid ${selectedAccountBalance >= paidAmount ? '#86EFAC' : '#FDE68A'}`,
+                      color: selectedAccountBalance >= paidAmount ? '#166534' : '#92400E',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontWeight: '900' }}>✓</span>
+                        <span>
+                          سيتم خصم مبلغ <strong>{paidAmount.toLocaleString()} ج.م</strong> فوراً من <strong>{selectedTreasuryAccount.name}</strong> وتسجيل قيد سحب معتمد في سجل الخزينة.
+                        </span>
+                      </div>
+                      {selectedAccountBalance < paidAmount && (
+                        <div style={{ color: '#DC2626', fontWeight: '800', marginTop: '2px' }}>
+                          ⚠️ تنبيه: المبلغ المطلوب سداده ({paidAmount.toLocaleString()} ج.م) أكبر من الرصيد المتوفر حالياً ({selectedAccountBalance.toLocaleString()} ج.م).
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{
+                      fontSize: '0.82rem',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      color: '#64748B'
+                    }}>
+                      ℹ️ الفاتورة مسجلة كسداد آجل بالكامل (المبلغ المدفوع 0 ج.م) — لن يتم الخصم من الخزينة وسيتم قيد كامل الفاتورة كمديونية لصالح المورد لحين سدادها لاحقاً.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Notes */}
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">ملاحظات الفاتورة</label>
+                <label className="form-label" style={{ color: '#4A3220', fontWeight: '700' }}>ملاحظات الفاتورة</label>
                 <input
                   type="text"
                   placeholder="ملاحظات الشحن، الجودة..."
@@ -608,10 +799,10 @@ export const PurchasesView = () => {
 
               {/* Submit Buttons */}
               <div className="purchase-modal-footer">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="btn btn-outline" style={{ minHeight: '44px' }}>
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="btn btn-outline" style={{ minHeight: '44px', color: '#6B4A2E', borderColor: '#EDD9BD' }}>
                   إلغاء
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ minHeight: '44px', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <button type="submit" className="btn btn-primary" style={{ minHeight: '44px', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: '800' }}>
                   <CheckCircle size={18} />
                   <span>حفظ الفاتورة وترحيلها للمخزن والمنتجات</span>
                 </button>
@@ -625,10 +816,11 @@ export const PurchasesView = () => {
       {/* DETAIL MODAL FOR SELECTED PURCHASE */}
       {selectedPurchase && (
         <div className="modal-overlay" onClick={() => setSelectedPurchase(null)}>
-          <div className="modal-content" style={{ maxWidth: '580px', padding: '24px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--mint-900)' }}>
-                تفاصيل فاتورة المشتريات #{selectedPurchase.invoiceNumber}
+          <div className="modal-content purchase-modal-container" style={{ maxWidth: '580px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #EDD9BD', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#4A3220', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShoppingBag size={20} color="#96663B" />
+                <span>تفاصيل فاتورة المشتريات #{selectedPurchase.invoiceNumber}</span>
               </h3>
               <button onClick={() => setSelectedPurchase(null)} className="btn-icon" style={{ width: '30px', height: '30px' }}>
                 <X size={16} />
@@ -636,42 +828,71 @@ export const PurchasesView = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', fontSize: '0.88rem' }}>
-                <div>المورد: <strong>{selectedPurchase.supplierName}</strong></div>
-                <div>التاريخ: <strong>{selectedPurchase.date}</strong></div>
-                {selectedPurchase.notes && <div>ملاحظات: {selectedPurchase.notes}</div>}
+              <div style={{ background: '#FFF8EE', border: '1px solid #EDD9BD', padding: '12px', borderRadius: '10px', fontSize: '0.88rem', color: '#4A3220' }}>
+                <div>المورد: <strong style={{ color: '#96663B' }}>{selectedPurchase.supplierName}</strong></div>
+                <div style={{ marginTop: '4px' }}>التاريخ: <strong style={{ color: '#6B4A2E' }}>{selectedPurchase.date}</strong></div>
+                {selectedPurchase.notes && <div style={{ marginTop: '4px', color: '#8A654C' }}>ملاحظات: {selectedPurchase.notes}</div>}
               </div>
 
-              <h4 style={{ fontSize: '0.92rem', fontWeight: '700', marginTop: '6px' }}>الأصناف الموردة:</h4>
+              <h4 style={{ fontSize: '0.92rem', fontWeight: '800', color: '#4A3220', margin: '6px 0 0' }}>الأصناف الموردة:</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {selectedPurchase.items.map((it, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--mint-50)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#FFF8EE', border: '1px solid #EDD9BD', borderRadius: '8px', fontSize: '0.85rem' }}>
                     <div>
-                      <strong>{it.name}</strong> ({it.qty} وحدة)
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>صلاحية: {it.expiryDate}</div>
+                      <strong style={{ color: '#4A3220' }}>{it.name}</strong> <span style={{ color: '#6B4A2E' }}>({it.qty} وحدة)</span>
+                      <div style={{ fontSize: '0.74rem', color: '#8A654C', marginTop: '2px' }}>صلاحية: {it.expiryDate}</div>
                     </div>
                     <div style={{ textAlign: 'left' }}>
-                      <div>التكلفة: {it.costPrice} ج.م</div>
-                      <div style={{ color: 'var(--mint-700)', fontWeight: '700' }}>المجموع: {it.costPrice * it.qty} ج.م</div>
+                      <div style={{ color: '#6B4A2E' }}>التكلفة: {it.costPrice} ج.م</div>
+                      <div style={{ color: '#96663B', fontWeight: '800' }}>المجموع: {it.costPrice * it.qty} ج.م</div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '800', fontSize: '1.05rem', color: 'var(--mint-900)' }}>
+              <div style={{ borderTop: '1px dashed #EDD9BD', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '1.1rem', color: '#96663B' }}>
                 <span>الإجمالي الكلي:</span>
                 <span>{selectedPurchase.totalAmount} ج.م</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#16a34a' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#5B8C5A', fontWeight: '700' }}>
                 <span>المدفوع:</span>
                 <span>{selectedPurchase.paidAmount} ج.م</span>
               </div>
+              {selectedPurchase.paidAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: '#6B4A2E' }}>
+                  <span>الخزينة المسحوب منها:</span>
+                  <span style={{ fontWeight: '800', color: '#96663B' }}>
+                    {treasuryAccounts.find(a => a.id === selectedPurchase.treasuryAccountId)?.name ||
+                      (selectedPurchase.paymentMethod === 'instapay' ? 'حساب إنستاباي' : (selectedPurchase.paymentMethod === 'wallet' ? 'محفظة فودافون كاش' : 'الخزينة الرئيسية (درج الكاش)'))}
+                  </span>
+                </div>
+              )}
               {selectedPurchase.remainingAmount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#dc2626', fontWeight: '700' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ef4444', fontWeight: '800' }}>
                   <span>المتبقي للمورد:</span>
                   <span>{selectedPurchase.remainingAmount} ج.م</span>
                 </div>
               )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', borderTop: '1px solid #EDD9BD', paddingTop: '14px' }}>
+                <button
+                  type="button"
+                  onClick={() => printPurchaseInvoice(selectedPurchase, contactInfo)}
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontWeight: '700' }}
+                >
+                  <Printer size={15} />
+                  <span>طباعة الفاتورة كـ PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPurchase(null)}
+                  className="btn btn-outline"
+                  style={{ color: '#6B4A2E', borderColor: '#EDD9BD' }}
+                >
+                  إغلاق
+                </button>
+              </div>
             </div>
           </div>
         </div>

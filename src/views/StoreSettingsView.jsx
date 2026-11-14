@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatWhatsAppNumber } from '../utils/whatsapp';
+import { initialBrewingGuides } from '../data/initialData';
 import {
   Phone,
   MessageCircle,
@@ -24,16 +25,38 @@ import {
   Copy,
   Check,
   Link,
-  Store
+  Store,
+  Bot,
+  Zap,
+  Key,
+  BookOpen,
+  Plus,
+  Trash2,
+  Thermometer,
+  Timer,
+  Scale,
+  Sliders,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import { testGeminiApiKey } from '../utils/geminiAi';
 
 export const StoreSettingsView = () => {
-  const { contactInfo, updateContactInfo, resetContactInfo, setViewMode } = useApp();
+  const {
+    contactInfo,
+    updateContactInfo,
+    resetContactInfo,
+    setViewMode,
+    confirmDialog,
+    brewingGuides = {},
+    updateBrewingGuide,
+    resetBrewingGuides
+  } = useApp();
   const [copiedKey, setCopiedKey] = useState('');
 
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com';
   const storeUrl = `${currentOrigin}/`;
-  const adminUrl = `${currentOrigin}/admin`;
+  const adminUrl = `${currentOrigin}/caturra`;
 
   const handleCopyUrl = (url, key) => {
     try {
@@ -50,9 +73,11 @@ export const StoreSettingsView = () => {
   // Local form state initialized from current contactInfo
   const [formData, setFormData] = useState({
     brandNameAr: contactInfo?.brandNameAr || 'كاتورا للقهوة المختصة',
-    brandNameEn: contactInfo?.brandNameEn || 'CATURRA SPECIALTY COFFEE ROASTERS',
+    brandNameEn: contactInfo?.brandNameEn || 'CATURRA COFFEE & ROASTER',
     phone: contactInfo?.phone || '01012345678',
     whatsapp: contactInfo?.whatsapp || '01000000000',
+    instapayPhone: contactInfo?.instapayPhone || contactInfo?.instapayAccount || '01033144498',
+    vodafoneCash: contactInfo?.vodafoneCash || '01033144498',
     email: contactInfo?.email || 'contact@caturracoffee.com',
     address: contactInfo?.address || 'القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام',
     workingHours: contactInfo?.workingHours || 'يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل',
@@ -63,15 +88,103 @@ export const StoreSettingsView = () => {
     aboutUs: contactInfo?.aboutUs || '',
     commercialRegister: contactInfo?.commercialRegister || '148920',
     taxNumber: contactInfo?.taxNumber || '582-934-211',
-    bannerEnabled: contactInfo?.bannerEnabled !== undefined ? contactInfo.bannerEnabled : true,
+    bannerEnabled: contactInfo?.bannerEnabled !== undefined ? contactInfo.bannerEnabled : false,
     bannerText: contactInfo?.bannerText || 'شحن مجاني لكافة محافظات مصر للطلبات التي تزيد عن 500 جنيه | استخدم كود CATURRA10 لخصم 10%',
-    bannerBadge: contactInfo?.bannerBadge || 'عرض حصري ☕',
+    bannerBadge: contactInfo?.bannerBadge || 'عرض حصري 🔥',
     bannerTheme: contactInfo?.bannerTheme || 'mint',
-    bannerLinkText: contactInfo?.bannerLinkText || 'تسوق الآن ⚡'
+    bannerLinkText: contactInfo?.bannerLinkText || 'تسوق الآن ⚡',
+    promoCode: contactInfo?.promoCode || 'CATURRA10',
+    promoDiscountPercent: contactInfo?.promoDiscountPercent || 10,
+    geminiApiKey: contactInfo?.geminiApiKey || ''
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'contact' | 'social' | 'brand'
+  const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [geminiTestStatus, setGeminiTestStatus] = useState(null);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+
+  // ☕ Brewing Guides Management State
+  const [selectedBrewingMethod, setSelectedBrewingMethod] = useState('v60'); // 'v60' | 'espresso' | 'french_press' | 'whole_beans'
+  const [brewingGuideSuccess, setBrewingGuideSuccess] = useState(false);
+  const [activeGuideEdit, setActiveGuideEdit] = useState(() => (brewingGuides?.v60 || initialBrewingGuides?.v60 || {}));
+  const [showBrewingPreview, setShowBrewingPreview] = useState(false);
+
+  useEffect(() => {
+    const current = (brewingGuides && brewingGuides[selectedBrewingMethod]) || initialBrewingGuides?.[selectedBrewingMethod] || {};
+    setActiveGuideEdit(JSON.parse(JSON.stringify(current)));
+  }, [selectedBrewingMethod, brewingGuides]);
+
+  const handleBrewingFieldChange = (field, value) => {
+    setActiveGuideEdit(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleStepChange = (index, field, value) => {
+    setActiveGuideEdit(prev => {
+      const steps = [...(prev?.steps || [])];
+      steps[index] = { ...steps[index], [field]: value };
+      return { ...prev, steps };
+    });
+  };
+
+  const handleAddStep = () => {
+    setActiveGuideEdit(prev => {
+      const steps = [...(prev?.steps || [])];
+      steps.push({
+        step: steps.length + 1,
+        title: `الخطوة ${steps.length + 1}`,
+        desc: ''
+      });
+      return { ...prev, steps };
+    });
+  };
+
+  const handleRemoveStep = (index) => {
+    setActiveGuideEdit(prev => {
+      const steps = prev?.steps?.filter((_, i) => i !== index).map((s, idx) => ({ ...s, step: idx + 1 })) || [];
+      return { ...prev, steps };
+    });
+  };
+
+  const handleSaveBrewingGuide = (e) => {
+    e?.preventDefault();
+    if (!activeGuideEdit) return;
+    updateBrewingGuide(selectedBrewingMethod, activeGuideEdit);
+    setBrewingGuideSuccess(true);
+    setTimeout(() => setBrewingGuideSuccess(false), 3500);
+  };
+
+  const handleResetAllBrewingGuides = async () => {
+    const ok = await confirmDialog({
+      title: 'استعادة وصفات التحضير الافتراضية',
+      message: 'هل تريد بالتأكيد استعادة جميع وصفات التحضير إلى القيم الاحترافية الافتراضية المعتمدة لكاتورا؟',
+      details: 'سيتم استرجاع نسب الاستخلاص ودرجات الحرارة والخطوات ونصائح الباريستا لجميع درجات الطحن (V60، إسبريسو، فرنش برس، وحبوب كاملة).',
+      confirmText: 'نعم، استعادة الافتراضي',
+      cancelText: 'إلغاء',
+      type: 'warning'
+    });
+    if (!ok) return;
+    resetBrewingGuides();
+    const restored = initialBrewingGuides?.[selectedBrewingMethod] || {};
+    setActiveGuideEdit(JSON.parse(JSON.stringify(restored)));
+    setBrewingGuideSuccess(true);
+    setTimeout(() => setBrewingGuideSuccess(false), 3500);
+  };
+
+  const handleTestGemini = async () => {
+    if (!formData.geminiApiKey?.trim()) {
+      setGeminiTestStatus({ success: false, error: 'يرجى كتابة أو لصق مفتاح API أولاً' });
+      return;
+    }
+    setIsTestingGemini(true);
+    setGeminiTestStatus(null);
+    const result = await testGeminiApiKey(formData.geminiApiKey);
+    setIsTestingGemini(false);
+    setGeminiTestStatus(result);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -80,22 +193,39 @@ export const StoreSettingsView = () => {
 
   const handleSave = (e) => {
     e?.preventDefault();
-    updateContactInfo(formData);
+    const cleanTransferPhone = formData.instapayPhone?.trim() || '01033144498';
+    updateContactInfo({
+      ...formData,
+      instapayPhone: cleanTransferPhone,
+      instapayAccount: cleanTransferPhone,
+      vodafoneCash: cleanTransferPhone
+    });
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
     }, 4000);
   };
 
-  const handleReset = () => {
-    if (window.confirm('هل تريد بالتأكيد استعادة بيانات التواصل الافتراضية للعلامة التجارية؟')) {
-      resetContactInfo();
+  const handleReset = async () => {
+    const ok = await confirmDialog({
+      title: 'استعادة الإعدادات الافتراضية',
+      message: 'هل تريد بالتأكيد استعادة بيانات التواصل الافتراضية للعلامة التجارية؟',
+      details: 'سيتم استرجاع أرقام الهاتف والإيميل والعناوين الافتراضية لمحمصة كاتورا.',
+      confirmText: 'نعم، استعادة الافتراضي',
+      cancelText: 'إلغاء',
+      type: 'warning'
+    });
+    if (!ok) return;
+
+    resetContactInfo();
       // Also update local form state to default
       setFormData({
         brandNameAr: 'كاتورا للقهوة المختصة',
-        brandNameEn: 'CATURRA SPECIALTY COFFEE ROASTERS',
+        brandNameEn: 'CATURRA COFFEE & ROASTER',
         phone: '01012345678',
         whatsapp: '01000000000',
+        instapayPhone: '01033144498',
+        vodafoneCash: '01033144498',
         email: 'contact@caturracoffee.com',
         address: 'القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام',
         workingHours: 'يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل',
@@ -108,13 +238,14 @@ export const StoreSettingsView = () => {
         taxNumber: '582-934-211',
         bannerEnabled: true,
         bannerText: 'شحن مجاني لكافة محافظات مصر للطلبات التي تزيد عن 500 جنيه | استخدم كود CATURRA10 لخصم 10%',
-        bannerBadge: 'عرض حصري ☕',
+        bannerBadge: 'عرض حصري 🔥',
         bannerTheme: 'mint',
-        bannerLinkText: 'تسوق الآن ⚡'
+        bannerLinkText: 'تسوق الآن ⚡',
+        promoCode: 'CATURRA10',
+        promoDiscountPercent: 10
       });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
-    }
   };
 
   const formattedWhatsApp = formatWhatsAppNumber(formData.whatsapp);
@@ -257,7 +388,7 @@ export const StoreSettingsView = () => {
               cursor: 'pointer'
             }}
           >
-            مشاهدة في المتجر ↗
+            مشاهدة في المتجر
           </a>
         </div>
       )}
@@ -540,7 +671,7 @@ export const StoreSettingsView = () => {
                     name="bannerBadge"
                     value={formData.bannerBadge}
                     onChange={handleChange}
-                    placeholder="مثال: عرض حصري ☕ أو خصم خاص 🔥"
+                    placeholder="مثال: عرض حصري 🔥 أو خصم خاص ✨"
                     className="form-input"
                     style={{ fontSize: '0.9rem', fontWeight: '700' }}
                   />
@@ -559,6 +690,50 @@ export const StoreSettingsView = () => {
                     className="form-input"
                     style={{ fontSize: '0.9rem', fontWeight: '700' }}
                   />
+                </div>
+              </div>
+
+              {/* Row 2.5: Promo Code & Discount Percent */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', background: 'rgba(212, 163, 115, 0.08)', padding: '14px 16px', borderRadius: '12px', border: '1px dashed rgba(212, 163, 115, 0.3)' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    🏷️ كود الخصم الترويجي للعملاء (Promo Code):
+                  </label>
+                  <input
+                    type="text"
+                    name="promoCode"
+                    value={formData.promoCode}
+                    onChange={e => setFormData(prev => ({ ...prev, promoCode: e.target.value.toUpperCase() }))}
+                    placeholder="مثال: CATURRA10"
+                    className="form-input"
+                    style={{ fontSize: '0.92rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    هذا الكود هو الذي يكتبه العميل في شاشة إتمام الطلب (Checkout) ليحصل على الخصم.
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    🔢 نسبة الخصم المئوية (%):
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="number"
+                      name="promoDiscountPercent"
+                      min="1"
+                      max="100"
+                      value={formData.promoDiscountPercent}
+                      onChange={handleChange}
+                      placeholder="10"
+                      className="form-input"
+                      style={{ fontSize: '0.92rem', fontWeight: '800', width: '100px' }}
+                    />
+                    <span style={{ fontWeight: '800', color: 'var(--mint-700)' }}>% خصم من إجمالي الفاتورة</span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    يتم خصم هذه النسبة تلقائياً وتحديث المبلغ المطلوب تحويله في إنستاباي ومحافظ الكاش.
+                  </div>
                 </div>
               </div>
 
@@ -669,6 +844,699 @@ export const StoreSettingsView = () => {
             </div>
           </div>
 
+          {/* ☕ CARD: إدارة أدلة ووصفات التحضير الموصى بها (Brewing Guides & Grind Recipes) ☕ */}
+          <div className="card" style={{
+            gridColumn: '1 / -1',
+            background: '#FFFDF9',
+            borderRadius: '18px',
+            border: '1.5px solid #EDD9BD',
+            overflow: 'hidden',
+            boxShadow: '0 6px 24px rgba(74, 50, 32, 0.08)'
+          }}>
+            <div style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid #EDD9BD',
+              background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)',
+              color: '#ffffff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 12px rgba(150, 102, 59, 0.35)'
+                }}>
+                  <Coffee size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: '900', color: '#FFF8EE' }}>
+                    ☕ إدارة وتخصيص أدلة ووصفات التحضير (Brewing Recipes & Grind Guides)
+                  </h3>
+                  <span style={{ fontSize: '0.82rem', color: '#EDD9BD' }}>
+                    تخصيص وصفات الباريستا التلقائية التي تظهر للعميل فور اختياره لدرجة الطحن في صفحة المنتج (النسب، الحرارة، الوقت، الخطوات، ونصائح الباريستا)
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleResetAllBrewingGuides}
+                  className="btn btn-outline"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    borderColor: 'rgba(237, 217, 189, 0.4)',
+                    color: '#EDD9BD',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    padding: '6px 14px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  title="استعادة كافة وصفات التحضير إلى القيم الاحترافية الافتراضية"
+                >
+                  <RotateCcw size={14} />
+                  <span>استعادة الوصفات الافتراضية</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBrewingPreview(prev => !prev)}
+                  style={{
+                    background: showBrewingPreview ? '#96663B' : 'rgba(255, 255, 255, 0.12)',
+                    border: '1px solid #EDD9BD',
+                    color: '#ffffff',
+                    borderRadius: '8px',
+                    padding: '6px 14px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Eye size={14} />
+                  <span>{showBrewingPreview ? 'إخفاء المعاينة الحية' : 'معاينة نافذة العميل'}</span>
+                </button>
+              </div>
+            </div>
+
+            {brewingGuideSuccess && (
+              <div style={{
+                background: '#ecfdf5',
+                borderBottom: '1px solid #a7f3d0',
+                padding: '10px 24px',
+                color: '#065f46',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.86rem',
+                fontWeight: '700'
+              }}>
+                <CheckCircle size={18} color="#059669" />
+                <span>تم حفظ وتحديث وصفة التحضير بنجاح! تنعكس التعديلات فوراً على المتجر عند اختيار درجة الطحن.</span>
+              </div>
+            )}
+
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              
+              {/* Method Selector Tabs */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: '800', color: '#4A3220', marginBottom: '8px' }}>
+                  🎯 اختر طريقة التحضير / درجة الطحن المراد تعديل وصفتها:
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                  {[
+                    { id: 'v60', icon: '☕', name: 'تقطير V60 / فلتر ترشيح', grind: 'V60 / فلتر' },
+                    { id: 'espresso', icon: '⚡', name: 'استخلاص الإسبريسو المركز', grind: 'إسبريسو' },
+                    { id: 'french_press', icon: '🧊', name: 'فرنش برس وكولد برو (نقع)', grind: 'فرنش برس' },
+                    { id: 'whole_beans', icon: '🌾', name: 'حبوب كاملة (الحفظ والراحة)', grind: 'حبوب كاملة' }
+                  ].map(m => {
+                    const isSelected = selectedBrewingMethod === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSelectedBrewingMethod(m.id)}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          border: isSelected ? '2px solid #96663B' : '1px solid #EDD9BD',
+                          background: isSelected ? 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)' : '#FFFDF9',
+                          color: isSelected ? '#FFF8EE' : '#5C3D2E',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          textAlign: 'right',
+                          transition: 'all 0.2s ease',
+                          boxShadow: isSelected ? '0 4px 14px rgba(150, 102, 59, 0.2)' : 'none'
+                        }}
+                      >
+                        <span style={{ fontSize: '1.4rem' }}>{m.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong style={{ display: 'block', fontSize: '0.88rem', color: isSelected ? '#C49A5C' : '#4A3220' }}>
+                            {m.name}
+                          </strong>
+                          <span style={{ fontSize: '0.74rem', color: isSelected ? '#EDD9BD' : '#8A654C' }}>
+                            مرتبطة بخيار: {m.grind}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Active Method Form Body */}
+              {activeGuideEdit && (
+                <div style={{
+                  background: '#FFF8EE',
+                  borderRadius: '14px',
+                  border: '1.5px solid #EDD9BD',
+                  padding: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '18px'
+                }}>
+                  {/* Row 1: Method Names */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: '#4A3220', marginBottom: '6px' }}>
+                        🏷️ عنوان طريقة التحضير (بالعربية):
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.methodName || ''}
+                        onChange={e => handleBrewingFieldChange('methodName', e.target.value)}
+                        placeholder="مثال: تقطير V60 / فلتر ترشيح"
+                        className="form-input"
+                        style={{ fontWeight: '700' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: '#4A3220', marginBottom: '6px' }}>
+                        🌐 Method Title (English):
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.methodNameEn || ''}
+                        onChange={e => handleBrewingFieldChange('methodNameEn', e.target.value)}
+                        placeholder="e.g. V60 Pour-over / Filter Drip"
+                        className="form-input"
+                        style={{ fontWeight: '700', direction: 'ltr' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Four Key Parameters Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #ebd9c8' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800', color: '#8c4718', marginBottom: '6px' }}>
+                        <Scale size={14} />
+                        <span>نسبة الاستخلاص (Ratio):</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.ratio || ''}
+                        onChange={e => handleBrewingFieldChange('ratio', e.target.value)}
+                        placeholder="مثال: 1:15"
+                        className="form-input"
+                        style={{ fontWeight: '800', fontSize: '0.92rem', textAlign: 'center' }}
+                      />
+                    </div>
+
+                    <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #ebd9c8' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800', color: '#8c4718', marginBottom: '6px' }}>
+                        <Thermometer size={14} />
+                        <span>حرارة الماء (Temp):</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.waterTemp || ''}
+                        onChange={e => handleBrewingFieldChange('waterTemp', e.target.value)}
+                        placeholder="مثال: 91°C - 93°C"
+                        className="form-input"
+                        style={{ fontWeight: '800', fontSize: '0.92rem', textAlign: 'center' }}
+                      />
+                    </div>
+
+                    <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #ebd9c8' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800', color: '#8c4718', marginBottom: '6px' }}>
+                        <Timer size={14} />
+                        <span>وقت التحضير (Time):</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.brewTime || ''}
+                        onChange={e => handleBrewingFieldChange('brewTime', e.target.value)}
+                        placeholder="مثال: 2:30 - 2:45 دقيقة"
+                        className="form-input"
+                        style={{ fontWeight: '800', fontSize: '0.92rem', textAlign: 'center' }}
+                      />
+                    </div>
+
+                    <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #ebd9c8' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800', color: '#8c4718', marginBottom: '6px' }}>
+                        <Coffee size={14} />
+                        <span>الجرعة الموصى بها:</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.coffeeDose || ''}
+                        onChange={e => handleBrewingFieldChange('coffeeDose', e.target.value)}
+                        placeholder="مثال: 20 جم بن"
+                        className="form-input"
+                        style={{ fontWeight: '800', fontSize: '0.92rem', textAlign: 'center' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Water Total & Grind Size Description */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: '#4A3220', marginBottom: '6px' }}>
+                        💧 كمية الماء الإجمالية:
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.waterTotal || ''}
+                        onChange={e => handleBrewingFieldChange('waterTotal', e.target.value)}
+                        placeholder="مثال: 300 مل ماء"
+                        className="form-input"
+                        style={{ fontWeight: '700' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: '#4A3220', marginBottom: '6px' }}>
+                        ⚙️ وصف ملمس ودرجة الطحن:
+                      </label>
+                      <input
+                        type="text"
+                        value={activeGuideEdit.grindSizeLabel || ''}
+                        onChange={e => handleBrewingFieldChange('grindSizeLabel', e.target.value)}
+                        placeholder="مثال: متوسطة النعومة (مثل حبات ملح البحر الخشن)"
+                        className="form-input"
+                        style={{ fontWeight: '700' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Barista Tip */}
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.86rem', fontWeight: '800', color: '#96663B', marginBottom: '6px' }}>
+                      <span>💡 نصيحة الباريستا الذهبية (Barista Pro Tip):</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={activeGuideEdit.baristaTip || ''}
+                      onChange={e => handleBrewingFieldChange('baristaTip', e.target.value)}
+                      placeholder="اكتب نصيحة الباريستا الاحترافية لإبراز أفضل نكهات هذا الاستخلاص..."
+                      className="form-input"
+                      style={{
+                        fontWeight: '600',
+                        fontSize: '0.88rem',
+                        lineHeight: '1.6',
+                        background: '#FFF8EE',
+                        border: '1.5px solid #EDD9BD',
+                        color: '#4A3220'
+                      }}
+                    />
+                  </div>
+
+                  {/* Row 5: Sequential Steps Editor */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <label style={{ fontSize: '0.86rem', fontWeight: '800', color: '#4A3220', margin: 0 }}>
+                        📋 خطوات التحضير المتسلسلة (Brewing Steps):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAddStep}
+                        style={{
+                          background: '#FFFDF9',
+                          border: '1px solid #EDD9BD',
+                          color: '#96663B',
+                          borderRadius: '8px',
+                          padding: '4px 12px',
+                          fontSize: '0.78rem',
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>إضافة خطوة جديدة</span>
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {(activeGuideEdit.steps || []).map((stepItem, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            background: '#FFFDF9',
+                            borderRadius: '10px',
+                            border: '1px solid #EDD9BD',
+                            padding: '12px 14px',
+                            display: 'flex',
+                            gap: '12px',
+                            alignItems: 'flex-start'
+                          }}
+                        >
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)',
+                            color: '#C49A5C',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '900',
+                            fontSize: '0.84rem',
+                            flexShrink: 0,
+                            marginTop: '4px'
+                          }}>
+                            {idx + 1}
+                          </div>
+                          
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <input
+                              type="text"
+                              value={stepItem.title || ''}
+                              onChange={e => handleStepChange(idx, 'title', e.target.value)}
+                              placeholder={`عنوان الخطوة ${idx + 1} (مثال: الترطيب الأولي Blooming)`}
+                              className="form-input"
+                              style={{ fontWeight: '700', fontSize: '0.88rem' }}
+                            />
+                            <textarea
+                              rows={2}
+                              value={stepItem.desc || ''}
+                              onChange={e => handleStepChange(idx, 'desc', e.target.value)}
+                              placeholder={`تفاصيل الخطوة ${idx + 1} (كمية الماء، الثواني، وطريقة الصب...)`}
+                              className="form-input"
+                              style={{ fontSize: '0.84rem', lineHeight: '1.5' }}
+                            />
+                          </div>
+
+                          {(activeGuideEdit.steps || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveStep(idx)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                flexShrink: 0
+                              }}
+                              title="حذف هذه الخطوة"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Save Guide Button */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '6px', borderTop: '1px solid #EDD9BD', paddingTop: '14px' }}>
+                    <button
+                      type="button"
+                      onClick={handleSaveBrewingGuide}
+                      className="btn btn-primary"
+                      style={{
+                        padding: '10px 24px',
+                        fontWeight: '800',
+                        fontSize: '0.9rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)',
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(150, 102, 59, 0.35)'
+                      }}
+                    >
+                      <Save size={16} />
+                      <span>حفظ وصفة ({activeGuideEdit.methodName || selectedBrewingMethod}) 💾</span>
+                    </button>
+                  </div>
+
+                </div>
+              )}
+
+              {/* Live Preview Card */}
+              {showBrewingPreview && activeGuideEdit && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)',
+                  borderRadius: '16px',
+                  border: '1.5px solid #EDD9BD',
+                  padding: '20px',
+                  color: '#FFF8EE',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    background: 'rgba(196, 154, 92, 0.25)',
+                    border: '1px solid #C49A5C',
+                    color: '#EDD9BD',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: '800'
+                  }}>
+                    معاينة حية لنافذة العميل 📱
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#4A3220', border: '1px solid #EDD9BD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C49A5C' }}>
+                      <Coffee size={18} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '900', color: '#FFF8EE' }}>
+                        {activeGuideEdit.methodName || 'طريقة التحضير'}
+                      </h4>
+                      <span style={{ fontSize: '0.76rem', color: '#EDD9BD' }}>
+                        دليل ووصفة التحضير الموصى بها لمحصول البن المختار
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+                    <div style={{ background: 'rgba(255, 253, 249, 0.1)', padding: '8px 10px', borderRadius: '8px', border: '1px solid #EDD9BD', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#EDD9BD', display: 'block' }}>نسبة الاستخلاص</span>
+                      <strong style={{ fontSize: '0.9rem', color: '#C49A5C' }}>{activeGuideEdit.ratio || '-'}</strong>
+                    </div>
+                    <div style={{ background: 'rgba(255, 253, 249, 0.1)', padding: '8px 10px', borderRadius: '8px', border: '1px solid #EDD9BD', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#EDD9BD', display: 'block' }}>حرارة الماء</span>
+                      <strong style={{ fontSize: '0.9rem', color: '#C49A5C' }}>{activeGuideEdit.waterTemp || '-'}</strong>
+                    </div>
+                    <div style={{ background: 'rgba(255, 253, 249, 0.1)', padding: '8px 10px', borderRadius: '8px', border: '1px solid #EDD9BD', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#EDD9BD', display: 'block' }}>وقت التحضير</span>
+                      <strong style={{ fontSize: '0.9rem', color: '#C49A5C' }}>{activeGuideEdit.brewTime || '-'}</strong>
+                    </div>
+                    <div style={{ background: 'rgba(255, 253, 249, 0.1)', padding: '8px 10px', borderRadius: '8px', border: '1px solid #EDD9BD', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#EDD9BD', display: 'block' }}>الجرعة والماء</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#C49A5C' }}>{activeGuideEdit.coffeeDose || ''} / {activeGuideEdit.waterTotal || ''}</strong>
+                    </div>
+                  </div>
+
+                  {activeGuideEdit.baristaTip && (
+                    <div style={{ background: 'rgba(217, 119, 6, 0.15)', border: '1px solid rgba(217, 119, 6, 0.35)', borderRadius: '8px', padding: '8px 12px', fontSize: '0.78rem', color: '#fef3c7', lineHeight: '1.5' }}>
+                      💡 <strong>نصيحة الباريستا:</strong> {activeGuideEdit.baristaTip}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* 🤖 CARD: إعدادات مساعد كاتورا الذكي (Google Gemini AI) 🤖 */}
+          <div className="card" style={{
+            background: '#ffffff',
+            borderRadius: '18px',
+            border: '1.5px solid ' + (formData.geminiApiKey ? 'rgba(56, 189, 248, 0.5)' : 'var(--border-light)'),
+            overflow: 'hidden',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-light)',
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0284c7, #38bdf8)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(56, 189, 248, 0.35)'
+                }}>
+                  <Bot size={22} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', color: '#ffffff' }}>
+                      🤖 ربط مساعد كاتورا بـ Google Gemini AI
+                    </h3>
+                    <span style={{
+                      background: formData.geminiApiKey ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.15)',
+                      color: formData.geminiApiKey ? '#7dd3fc' : '#cbd5e1',
+                      border: '1px solid ' + (formData.geminiApiKey ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.2)'),
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      fontSize: '0.72rem',
+                      fontWeight: '800'
+                    }}>
+                      {formData.geminiApiKey ? '⚡ متصل بـ Gemini 2.0' : 'وضع الباريستا المحلي'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                    ربط المساعد بذكاء اصطناعي حقيقي من Google للإجابة عن أسئلة الزبائن وترشيح القهوة بذكاء فائق
+                  </span>
+                </div>
+              </div>
+
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  color: '#e2e8f0',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  padding: '6px 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'background 0.15s'
+                }}
+              >
+                <span>احصل على مفتاح مجاني (AI Studio)</span>
+                <ExternalLink size={13} />
+              </a>
+            </div>
+
+            <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  🔑 مفتاح Google Gemini API Key:
+                </label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <input
+                      type={showGeminiKey ? 'text' : 'password'}
+                      name="geminiApiKey"
+                      value={formData.geminiApiKey}
+                      onChange={handleChange}
+                      placeholder="الصق مفتاح API الخاص بك هنا (يبدأ بـ AIzaSy...)"
+                      className="form-input"
+                      style={{
+                        fontSize: '0.92rem',
+                        fontWeight: '700',
+                        fontFamily: 'monospace',
+                        letterSpacing: showGeminiKey ? 'normal' : '2px',
+                        paddingLeft: '40px'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowGeminiKey(prev => !prev)}
+                      style={{
+                        position: 'absolute',
+                        left: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        padding: '4px'
+                      }}
+                      title={showGeminiKey ? 'إخفاء' : 'إظهار'}
+                    >
+                      <Eye size={17} />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTestGemini}
+                    disabled={isTestingGemini || !formData.geminiApiKey}
+                    style={{
+                      background: isTestingGemini ? '#94a3b8' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                      border: 'none',
+                      color: '#ffffff',
+                      padding: '8px 18px',
+                      borderRadius: '10px',
+                      fontSize: '0.84rem',
+                      fontWeight: '800',
+                      cursor: isTestingGemini || !formData.geminiApiKey ? 'default' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(2, 132, 199, 0.3)'
+                    }}
+                  >
+                    <Zap size={15} />
+                    <span>{isTestingGemini ? 'جاري الفحص...' : 'اختبار الاتصال ⚡'}</span>
+                  </button>
+                </div>
+
+                {/* Gemini Test Feedback Message */}
+                {geminiTestStatus && (
+                  <div style={{
+                    marginTop: '10px',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: geminiTestStatus.success ? '#ecfdf5' : '#fef2f2',
+                    border: '1px solid ' + (geminiTestStatus.success ? '#6ee7b7' : '#fca5a5'),
+                    color: geminiTestStatus.success ? '#065f46' : '#991b1b'
+                  }}>
+                    {geminiTestStatus.success ? (
+                      <>
+                        <CheckCircle size={16} color="#059669" />
+                        <span>✅ الاتصال بـ Google Gemini 2.0 ناجح وسريع! سيعمل المساعد بكامل ذكائه الآن.</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: '1rem' }}>⚠️</span>
+                        <span>فشل الاتصال: {geminiTestStatus.error}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '8px', lineHeight: '1.5' }}>
+                  💡 <strong>ملاحظة:</strong> المفتاح مجاني بالكامل من Google AI Studio. بمجرد إدخاله، سيتحول باريستا كاتورا للعمل بنموذج <strong>Gemini 2.0 Flash</strong> الفائق الذكاء، مع حفظ خريطة منتجات وأسعار وتفاصيل كاتورا تلقائياً. في حال عدم إدخال مفتاح، يستمر المساعد بالعمل عبر محرك كاتورا الذكي المحلي.
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* CARD 1: الاتصال المباشر والواتساب */}
           <div className="card" style={{ background: '#ffffff', borderRadius: '18px', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <div style={{
@@ -759,6 +1627,39 @@ export const StoreSettingsView = () => {
                 />
                 <div style={{ fontSize: '0.74rem', color: '#15803d', marginTop: '4px' }}>
                   ⚡ هام: يستقبل هذا الرقم رسائل طلبات سلة الشراء تلقائياً من المتجر. الصيغة المدعومة: 010... أو 2010...
+                </div>
+              </div>
+
+              {/* InstaPay & Mobile Wallets Transfer Destination Phone */}
+              <div style={{
+                background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                border: '1.5px solid #c084fc',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem', fontWeight: '800', color: '#581c87', marginBottom: '2px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={16} color="#7c3aed" />
+                    رقم التحويل لإنستاباي والمحافظ الإلكترونية (بدل الحساب):
+                  </span>
+                  <span style={{ fontSize: '0.74rem', background: '#7c3aed', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>
+                    يظهر للعملاء في السلة
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="instapayPhone"
+                  value={formData.instapayPhone || ''}
+                  onChange={handleChange}
+                  placeholder="01033144498"
+                  className="form-input"
+                  style={{ direction: 'ltr', textAlign: 'left', fontWeight: '800', fontSize: '1rem', borderColor: '#a78bfa', background: '#ffffff', color: '#0f172a' }}
+                />
+                <div style={{ fontSize: '0.76rem', color: '#6b21a8', lineHeight: '1.45', fontWeight: '600' }}>
+                  ⚡ هذا هو رقم الموبايل الذي يظهر للعملاء في نافذة إتمام الطلب (Checkout) ليقوموا بالتحويل عليه بدلاً من عنوان الحساب القديم. تم تعيينه: <strong>01033144498</strong> مع إمكانية تعديله وحفظه هنا في أي وقت.
                 </div>
               </div>
 
@@ -1092,7 +1993,7 @@ export const StoreSettingsView = () => {
                     name="brandNameEn"
                     value={formData.brandNameEn}
                     onChange={handleChange}
-                    placeholder="CATURRA SPECIALTY COFFEE"
+                    placeholder="CATURRA COFFEE & ROASTER"
                     className="form-input"
                     style={{ direction: 'ltr', textAlign: 'left', fontSize: '0.84rem', fontWeight: '700' }}
                   />

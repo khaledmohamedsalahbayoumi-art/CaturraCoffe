@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, initialInvoiceNumber = '' }) => {
-  const { invoices = [], contactInfo } = useApp();
+  const { invoices = [], contactInfo, t = (k) => k, language = 'ar', isRtl = true, formatPrice = (p) => `${p} ج.م` } = useApp();
 
   const [searchQuery, setSearchQuery] = useState(initialInvoiceNumber || '');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -92,26 +92,26 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
   const steps = [
     {
       id: 'received',
-      title: 'تم استلام الطلب',
-      desc: 'تم تسجيل طلبك بنجاح في نظام المحمصة',
+      title: t('step1Title'),
+      desc: t('step1Desc'),
       icon: Package
     },
     {
       id: 'processing',
-      title: 'التحميص والتجهيز',
-      desc: 'جاري فرز وطحن حبوب البن والتغليف المحكم',
+      title: t('step2Title'),
+      desc: t('step2Desc'),
       icon: Coffee
     },
     {
       id: 'shipped',
-      title: 'جاري الشحن والتوصيل',
-      desc: 'الشحنة مع مندوب التوصيل في طريقها إليك',
+      title: t('step3Title'),
+      desc: t('step3Desc'),
       icon: Truck
     },
     {
       id: 'delivered',
-      title: 'تم الاستلام بنجاح',
-      desc: 'نتمنى لك تجربة تذوق ممتعة مع كاتورا ☕',
+      title: t('step4Title'),
+      desc: t('step4Desc'),
       icon: CheckCircle
     }
   ];
@@ -132,20 +132,21 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
           padding: 0,
           borderRadius: '24px',
           overflow: 'hidden',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
-          background: '#ffffff'
+          boxShadow: '0 25px 60px rgba(74, 50, 32, 0.25)',
+          background: '#FFFDF9',
+          border: '1.5px solid #EDD9BD'
         }}
       >
         {/* Header Bar */}
         <div
           style={{
             padding: '18px 24px',
-            background: 'linear-gradient(135deg, var(--mint-900) 0%, var(--mint-950) 100%)',
+            background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)',
             color: '#ffffff',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            borderBottom: '1px solid rgba(74, 222, 128, 0.2)'
+            borderBottom: '1px solid #EDD9BD'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -154,22 +155,22 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                 width: '42px',
                 height: '42px',
                 borderRadius: '12px',
-                background: 'rgba(74, 222, 128, 0.15)',
-                color: '#4ade80',
+                background: 'rgba(196, 154, 92, 0.2)',
+                color: '#C49A5C',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid rgba(74, 222, 128, 0.3)'
+                border: '1px solid rgba(196, 154, 92, 0.35)'
               }}
             >
               <Truck size={22} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#ffffff' }}>
-                تتبع حالة الطلب والشحن 🚚
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#FFFDF9' }}>
+                {t('trackingModalTitle')}
               </h2>
-              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#86efac' }}>
-                متابعة فورية ومباشرة لمراحل تحميص وتوصيل قهوتك المختصة
+              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#EDD9BD' }}>
+                {t('trackingModalSub')}
               </p>
             </div>
           </div>
@@ -209,16 +210,21 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
               <Search
                 size={18}
                 color="var(--mint-700)"
-                style={{ position: 'absolute', right: '14px', top: '13px' }}
+                style={{
+                  position: 'absolute',
+                  [isRtl ? 'right' : 'left']: '14px',
+                  top: '13px'
+                }}
               />
               <input
                 type="text"
-                placeholder="أدخل رقم الفاتورة (مثال: INV-2026-0101) أو رقم الموبايل..."
+                placeholder={t('trackingSearchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-input"
                 style={{
-                  paddingRight: '42px',
+                  paddingRight: isRtl ? '42px' : '14px',
+                  paddingLeft: isRtl ? '14px' : '42px',
                   height: '44px',
                   borderRadius: '12px',
                   fontSize: '0.92rem',
@@ -236,7 +242,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                 fontWeight: '800'
               }}
             >
-              <span>بحث وتتبع</span>
+              <span>{t('trackingSearchBtn')}</span>
             </button>
           </form>
         </div>
@@ -250,8 +256,8 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
               {/* Order Meta Header Card */}
               <div
                 style={{
-                  background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                  border: '1.5px solid #86efac',
+                  background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)',
+                  border: '1.5px solid #EDD9BD',
                   borderRadius: '16px',
                   padding: '16px 20px',
                   marginBottom: '24px',
@@ -263,19 +269,19 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '0.78rem', color: '#15803d', fontWeight: '700' }}>
-                    طلب مؤكد برقم:
+                  <div style={{ fontSize: '0.78rem', color: '#e6b87d', fontWeight: '700' }}>
+                    {t('trackingOrderConfirmedNumber')}
                   </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#14532d' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#f5ebe1' }}>
                     {selectedInvoice.invoiceNumber}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#166534', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={13} />
-                    <span>تاريخ الطلب: {selectedInvoice.date}</span>
+                  <div style={{ fontSize: '0.8rem', color: '#c4b0a1', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Calendar size={13} color="#e6b87d" />
+                    <span>{t('trackingOrderDate')} {selectedInvoice.date}</span>
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'left' }}>
+                <div style={{ textAlign: isRtl ? 'left' : 'right' }}>
                   <span
                     className={`badge ${
                       currentStatus === 'delivered' ? 'badge-mint' :
@@ -290,13 +296,13 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                       borderRadius: '10px'
                     }}
                   >
-                    {currentStatus === 'delivered' ? '✨ تم التوصيل بنجاح' :
-                     currentStatus === 'shipped' ? '🚚 جاري الشحن والتوصيل' :
-                     currentStatus === 'processing' ? '☕ قيد التحميص والتجهيز' :
-                     currentStatus === 'cancelled' ? '❌ طلب ملغي' : '📋 تم استلام الطلب'}
+                    {currentStatus === 'delivered' ? t('trackingStatusDelivered') :
+                     currentStatus === 'shipped' ? t('trackingStatusShipped') :
+                     currentStatus === 'processing' ? t('trackingStatusProcessing') :
+                     currentStatus === 'cancelled' ? t('trackingStatusCancelled') : t('trackingStatusReceived')}
                   </span>
-                  <div style={{ fontSize: '0.8rem', color: '#15803d', fontWeight: '700', marginTop: '4px' }}>
-                    الإجمالي: {selectedInvoice.total} ج.م ({selectedInvoice.paymentMethod === 'cash' ? 'دفع عند الاستلام' : 'مدفوع'})
+                  <div style={{ fontSize: '0.8rem', color: '#e6b87d', fontWeight: '700', marginTop: '4px' }}>
+                    {t('orderTotalLabel')} {formatPrice(selectedInvoice.total, language)} ({selectedInvoice.paymentMethod === 'cash' ? t('codName') : t('trackingPaid')})
                   </div>
                 </div>
               </div>
@@ -318,9 +324,9 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                 >
                   <AlertCircle size={22} color="#dc2626" />
                   <div>
-                    <strong>تم إلغاء هذا الطلب</strong>
+                    <strong>{t('trackingCancelledBannerTitle')}</strong>
                     <p style={{ margin: '2px 0 0', fontSize: '0.82rem' }}>
-                      تم إلغاء الطلب من قبل الإدارة وتم استرجاع الكميات للمخزن. لمزيد من التفاصيل يرجى التواصل مع خدمة العملاء.
+                      {t('trackingCancelledBannerDesc')}
                     </p>
                   </div>
                 </div>
@@ -330,7 +336,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
               {currentStatus !== 'cancelled' && (
                 <div style={{ marginBottom: '28px' }}>
                   <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-main)', marginBottom: '16px' }}>
-                    مراحل تجهيز وتوصيل الشحنة:
+                    {t('trackingStepsTitle')}
                   </h3>
 
                   <div
@@ -364,14 +370,14 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                               width: '44px',
                               height: '44px',
                               borderRadius: '50%',
-                              background: isCompleted ? 'linear-gradient(135deg, #16a34a, #15803d)' : '#f1f5f9',
+                              background: isCompleted ? 'linear-gradient(135deg, #96663B, #7A5230)' : '#FFF8EE',
                               color: isCompleted ? '#ffffff' : '#94a3b8',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              boxShadow: isCurrent ? '0 0 0 4px rgba(34, 197, 94, 0.25)' : 'none',
+                              boxShadow: isCurrent ? '0 0 0 4px rgba(150, 102, 59, 0.25)' : 'none',
                               transition: 'all 0.3s ease',
-                              border: isCompleted ? 'none' : '2px dashed #cbd5e1'
+                              border: isCompleted ? 'none' : '2px dashed #EDD9BD'
                             }}
                           >
                             <Icon size={20} />
@@ -383,7 +389,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                               marginTop: '8px',
                               fontSize: '0.82rem',
                               fontWeight: isCurrent ? '900' : isCompleted ? '700' : '600',
-                              color: isCurrent ? '#166534' : isCompleted ? '#1e293b' : '#94a3b8'
+                              color: isCurrent ? '#96663B' : isCompleted ? '#4A3220' : '#8A654C'
                             }}
                           >
                             {st.title}
@@ -392,7 +398,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                           <div
                             style={{
                               fontSize: '0.68rem',
-                              color: isCompleted ? '#64748b' : '#cbd5e1',
+                              color: isCompleted ? '#5C3D2E' : '#8A654C',
                               marginTop: '2px',
                               lineHeight: '1.3'
                             }}
@@ -413,25 +419,25 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                   padding: '16px',
                   borderRadius: '16px',
                   marginBottom: '18px',
-                  background: '#f8fafc',
-                  border: '1px solid var(--border-light)'
+                  background: '#FFF8EE',
+                  border: '1px solid #EDD9BD'
                 }}
               >
                 <div style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--mint-950)', marginBottom: '10px' }}>
-                  معلومات التوصيل والعميل:
+                  {t('trackingCustomerDetails')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '0.82rem' }}>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>اسم العميل: </span>
+                    <span style={{ color: 'var(--text-muted)' }}>{t('trackingCustName')} </span>
                     <strong>{selectedInvoice.customerName}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>رقم الموبايل: </span>
-                    <strong dir="ltr">{selectedInvoice.customerPhone || 'غير مسجل'}</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>{t('trackingCustPhone')} </span>
+                    <strong dir="ltr">{selectedInvoice.customerPhone || (language === 'en' ? 'Not registered' : 'غير مسجل')}</strong>
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>عنوان التوصيل: </span>
-                    <strong>{selectedInvoice.customerAddress || 'القاهرة - استلام المحمصة'}</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>{t('trackingCustAddress')} </span>
+                    <strong>{selectedInvoice.customerAddress || (language === 'en' ? 'Store Pickup' : 'القاهرة - استلام المحمصة')}</strong>
                   </div>
                 </div>
               </div>
@@ -447,7 +453,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                 }}
               >
                 <div style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--mint-950)', marginBottom: '12px' }}>
-                  محتويات الطلب ({selectedInvoice.items?.length || 0} أصناف):
+                  {t('trackingOrderSummary')} ({selectedInvoice.items?.length || 0})
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -487,14 +493,14 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                           </div>
                           {(it.weightLabel || it.grind) && (
                             <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                              {it.weightLabel || (it.weightGram ? `${it.weightGram}ج` : '')} {it.grind ? `• طحن: ${it.grind}` : ''}
+                              {it.weightLabel || (it.weightGram ? `${it.weightGram}g` : '')} {it.grind ? `• ${it.grind}` : ''}
                             </div>
                           )}
                         </div>
                       </div>
 
                       <div style={{ fontWeight: '800', color: 'var(--mint-900)', fontSize: '0.92rem' }}>
-                        {it.total || (it.price * it.qty)} ج.م
+                        {formatPrice(it.total || (it.price * it.qty), language)}
                       </div>
                     </div>
                   ))}
@@ -504,7 +510,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
               {/* Action Buttons: WhatsApp Roastery Support */}
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <a
-                  href={`https://wa.me/${roasteryWhatsApp}?text=${encodeURIComponent(`مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن حالة طلبي رقم: ${selectedInvoice.invoiceNumber}`)}`}
+                  href={`https://wa.me/${roasteryWhatsApp}?text=${encodeURIComponent(language === 'en' ? `Hello Caturra, I would like to inquire about my order #${selectedInvoice.invoiceNumber}` : `مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن حالة طلبي رقم: ${selectedInvoice.invoiceNumber}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-outline"
@@ -514,14 +520,14 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    borderColor: '#86efac',
-                    color: '#15803d',
+                    borderColor: '#EDD9BD',
+                    color: '#96663B',
                     padding: '10px',
                     fontWeight: '700'
                   }}
                 >
                   <MessageCircle size={18} />
-                  <span>استفسار عن الشحنة عبر واتساب</span>
+                  <span>{t('trackingSupportChat')}</span>
                 </a>
 
                 <button
@@ -538,7 +544,7 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                   }}
                 >
                   <Printer size={16} />
-                  <span>طباعة بيانات التتبع</span>
+                  <span>{language === 'en' ? 'Print Tracking Info' : 'طباعة بيانات التتبع'}</span>
                 </button>
               </div>
 
@@ -561,10 +567,10 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                 <AlertCircle size={32} />
               </div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 6px' }}>
-                لم يتم العثور على طلب بهذا الرقم!
+                {t('trackingNoOrderTitle')}
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto 18px', lineHeight: '1.5' }}>
-                تأكد من إدخال رقم الفاتورة بشكل صحيح (مثال: INV-2026-0101) أو جرب البحث برقم الموبايل المسجل به الطلب.
+                {t('trackingNoOrderDesc')}
               </p>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '16px' }}>
                 <button
@@ -577,17 +583,17 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
                   className="btn btn-outline"
                   style={{ padding: '8px 20px', fontWeight: '700' }}
                 >
-                  إعادة البحث
+                  {language === 'en' ? 'Reset Search' : 'إعادة البحث'}
                 </button>
                 <a
-                  href={`https://wa.me/${roasteryWhatsApp}?text=${encodeURIComponent('مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن حالة طلبي.')}`}
+                  href={`https://wa.me/${roasteryWhatsApp}?text=${encodeURIComponent(language === 'en' ? 'Hello Caturra, I would like to inquire about my order.' : 'مرحباً كاتورا للقهوة المختصة، أود الاستفسار عن حالة طلبي.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
                   style={{ padding: '8px 20px', fontWeight: '700', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 >
                   <MessageCircle size={16} />
-                  <span>تواصل معنا واتساب</span>
+                  <span>{language === 'en' ? 'Contact WhatsApp' : 'تواصل معنا واتساب'}</span>
                 </a>
               </div>
             </div>
@@ -609,11 +615,12 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialInvoiceId = null, i
               >
                 <Package size={30} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 6px' }}>
-                تتبع حالة شحنتك وطلبك ☕📦
+              <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 6px' }}>
+                <Coffee size={18} color="#96663B" />
+                <span>{t('trackingInvoicePrompt')}</span>
               </h3>
               <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto', lineHeight: '1.6' }}>
-                أدخل رقم الفاتورة أو رقم هاتفك المحمول أعلاه، ثم اضغط على زر <strong style={{ color: 'var(--mint-700)' }}>"بحث وتتبع"</strong> لمتابعة مراحل تجهيز وتسليم قهوتك.
+                {t('trackingInvoicePromptSub')}
               </p>
             </div>
           )}

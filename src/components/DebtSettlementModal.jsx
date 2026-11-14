@@ -8,9 +8,12 @@ import {
   CreditCard,
   Banknote,
   Smartphone,
-  User
+  User,
+  Landmark
 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import { playNotificationSound, vibratePhone } from '../utils/notifications';
+import { toLatinDigits } from '../utils/numberEnforcer';
 
 export const DebtSettlementModal = ({
   isOpen,
@@ -20,39 +23,59 @@ export const DebtSettlementModal = ({
   invoiceNumber,
   onSuccess
 }) => {
-  if (!isOpen || !customer) return null;
+  const { treasuryAccounts = [], getTreasuryAccountBalance } = useApp();
 
-  const totalDebt = Number(customer.debt || 0);
+  const totalCustomerDebt = Math.max(Number(customer?.debt || 0), 0);
+  const isInvoiceSettlement = Boolean(initialAmount && Number(initialAmount) > 0);
+  const settleTargetDebt = isInvoiceSettlement ? Number(initialAmount) : totalCustomerDebt;
 
-  const [amount, setAmount] = useState(() => {
-    if (initialAmount && Number(initialAmount) > 0) {
-      return String(Math.min(Number(initialAmount), totalDebt));
-    }
-    return String(totalDebt);
+  const [amount, setAmount] = useState(() => String(settleTargetDebt));
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'instapay' | 'wallet' | 'bank'
+  const [targetAccountId, setTargetAccountId] = useState(() => {
+    return treasuryAccounts.find(a => a.type === 'cash')?.id || treasuryAccounts[0]?.id || 'acc-cash-main';
   });
-
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'instapay' | 'bank'
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
-    if (initialAmount && Number(initialAmount) > 0) {
-      setAmount(String(Math.min(Number(initialAmount), totalDebt)));
-    } else {
-      setAmount(String(totalDebt));
-    }
+    if (!isOpen || !customer) return;
+    const debtToSettle = (initialAmount && Number(initialAmount) > 0)
+      ? Number(initialAmount)
+      : Math.max(Number(customer?.debt || 0), 0);
+    setAmount(String(debtToSettle));
     setNotes('');
     setShowSuccessToast(false);
-  }, [customer, initialAmount, totalDebt]);
 
-  const numAmount = parseFloat(amount) || 0;
-  const isOverpaid = numAmount > totalDebt;
+    // Default account to match payment method
+    const defaultAcc = treasuryAccounts.find(a => a.type === paymentMethod) || treasuryAccounts[0];
+    if (defaultAcc) setTargetAccountId(defaultAcc.id);
+  }, [customer, initialAmount, isOpen]);
+
+  const handleMethodChange = (method) => {
+    setPaymentMethod(method);
+    let matchedAcc = null;
+    if (method === 'instapay') {
+      matchedAcc = treasuryAccounts.find(a => a.type === 'instapay');
+    } else if (method === 'wallet') {
+      matchedAcc = treasuryAccounts.find(a => a.type === 'wallet');
+    } else if (method === 'bank') {
+      matchedAcc = treasuryAccounts.find(a => a.type === 'bank');
+    } else {
+      matchedAcc = treasuryAccounts.find(a => a.type === 'cash');
+    }
+    if (matchedAcc) {
+      setTargetAccountId(matchedAcc.id);
+    }
+  };
+
+  const numAmount = parseFloat(toLatinDigits(amount)) || 0;
+  const isOverpaid = numAmount > settleTargetDebt;
   const isValidAmount = numAmount > 0 && !isOverpaid;
-  const remainingDebt = Math.max(0, Math.round((totalDebt - numAmount) * 100) / 100);
+  const remainingDebt = Math.max(0, Math.round((settleTargetDebt - numAmount) * 100) / 100);
 
   const handlePreset = (fraction) => {
-    const val = Math.round(totalDebt * fraction);
+    const val = Math.round(settleTargetDebt * fraction);
     setAmount(String(val));
   };
 
@@ -66,6 +89,7 @@ export const DebtSettlementModal = ({
       if (onSuccess) {
         onSuccess(numAmount, {
           paymentMethod,
+          targetAccountId,
           notes,
           remainingDebt,
           customer
@@ -86,6 +110,8 @@ export const DebtSettlementModal = ({
       setIsSubmitting(false);
     }
   };
+
+  if (!isOpen || !customer) return null;
 
   return (
     <div
@@ -289,7 +315,7 @@ export const DebtSettlementModal = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <AlertTriangle size={17} color="#dc2626" />
                 <span style={{ fontSize: '0.84rem', fontWeight: '700', color: '#991b1b' }}>
-                  إجمالي المديونية المستحقة:
+                  {isInvoiceSettlement ? `المطلوب سداده للفاتورة #${invoiceNumber}:` : 'إجمالي المديونية المستحقة على العميل:'}
                 </span>
               </div>
               <span
@@ -299,7 +325,7 @@ export const DebtSettlementModal = ({
                   color: '#dc2626'
                 }}
               >
-                {totalDebt.toLocaleString()} ج.م
+                {settleTargetDebt.toLocaleString()} ج.م
               </span>
             </div>
 
@@ -317,9 +343,9 @@ export const DebtSettlementModal = ({
                     borderRadius: '8px',
                     fontSize: '0.78rem',
                     fontWeight: '700',
-                    border: numAmount === totalDebt ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
-                    background: numAmount === totalDebt ? 'var(--mint-100)' : '#ffffff',
-                    color: numAmount === totalDebt ? 'var(--mint-950)' : 'var(--text-secondary)',
+                    border: numAmount === settleTargetDebt ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
+                    background: numAmount === settleTargetDebt ? 'var(--mint-100)' : '#ffffff',
+                    color: numAmount === settleTargetDebt ? 'var(--mint-950)' : 'var(--text-secondary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
@@ -334,9 +360,9 @@ export const DebtSettlementModal = ({
                     borderRadius: '8px',
                     fontSize: '0.78rem',
                     fontWeight: '700',
-                    border: numAmount === Math.round(totalDebt * 0.5) ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
-                    background: numAmount === Math.round(totalDebt * 0.5) ? 'var(--mint-100)' : '#ffffff',
-                    color: numAmount === Math.round(totalDebt * 0.5) ? 'var(--mint-950)' : 'var(--text-secondary)',
+                    border: numAmount === Math.round(settleTargetDebt * 0.5) ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
+                    background: numAmount === Math.round(settleTargetDebt * 0.5) ? 'var(--mint-100)' : '#ffffff',
+                    color: numAmount === Math.round(settleTargetDebt * 0.5) ? 'var(--mint-950)' : 'var(--text-secondary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
@@ -351,9 +377,9 @@ export const DebtSettlementModal = ({
                     borderRadius: '8px',
                     fontSize: '0.78rem',
                     fontWeight: '700',
-                    border: numAmount === Math.round(totalDebt * 0.25) ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
-                    background: numAmount === Math.round(totalDebt * 0.25) ? 'var(--mint-100)' : '#ffffff',
-                    color: numAmount === Math.round(totalDebt * 0.25) ? 'var(--mint-950)' : 'var(--text-secondary)',
+                    border: numAmount === Math.round(settleTargetDebt * 0.25) ? '1.5px solid var(--mint-600)' : '1px solid var(--border-light)',
+                    background: numAmount === Math.round(settleTargetDebt * 0.25) ? 'var(--mint-100)' : '#ffffff',
+                    color: numAmount === Math.round(settleTargetDebt * 0.25) ? 'var(--mint-950)' : 'var(--text-secondary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
@@ -370,17 +396,17 @@ export const DebtSettlementModal = ({
                   المبلغ المسدد الآن:
                 </label>
                 <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                  (الحد الأقصى: {totalDebt} ج.م)
+                  (الحد الأقصى: {settleTargetDebt} ج.م)
                 </span>
               </div>
               <div style={{ position: 'relative' }}>
                 <input
                   type="number"
                   min="1"
-                  max={totalDebt}
+                  max={settleTargetDebt}
                   step="any"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => setAmount(toLatinDigits(e.target.value))}
                   placeholder="أدخل المبلغ المسدد..."
                   className="form-input"
                   style={{
@@ -410,7 +436,7 @@ export const DebtSettlementModal = ({
               {/* Validation / Balance Preview */}
               {isOverpaid ? (
                 <div style={{ fontSize: '0.76rem', color: '#dc2626', fontWeight: '700' }}>
-                  ⚠️ المبلغ المدخل أكبر من إجمالي المديونية ({totalDebt} ج.م)!
+                  ⚠️ المبلغ المدخل أكبر من المديونية المستهدفة ({settleTargetDebt} ج.م)!
                 </div>
               ) : numAmount > 0 ? (
                 <div
@@ -440,62 +466,114 @@ export const DebtSettlementModal = ({
               <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--mint-900)', display: 'block', marginBottom: '6px' }}>
                 طريقة التحصيل / الدفع:
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '6px' }}>
                 <div
-                  onClick={() => setPaymentMethod('cash')}
+                  onClick={() => handleMethodChange('cash')}
                   style={{
                     border: paymentMethod === 'cash' ? '2px solid var(--mint-600)' : '1px solid var(--border-light)',
                     background: paymentMethod === 'cash' ? 'var(--mint-50)' : '#ffffff',
                     borderRadius: '10px',
-                    padding: '8px 6px',
+                    padding: '8px 4px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <Banknote size={18} color={paymentMethod === 'cash' ? 'var(--mint-700)' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
-                  <div style={{ fontSize: '0.78rem', fontWeight: '800', color: paymentMethod === 'cash' ? 'var(--mint-950)' : 'var(--text-secondary)' }}>
+                  <Banknote size={17} color={paymentMethod === 'cash' ? 'var(--mint-700)' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
+                  <div style={{ fontSize: '0.74rem', fontWeight: '800', color: paymentMethod === 'cash' ? 'var(--mint-950)' : 'var(--text-secondary)' }}>
                     كاش (نقدي)
                   </div>
                 </div>
 
                 <div
-                  onClick={() => setPaymentMethod('instapay')}
+                  onClick={() => handleMethodChange('instapay')}
                   style={{
                     border: paymentMethod === 'instapay' ? '2px solid #7c3aed' : '1px solid var(--border-light)',
                     background: paymentMethod === 'instapay' ? '#f5f3ff' : '#ffffff',
                     borderRadius: '10px',
-                    padding: '8px 6px',
+                    padding: '8px 4px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <Smartphone size={18} color={paymentMethod === 'instapay' ? '#7c3aed' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
-                  <div style={{ fontSize: '0.78rem', fontWeight: '800', color: paymentMethod === 'instapay' ? '#5b21b6' : 'var(--text-secondary)' }}>
+                  <Smartphone size={17} color={paymentMethod === 'instapay' ? '#7c3aed' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
+                  <div style={{ fontSize: '0.74rem', fontWeight: '800', color: paymentMethod === 'instapay' ? '#5b21b6' : 'var(--text-secondary)' }}>
                     إنستاباي
                   </div>
                 </div>
 
                 <div
-                  onClick={() => setPaymentMethod('bank')}
+                  onClick={() => handleMethodChange('wallet')}
                   style={{
-                    border: paymentMethod === 'bank' ? '2px solid #0284c7' : '1px solid var(--border-light)',
-                    background: paymentMethod === 'bank' ? '#f0f9ff' : '#ffffff',
+                    border: paymentMethod === 'wallet' ? '2px solid #e11d48' : '1px solid var(--border-light)',
+                    background: paymentMethod === 'wallet' ? '#fff1f2' : '#ffffff',
                     borderRadius: '10px',
-                    padding: '8px 6px',
+                    padding: '8px 4px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <CreditCard size={18} color={paymentMethod === 'bank' ? '#0284c7' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
-                  <div style={{ fontSize: '0.78rem', fontWeight: '800', color: paymentMethod === 'bank' ? '#0369a1' : 'var(--text-secondary)' }}>
-                    تحويل / فيزا
+                  <Wallet size={17} color={paymentMethod === 'wallet' ? '#e11d48' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
+                  <div style={{ fontSize: '0.74rem', fontWeight: '800', color: paymentMethod === 'wallet' ? '#9f1239' : 'var(--text-secondary)' }}>
+                    فودافون كاش
+                  </div>
+                </div>
+
+                <div
+                  onClick={() => handleMethodChange('bank')}
+                  style={{
+                    border: paymentMethod === 'bank' ? '2px solid #0284c7' : '1px solid var(--border-light)',
+                    background: paymentMethod === 'bank' ? '#f0f9ff' : '#ffffff',
+                    borderRadius: '10px',
+                    padding: '8px 4px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <CreditCard size={17} color={paymentMethod === 'bank' ? '#0284c7' : 'var(--text-muted)'} style={{ margin: '0 auto 2px' }} />
+                  <div style={{ fontSize: '0.74rem', fontWeight: '800', color: paymentMethod === 'bank' ? '#0369a1' : 'var(--text-secondary)' }}>
+                    بنك / فيزا
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Target Treasury Account Selector */}
+            {treasuryAccounts.length > 0 && (
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <Landmark size={15} color="var(--mint-700)" />
+                  <label style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--mint-900)', margin: 0 }}>
+                    الخزينة المستلمة للإيداع (تحديث فوري للرصيد):
+                  </label>
+                </div>
+                <select
+                  value={targetAccountId}
+                  onChange={(e) => setTargetAccountId(e.target.value)}
+                  className="form-input"
+                  style={{
+                    height: '38px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    background: '#ffffff',
+                    borderRadius: '8px',
+                    borderColor: 'var(--mint-300)'
+                  }}
+                >
+                  {treasuryAccounts.map(acc => {
+                    const balance = getTreasuryAccountBalance ? getTreasuryAccountBalance(acc.id) : (acc.openingBalance || 0);
+                    return (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} — (الرصيد الحالي: {balance.toLocaleString()} ج.م)
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
 
             {/* Notes (Optional) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

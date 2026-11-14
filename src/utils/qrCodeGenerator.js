@@ -18,7 +18,7 @@ export const getInvoiceTaxPayload = (invoice, contactInfo) => {
   const seller = contactInfo?.brandNameAr || 'كاتورا للقهوة المختصة';
   const taxId = contactInfo?.taxNumber || '582-934-211';
   const cr = contactInfo?.commercialRegister || '148920';
-  const timestamp = invoice?.date || new Date().toLocaleDateString('ar-EG');
+  const timestamp = invoice?.date || new Date().toLocaleDateString('ar-EG-u-nu-latn');
   const total = Number(invoice?.total || 0).toFixed(2);
   const vat = (Number(invoice?.total || 0) * 0.14 / 1.14).toFixed(2); // 14% Egyptian VAT
   const paid = Number(invoice?.paidAmount || 0).toFixed(2);
@@ -56,3 +56,5 @@ export const generateInvoiceQrDataUrl = async (text, options = {}) => {
     return '';
   }
 };
+
+

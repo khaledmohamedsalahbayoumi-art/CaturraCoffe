@@ -3,11 +3,27 @@ import { X, Download, ExternalLink, FileText, AlertCircle } from 'lucide-react';
 import { createPdfBlobUrl, downloadPdfFile, openPdfInNewTab } from '../utils/pdfStorage';
 
 export const PdfReaderModal = ({ isOpen, onClose, pdf, title }) => {
-  if (!isOpen || !pdf) return null;
-
   const blobUrl = useMemo(() => {
+    if (!isOpen || !pdf) return null;
     return createPdfBlobUrl(pdf);
-  }, [pdf]);
+  }, [isOpen, pdf]);
+
+  // Lock scroll and handle escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   // Clean up blob url on unmount if it was generated
   useEffect(() => {
@@ -18,19 +34,31 @@ export const PdfReaderModal = ({ isOpen, onClose, pdf, title }) => {
     };
   }, [blobUrl]);
 
+  if (!isOpen || !pdf) return null;
+
   const pdfName = pdf.name || `${title || 'دليل-كاتورا'}.pdf`;
 
   return (
     <div
       className="modal-overlay"
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
         zIndex: 99999,
-        background: 'rgba(5, 15, 10, 0.85)',
+        background: 'rgba(44, 24, 16, 0.75)',
         backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px'
+        padding: '16px',
+        animation: 'fadeIn 0.2s ease-out'
       }}
       onClick={onClose}
     >
@@ -55,13 +83,13 @@ export const PdfReaderModal = ({ isOpen, onClose, pdf, title }) => {
         <div
           style={{
             padding: '16px 22px',
-            background: 'linear-gradient(135deg, #022c19 0%, #064e3b 100%)',
+            background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)',
             color: '#ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            borderBottom: '1px solid #EDD9BD'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
@@ -114,7 +142,7 @@ export const PdfReaderModal = ({ isOpen, onClose, pdf, title }) => {
                 style={{
                   margin: '3px 0 0',
                   fontSize: '0.78rem',
-                  color: '#a7f3d0',
+                  color: '#EDD9BD',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
@@ -155,7 +183,7 @@ export const PdfReaderModal = ({ isOpen, onClose, pdf, title }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: 'var(--mint-600, #059669)',
+                background: 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '10px',
@@ -163,6 +191,7 @@ export const PdfReaderModal = ({ isOpen, onClose, pdf, title }) => {
                 fontSize: '0.82rem',
                 fontWeight: '800',
                 cursor: 'pointer',
+                boxShadow: '0 3px 10px rgba(150, 102, 59, 0.25)',
                 transition: 'all 0.2s'
               }}
               title="تحميل الملف إلى جهازك"

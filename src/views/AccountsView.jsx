@@ -13,7 +13,8 @@ import {
   Layers,
   ArrowUpRight,
   ArrowDownRight,
-  X
+  X,
+  Wallet
 } from 'lucide-react';
 
 export const AccountsView = () => {
@@ -22,47 +23,52 @@ export const AccountsView = () => {
     purchases,
     expenses,
     addExpense,
-    deleteExpense
+    updateExpense,
+    deleteExpense,
+    treasuryAccounts,
+    treasuryTransactions,
+    getTreasuryAccountBalance,
+    confirmDialog
   } = useApp();
 
-  const [dateFilterMode, setDateFilterMode] = useState('month'); // 'all' | 'today' | 'month' | 'year' | 'custom'
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState('all'); // 'all' | 'cash' | 'waste'
 
   // New Expense Form
   const [expenseForm, setExpenseForm] = useState({
     title: '',
     category: 'إيجار',
     amount: '',
+    accountId: 'acc-cash-main',
     date: new Date().toISOString().split('T')[0],
     notes: ''
   });
 
-  // Date filtering logic
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
-  const currentYearStr = todayStr.substring(0, 4);  // YYYY
+  const selectedAcc = treasuryAccounts.find(a => a.id === expenseForm.accountId) || treasuryAccounts[0];
+  const selectedAccBalance = selectedAcc ? getTreasuryAccountBalance(selectedAcc.id) : 0;
+  const isInsufficient = Number(expenseForm.amount) > 0 && Number(expenseForm.amount) > selectedAccBalance && expenseForm.accountId !== 'none';
 
+  // Custom date range filtering logic
   const filterByDate = (itemDate) => {
     if (!itemDate) return true;
-    if (dateFilterMode === 'all') return true;
-    if (dateFilterMode === 'today') return itemDate.startsWith(todayStr);
-    if (dateFilterMode === 'month') return itemDate.startsWith(currentMonthStr);
-    if (dateFilterMode === 'year') return itemDate.startsWith(currentYearStr);
-    if (dateFilterMode === 'custom') {
-      if (customStartDate && itemDate < customStartDate) return false;
-      if (customEndDate && itemDate > customEndDate) return false;
-      return true;
-    }
+    const dateOnly = itemDate.substring(0, 10);
+    if (customStartDate && dateOnly < customStartDate) return false;
+    if (customEndDate && dateOnly > customEndDate) return false;
     return true;
   };
 
-  const filteredInvoices = invoices.filter(i => filterByDate(i.date));
+  const filteredInvoices = invoices.filter(i => filterByDate(i.date) && i.status !== 'cancelled' && i.trackingStatus !== 'cancelled');
   const filteredPurchases = purchases.filter(p => filterByDate(p.date));
   const filteredExpenses = expenses.filter(e => filterByDate(e.date));
+
+  // Stock waste and audit deficit breakdown
+  const stockLossExpenses = filteredExpenses.filter(e =>
+    e.category === 'هالك وتالف مخزون' || e.category === 'عجز جرد مخزني' || e.category === 'هالك ومخزون' || e.referenceType === 'stock_waste' || e.referenceType === 'inventory_audit_deficit' || e.accountId === 'none'
+  );
+  const totalStockLoss = stockLossExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   // Totals for filtered period
   const totalSales = filteredInvoices.reduce((sum, i) => sum + Number(i.total || 0), 0);
@@ -92,6 +98,7 @@ export const AccountsView = () => {
       title: '',
       category: 'إيجار',
       amount: '',
+      accountId: treasuryAccounts[0]?.id || 'acc-cash-main',
       date: new Date().toISOString().split('T')[0],
       notes: ''
     });
@@ -104,10 +111,10 @@ export const AccountsView = () => {
       <div
         className="card"
         style={{
-          background: '#ffffff',
+          background: '#FFFDF9',
           borderRadius: '16px',
-          border: '1px solid var(--border-mint)',
-          boxShadow: '0 4px 18px rgba(4, 136, 75, 0.06)',
+          border: '1.5px solid #EDD9BD',
+          boxShadow: '0 4px 20px rgba(74, 50, 32, 0.08)',
           padding: '12px 18px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -116,111 +123,117 @@ export const AccountsView = () => {
           gap: '14px'
         }}
       >
-        {/* Right side: Filter label & Unified Segmented Control */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--mint-900)', fontWeight: '800', fontSize: '0.86rem' }}>
-            <Calendar size={17} style={{ color: 'var(--mint-600)' }} />
-            <span>الفترة الزمنية:</span>
-          </div>
-
-          {/* Unified Segmented Pill Bar */}
+        {/* Right side: Custom Date Range Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div
             style={{
-              background: '#f1f5f9',
-              padding: '4px',
-              borderRadius: '12px',
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              border: '1px solid #e2e8f0',
-              gap: '3px'
+              gap: '6px',
+              color: '#96663B',
+              fontWeight: '800',
+              fontSize: '0.86rem',
+              background: '#FFF8EE',
+              padding: '6px 12px',
+              borderRadius: '10px',
+              border: '1px solid #EDD9BD'
             }}
           >
-            {[
-              { id: 'all', label: 'جميع الفترات' },
-              { id: 'today', label: 'اليوم' },
-              { id: 'month', label: 'هذا الشهر' },
-              { id: 'year', label: 'هذا العام' },
-              { id: 'custom', label: 'نطاق مخصص 🗓️' }
-            ].map(tab => {
-              const isActive = dateFilterMode === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setDateFilterMode(tab.id)}
-                  style={{
-                    border: 'none',
-                    borderRadius: '9px',
-                    padding: '7px 14px',
-                    fontSize: '0.84rem',
-                    fontWeight: isActive ? '800' : '600',
-                    cursor: 'pointer',
-                    transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-                    background: isActive
-                      ? 'linear-gradient(135deg, var(--mint-600) 0%, var(--mint-700) 100%)'
-                      : 'transparent',
-                    color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                    boxShadow: isActive ? '0 2px 8px rgba(4, 136, 75, 0.35)' : 'none'
-                  }}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+            <Calendar size={17} style={{ color: '#96663B' }} />
+            <span>نطاق مخصص:</span>
           </div>
 
-          {/* Custom Date Range Picker Box */}
-          {dateFilterMode === 'custom' && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'var(--mint-50)',
-                border: '1.5px solid var(--mint-300)',
-                borderRadius: '10px',
-                padding: '4px 10px',
-                animation: 'slideUp 200ms ease'
-              }}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: '#FFF8EE',
+              border: '1px solid #EDD9BD',
+              borderRadius: '10px',
+              padding: '4px 10px'
+            }}
+          >
+            <label
+              htmlFor="customStartDate"
+              onClick={() => { try { document.getElementById('customStartDate')?.showPicker(); } catch (_) {} }}
+              style={{ fontSize: '0.82rem', color: '#4A3220', fontWeight: '800', cursor: 'pointer' }}
             >
-              <span style={{ fontSize: '0.78rem', color: 'var(--mint-800)', fontWeight: '700' }}>من:</span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={e => setCustomStartDate(e.target.value)}
-                className="form-input"
-                style={{ width: '135px', height: '32px', fontSize: '0.8rem', padding: '2px 8px', borderRadius: '6px' }}
-              />
-              <span style={{ fontSize: '0.78rem', color: 'var(--mint-800)', fontWeight: '700' }}>إلى:</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={e => setCustomEndDate(e.target.value)}
-                className="form-input"
-                style={{ width: '135px', height: '32px', fontSize: '0.8rem', padding: '2px 8px', borderRadius: '6px' }}
-              />
-              {(customStartDate || customEndDate) && (
-                <button
-                  onClick={() => {
-                    setCustomStartDate('');
-                    setCustomEndDate('');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#dc2626',
-                    cursor: 'pointer',
-                    fontSize: '0.74rem',
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                  title="مسح التاريخ"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          )}
+              من:
+            </label>
+            <input
+              id="customStartDate"
+              type="date"
+              value={customStartDate}
+              onChange={e => setCustomStartDate(e.target.value)}
+              onClick={e => { try { e.target.showPicker(); } catch (_) {} }}
+              onFocus={e => { try { e.target.showPicker(); } catch (_) {} }}
+              className="form-input"
+              style={{
+                width: '135px',
+                height: '34px',
+                fontSize: '0.84rem',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                background: '#FFFDF9',
+                border: '1px solid #EDD9BD',
+                color: '#4A3220',
+                cursor: 'pointer'
+              }}
+            />
+            <label
+              htmlFor="customEndDate"
+              onClick={() => { try { document.getElementById('customEndDate')?.showPicker(); } catch (_) {} }}
+              style={{ fontSize: '0.82rem', color: '#4A3220', fontWeight: '800', cursor: 'pointer' }}
+            >
+              إلى:
+            </label>
+            <input
+              id="customEndDate"
+              type="date"
+              value={customEndDate}
+              onChange={e => setCustomEndDate(e.target.value)}
+              onClick={e => { try { e.target.showPicker(); } catch (_) {} }}
+              onFocus={e => { try { e.target.showPicker(); } catch (_) {} }}
+              className="form-input"
+              style={{
+                width: '135px',
+                height: '34px',
+                fontSize: '0.84rem',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                background: '#FFFDF9',
+                border: '1px solid #EDD9BD',
+                color: '#4A3220',
+                cursor: 'pointer'
+              }}
+            />
+            {(customStartDate || customEndDate) && (
+              <button
+                onClick={() => {
+                  setCustomStartDate('');
+                  setCustomEndDate('');
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  borderRadius: '6px',
+                  color: '#fca5a5',
+                  cursor: 'pointer',
+                  fontSize: '0.74rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px'
+                }}
+                title="مسح التاريخ"
+              >
+                <X size={13} />
+                <span>مسح</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Left side: Compare Mode Toggle & Add Expense Button */}
@@ -232,9 +245,9 @@ export const AccountsView = () => {
               height: '40px',
               padding: '0 16px',
               borderRadius: '11px',
-              border: compareMode ? '1.5px solid var(--mint-500)' : '1px solid var(--border-light)',
-              background: compareMode ? 'var(--mint-50)' : '#ffffff',
-              color: compareMode ? 'var(--mint-900)' : 'var(--text-secondary)',
+              border: compareMode ? '1.5px solid #96663B' : '1px solid #EDD9BD',
+              background: compareMode ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : '#FFF8EE',
+              color: compareMode ? '#FFFDF9' : '#6B4A2E',
               fontWeight: '800',
               fontSize: '0.84rem',
               cursor: 'pointer',
@@ -242,19 +255,19 @@ export const AccountsView = () => {
               alignItems: 'center',
               gap: '8px',
               transition: 'all 200ms',
-              boxShadow: compareMode ? '0 2px 10px rgba(4, 136, 75, 0.15)' : 'none'
+              boxShadow: compareMode ? '0 2px 10px rgba(150, 102, 59, 0.25)' : 'none'
             }}
             title="مقارنة مؤشرات الأداء الحالية بالفترة السابقة"
           >
-            <BarChart3 size={16} style={{ color: compareMode ? 'var(--mint-600)' : 'var(--text-muted)' }} />
+            <BarChart3 size={16} style={{ color: compareMode ? '#FFFDF9' : '#6B4A2E' }} />
             <span>مقارنة الفترات السابقة</span>
             <span
               style={{
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: compareMode ? '#16a34a' : '#cbd5e1',
-                boxShadow: compareMode ? '0 0 8px #16a34a' : 'none',
+                background: compareMode ? '#4ade80' : '#64748b',
+                boxShadow: compareMode ? '0 0 8px #4ade80' : 'none',
                 transition: 'all 200ms'
               }}
             />
@@ -273,7 +286,7 @@ export const AccountsView = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 4px 14px rgba(4, 136, 75, 0.25)'
+              boxShadow: '0 4px 14px rgba(194, 123, 56, 0.35)'
             }}
           >
             <Plus size={16} />
@@ -321,14 +334,20 @@ export const AccountsView = () => {
         {/* Operating Expenses */}
         <div className="card" style={{ padding: '20px', borderLeft: '4px solid #d97706' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>المصروفات التشغيلية</span>
+            <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>المصروفات والخسائر التشغيلية</span>
             <span className="badge badge-warning">{filteredExpenses.length} بنود</span>
           </div>
           <div style={{ fontSize: '1.7rem', fontWeight: '800', color: '#b45309', marginTop: '8px' }}>
             {totalExpenses.toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>ج.م</span>
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            إيجار، كهرباء، تسويق، مطبوعات
+            {totalStockLoss > 0 ? (
+              <span style={{ color: '#b45309', fontWeight: '700' }}>
+                منها {totalStockLoss.toLocaleString()} ج.م هالك وعجز مخزني دفتري
+              </span>
+            ) : (
+              'إيجار، كهرباء، تسويق، هالك بضاعة'
+            )}
           </div>
         </div>
 
@@ -338,22 +357,23 @@ export const AccountsView = () => {
           style={{
             padding: '20px',
             borderLeft: `4px solid ${netProfit >= 0 ? '#16a34a' : '#dc2626'}`,
-            background: netProfit >= 0 ? 'linear-gradient(135deg, var(--mint-50) 0%, #ffffff 100%)' : '#fff5f5'
+            background: netProfit >= 0 ? '#FFFDF9' : 'rgba(239, 68, 68, 0.08)',
+            border: `1px solid ${netProfit >= 0 ? '#EDD9BD' : 'rgba(239, 68, 68, 0.35)'}`
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.84rem', fontWeight: '700', color: netProfit >= 0 ? 'var(--mint-900)' : '#991b1b' }}>
+            <span style={{ fontSize: '0.84rem', fontWeight: '700', color: netProfit >= 0 ? '#4A3220' : '#dc2626' }}>
               صافي الربح الفعلي (Net Profit)
             </span>
             <span className={`badge ${netProfit >= 0 ? 'badge-mint' : 'badge-danger'}`}>
               هامش: {profitMargin}%
             </span>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: '900', color: netProfit >= 0 ? '#16a34a' : '#dc2626', marginTop: '8px' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: '900', color: netProfit >= 0 ? '#16a34a' : '#ef4444', marginTop: '8px' }}>
             {netProfit >= 0 ? `+${netProfit.toLocaleString()}` : netProfit.toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>ج.م</span>
           </div>
           {compareMode && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px', fontSize: '0.78rem', color: profitGrowth >= 0 ? '#16a34a' : '#dc2626' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px', fontSize: '0.78rem', color: profitGrowth >= 0 ? '#16a34a' : '#ef4444' }}>
               {profitGrowth >= 0 ? <ArrowUpRight size={15} /> : <ArrowDownRight size={15} />}
               <span>{Math.abs(profitGrowth)}% نمو صافي الأرباح</span>
             </div>
@@ -364,26 +384,26 @@ export const AccountsView = () => {
 
       {/* COMPARISON BAR / VISUAL SECTION (When enabled) */}
       {compareMode && (
-        <div className="card" style={{ padding: '20px', background: 'var(--mint-50)', border: '1.5px dashed var(--mint-400)' }}>
-          <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--mint-900)', marginBottom: '12px' }}>
+        <div className="card" style={{ padding: '20px', background: '#FFFDF9', border: '1.5px dashed #EDD9BD' }}>
+          <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#4A3220', marginBottom: '12px' }}>
             📊 ملخص المقارنة بين الفترتين
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.88rem' }}>
-            <div style={{ background: '#ffffff', padding: '12px', borderRadius: '10px' }}>
+            <div style={{ background: '#FFF8EE', border: '1px solid #EDD9BD', padding: '12px', borderRadius: '10px' }}>
               <div style={{ color: 'var(--text-muted)' }}>المبيعات الحالية vs السابقة</div>
-              <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--mint-800)', marginTop: '4px' }}>
+              <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#96663B', marginTop: '4px' }}>
                 {totalSales.toLocaleString()} ج.م <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>مقابل {prevSales.toLocaleString()} ج.م</span>
               </div>
             </div>
-            <div style={{ background: '#ffffff', padding: '12px', borderRadius: '10px' }}>
+            <div style={{ background: '#FFF8EE', border: '1px solid #EDD9BD', padding: '12px', borderRadius: '10px' }}>
               <div style={{ color: 'var(--text-muted)' }}>المصروفات والمشتريات vs السابقة</div>
               <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#b45309', marginTop: '4px' }}>
                 {(totalPurchases + totalExpenses).toLocaleString()} ج.م <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>مقابل {(prevPurchases + prevExpenses).toLocaleString()} ج.م</span>
               </div>
             </div>
-            <div style={{ background: '#ffffff', padding: '12px', borderRadius: '10px' }}>
+            <div style={{ background: '#FFF8EE', border: '1px solid #EDD9BD', padding: '12px', borderRadius: '10px' }}>
               <div style={{ color: 'var(--text-muted)' }}>الفارق في صافي الأرباح</div>
-              <div style={{ fontWeight: '800', fontSize: '1.1rem', color: (netProfit - prevNetProfit) >= 0 ? '#16a34a' : '#dc2626', marginTop: '4px' }}>
+              <div style={{ fontWeight: '800', fontSize: '1.1rem', color: (netProfit - prevNetProfit) >= 0 ? '#16a34a' : '#ef4444', marginTop: '4px' }}>
                 {(netProfit - prevNetProfit) >= 0 ? `+${(netProfit - prevNetProfit).toLocaleString()}` : (netProfit - prevNetProfit).toLocaleString()} ج.م
               </div>
             </div>
@@ -393,23 +413,84 @@ export const AccountsView = () => {
 
       {/* EXPENSES MANAGEMENT TABLE */}
       <div className="card" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-main)' }}>
-              سجل المصروفات التشغيلية
+              سجل المصروفات والخسائر التشغيلية
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              جميع المصروفات النثرية والتشغيلية المخصومة من الأرباح
+              المصروفات النثرية والتشغيلية وقيود إهلاك وعجز المخزون المخصومة من الأرباح
             </p>
           </div>
-          <button
-            onClick={() => setIsAddExpenseModalOpen(true)}
-            className="btn btn-outline"
-            style={{ padding: '6px 14px', fontSize: '0.84rem' }}
-          >
-            <Plus size={15} />
-            <span>إضافة مصروف</span>
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Quick Type Filter Tabs */}
+            <div style={{ display: 'flex', background: '#FFF8EE', border: '1px solid #EDD9BD', borderRadius: '10px', padding: '3px', gap: '3px' }}>
+              <button
+                type="button"
+                onClick={() => setExpenseTypeFilter('all')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  background: expenseTypeFilter === 'all' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : 'transparent',
+                  color: expenseTypeFilter === 'all' ? '#FFFDF9' : '#6B4A2E',
+                  boxShadow: expenseTypeFilter === 'all' ? '0 2px 8px rgba(150, 102, 59, 0.25)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                الكل ({filteredExpenses.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpenseTypeFilter('cash')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  background: expenseTypeFilter === 'cash' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : 'transparent',
+                  color: expenseTypeFilter === 'cash' ? '#FFFDF9' : '#6B4A2E',
+                  boxShadow: expenseTypeFilter === 'cash' ? '0 2px 8px rgba(150, 102, 59, 0.25)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                نقدية ({filteredExpenses.length - stockLossExpenses.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpenseTypeFilter('waste')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  background: expenseTypeFilter === 'waste' ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' : 'transparent',
+                  color: expenseTypeFilter === 'waste' ? '#ffffff' : '#6B4A2E',
+                  boxShadow: expenseTypeFilter === 'waste' ? '0 2px 8px rgba(217, 119, 6, 0.35)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                هالك وجرد ({stockLossExpenses.length})
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsAddExpenseModalOpen(true)}
+              className="btn btn-outline"
+              style={{ padding: '6px 14px', fontSize: '0.84rem' }}
+            >
+              <Plus size={15} />
+              <span>إضافة مصروف</span>
+            </button>
+          </div>
         </div>
 
         <div className="data-table-container">
@@ -418,6 +499,7 @@ export const AccountsView = () => {
               <tr>
                 <th>بند المصروف</th>
                 <th>التصنيف</th>
+                <th>الخزينة المسحوب منها</th>
                 <th>التاريخ</th>
                 <th>المبلغ</th>
                 <th>الملاحظات</th>
@@ -425,42 +507,138 @@ export const AccountsView = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredExpenses.map((exp) => (
-                <tr key={exp.id}>
-                  <td>
-                    <strong style={{ color: 'var(--text-main)' }}>{exp.title}</strong>
-                  </td>
-                  <td>
-                    <span className="badge badge-mint" style={{ fontSize: '0.76rem' }}>
-                      {exp.category}
-                    </span>
-                  </td>
-                  <td style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
-                    {exp.date}
-                  </td>
-                  <td>
-                    <strong style={{ color: '#dc2626', fontSize: '0.95rem' }}>
-                      -{exp.amount.toLocaleString()} ج.م
-                    </strong>
-                  </td>
-                  <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                    {exp.notes || '-'}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`هل أنت متأكد من حذف مصروف "${exp.title}"؟`)) {
-                          deleteExpense(exp.id);
-                        }
-                      }}
-                      style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px' }}
-                      title="حذف المصروف"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredExpenses
+                .filter(exp => {
+                  const isWaste = exp.category === 'هالك وتالف مخزون' || exp.category === 'عجز جرد مخزني' || exp.category === 'هالك ومخزون' || exp.referenceType === 'stock_waste' || exp.referenceType === 'inventory_audit_deficit' || exp.accountId === 'none';
+                  if (expenseTypeFilter === 'cash') return !isWaste;
+                  if (expenseTypeFilter === 'waste') return isWaste;
+                  return true;
+                })
+                .map((exp) => {
+                  const isWaste = exp.category === 'هالك وتالف مخزون' || 
+                                  exp.category === 'عجز جرد مخزني' || 
+                                  exp.category === 'هالك ومخزون' || 
+                                  exp.referenceType === 'stock_waste' || 
+                                  exp.referenceType === 'inventory_audit_deficit' || 
+                                  exp.accountId === 'none';
+
+                  // Robust lookup from accountId, associated transaction, or default treasury account
+                  const relatedTx = (treasuryTransactions || []).find(tx => tx.expenseId === exp.id || tx.id === `tx-exp-${exp.id}`);
+                  const resolvedAccountId = (exp.accountId && exp.accountId !== 'none')
+                    ? exp.accountId
+                    : (relatedTx?.fromAccountId || (!isWaste ? (exp.category === 'تسويق' ? 'acc-instapay-main' : (treasuryAccounts[0]?.id || 'acc-cash-main')) : 'none'));
+
+                  const fromAccount = resolvedAccountId !== 'none'
+                    ? (treasuryAccounts.find(a => a.id === resolvedAccountId) || { name: exp.accountName || 'الخزينة الرئيسية (درج الكاش)', color: 'var(--mint-800)' })
+                    : null;
+
+                  return (
+                    <tr key={exp.id}>
+                      <td>
+                        <strong style={{ color: 'var(--text-main)' }}>{exp.title}</strong>
+                      </td>
+                      <td>
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: '0.76rem',
+                            background: isWaste ? '#fef3c7' : 'rgba(5, 150, 105, 0.12)',
+                            color: isWaste ? '#92400e' : 'var(--mint-900)',
+                            border: isWaste ? '1px solid #fde68a' : '1px solid var(--border-mint)'
+                          }}
+                        >
+                          {exp.category}
+                        </span>
+                      </td>
+                      <td>
+                        {isWaste ? (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.76rem',
+                              fontWeight: '700',
+                              color: '#9a3412',
+                              background: '#fff7ed',
+                              border: '1px solid #fed7aa',
+                              padding: '3px 8px',
+                              borderRadius: '6px'
+                            }}
+                            title="تسوية مخزنية غير نقدية"
+                          >
+                            قيد خسائر دفتري
+                          </span>
+                        ) : (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <select
+                              value={resolvedAccountId}
+                              onChange={(e) => {
+                                const newAccId = e.target.value;
+                                const accObj = treasuryAccounts.find(a => a.id === newAccId);
+                                updateExpense(exp.id, {
+                                  accountId: newAccId,
+                                  accountName: accObj ? accObj.name : ''
+                                });
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '0.78rem',
+                                fontWeight: '700',
+                                border: '1px solid rgba(5, 150, 105, 0.25)',
+                                background: 'rgba(5, 150, 105, 0.08)',
+                                color: 'var(--mint-950)',
+                                cursor: 'pointer',
+                                outline: 'none'
+                              }}
+                              title="الخزينة المسحوب منها - يمكنك التغيير في أي وقت"
+                            >
+                              {treasuryAccounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>
+                                  💼 {acc.name}
+                                </option>
+                              ))}
+                              <option value="none">قيد خسائر دفتري (بدون خصم)</option>
+                            </select>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        {exp.date}
+                      </td>
+                      <td>
+                        <strong style={{ color: '#dc2626', fontSize: '0.95rem' }}>
+                          -{exp.amount.toLocaleString()} ج.م
+                        </strong>
+                      </td>
+                      <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                        {exp.notes || '-'}
+                      </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        onClick={async () => {
+                          const ok = await confirmDialog({
+                            title: 'حذف المصروف',
+                            message: `هل أنت متأكد من حذف مصروف "${exp.title}"؟`,
+                            details: `المبلغ: ${exp.amount?.toLocaleString()} ج.م • البند: ${exp.category}`,
+                            confirmText: 'نعم، حذف المصروف',
+                            cancelText: 'إلغاء',
+                            type: 'danger'
+                          });
+                          if (ok) {
+                            deleteExpense(exp.id);
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px' }}
+                        title="حذف المصروف"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
@@ -517,7 +695,15 @@ export const AccountsView = () => {
                   <label className="form-label">التصنيف *</label>
                   <select
                     value={expenseForm.category}
-                    onChange={e => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                    onChange={e => {
+                      const newCat = e.target.value;
+                      const isLoss = newCat === 'هالك وتالف مخزون' || newCat === 'عجز جرد مخزني';
+                      setExpenseForm({
+                        ...expenseForm,
+                        category: newCat,
+                        accountId: isLoss ? 'none' : (expenseForm.accountId === 'none' ? (treasuryAccounts[0]?.id || 'acc-cash-main') : expenseForm.accountId)
+                      });
+                    }}
                     className="form-select"
                   >
                     <option value="إيجار">إيجار</option>
@@ -526,9 +712,48 @@ export const AccountsView = () => {
                     <option value="تسويق">تسويق وإعلانات</option>
                     <option value="رواتب">رواتب ومكافآت</option>
                     <option value="صيانة">صيانة وأجهزة</option>
+                    <option value="هالك وتالف مخزون">هالك وتالف مخزون (قيد دفتري)</option>
+                    <option value="عجز جرد مخزني">عجز جرد مخزني (قيد دفتري)</option>
                     <option value="نثريات">نثريات وأخرى</option>
                   </select>
                 </div>
+              </div>
+
+              {/* الخزينة المسحوب منها */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Wallet size={15} color="var(--mint-700)" />
+                    <span>الخزينة / الحساب المسحوب منه المصروف *</span>
+                  </span>
+                  {selectedAcc && expenseForm.accountId !== 'none' && (
+                    <span style={{ fontSize: '0.78rem', color: isInsufficient ? '#dc2626' : 'var(--mint-700)', fontWeight: '700' }}>
+                      الرصيد المتاح: {selectedAccBalance.toLocaleString()} ج.م
+                    </span>
+                  )}
+                </label>
+                <select
+                  required
+                  value={expenseForm.accountId}
+                  onChange={e => setExpenseForm({ ...expenseForm, accountId: e.target.value })}
+                  className="form-select"
+                  style={{ fontWeight: '700' }}
+                >
+                  {treasuryAccounts.map(acc => {
+                    const bal = getTreasuryAccountBalance(acc.id);
+                    return (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} (الرصيد: {bal.toLocaleString()} ج.م)
+                      </option>
+                    );
+                  })}
+                  <option value="none">بدون خصم من الخزائن (قيد دفتري فقط)</option>
+                </select>
+                {isInsufficient && (
+                  <div style={{ fontSize: '0.78rem', color: '#dc2626', marginTop: '4px', fontWeight: '700' }}>
+                    ⚠️ تنبيه: مبلغ المصروف ({Number(expenseForm.amount).toLocaleString()} ج.م) يتجاوز الرصيد المتوفر بالخزينة ({selectedAccBalance.toLocaleString()} ج.م).
+                  </div>
+                )}
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>

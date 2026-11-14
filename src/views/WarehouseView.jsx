@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Warehouse as WarehouseIcon,
   Search,
-  AlertTriangle,
-  Clock,
   CheckCircle,
-  Package,
-  Calendar,
   Layers,
   Trash2,
-  TrendingDown,
   X,
   ClipboardCheck,
   FileText,
   Check,
   RotateCcw,
-  Sparkles,
   Plus,
-  Minus
+  Minus,
+  Upload,
+  Download
 } from 'lucide-react';
-import { exportStockAuditToPdf } from '../utils/exportUtils';
+import { exportStockAuditToPdf, exportInventoryTemplate } from '../utils/exportUtils';
+import {
+  processInventoryUploadFile,
+  InventoryImportSuccessBanner,
+  InventoryImportModal
+} from '../components/InventoryImportModal';
 
 // Helper: Convert Eastern Arabic numerals (٠-٩) and Arabic decimal comma (٫) to standard ASCII
 const normalizeArabicNumerals = (str) => {
@@ -42,8 +42,46 @@ export const WarehouseView = () => {
     reconcileInventoryAudit,
     contactInfo,
     currentUser,
-    setActiveTab
+    confirmDialog,
+    importInventoryBatch
   } = useApp();
+
+  // 📊 Excel / CSV Inventory Import & Export State
+  const [importPreviewData, setImportPreviewData] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importSuccessAlert, setImportSuccessAlert] = useState(null);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const preview = await processInventoryUploadFile(file, products);
+      if (!preview) {
+        alert('تعذر قراءة بيانات من الملف. يرجى التأكد من أن الملف بصيغة Excel (.xlsx / .xls) أو CSV ومحتوٍ على صف العناوين وبيانات الأصناف.');
+        return;
+      }
+      setImportPreviewData(preview);
+      setIsImportModalOpen(true);
+    } catch (err) {
+      console.error('Import file parse error:', err);
+      alert('حدث خطأ أثناء قراءة الملف: ' + err.message);
+    }
+  };
+
+  const handleConfirmImport = (removeMissing = true) => {
+    if (!importPreviewData || !importPreviewData.items) return;
+    const res = importInventoryBatch(importPreviewData.items, { removeMissing });
+    setIsImportModalOpen(false);
+    setImportSuccessAlert({
+      updated: res.updatedCount,
+      added: res.addedCount,
+      removed: res.removedCount,
+      total: res.total
+    });
+    setImportPreviewData(null);
+    setTimeout(() => setImportSuccessAlert(null), 8000);
+  };
 
   // Top Section Switcher: 'batches' | 'audit'
   const [activeWarehouseTab, setActiveWarehouseTab] = useState('batches');
@@ -93,8 +131,12 @@ export const WarehouseView = () => {
   const handleWasteSubmit = (e) => {
     e.preventDefault();
     if (!wasteModalBatch) return;
-    recordStockWaste(wasteModalBatch.id, Number(wasteQty), wasteReason);
-    alert(`تم تسجيل إهلاك (${wasteQty}) وحدة من تشغيلة "${wasteModalBatch.batchCode}" وخصمها من المخزن.`);
+    const qty = Number(wasteQty);
+    const unitCost = Number(wasteModalBatch.costPrice || 0);
+    const totalLoss = Math.round(qty * unitCost);
+
+    recordStockWaste(wasteModalBatch.id, qty, wasteReason);
+    alert(`تم تسجيل إهلاك (${qty}) وحدة من تشغيلة "${wasteModalBatch.batchCode}" بقيمة (${totalLoss.toLocaleString()} ج.م).\nتم خصم الكمية من المخزن وقيد الخسارة تلقائياً في قسم الحسابات.`);
     setWasteModalBatch(null);
     setWasteQty(1);
   };
@@ -123,7 +165,7 @@ export const WarehouseView = () => {
       sku: p.sku || `SKU-${p.id}`,
       name: p.name,
       nameEn: p.nameEn,
-      categoryName: catMap[p.category] || p.category || 'عام',
+      categoryName: catMap[p.category] || (p.category === 'espresso' || p.category === 'filter' ? 'بن مختص' : p.category === 'coffee' ? 'بن وتوليفات كلاسيكية' : p.category) || 'عام',
       unitType: p.unitType,
       systemStock,
       actualStock,
@@ -261,10 +303,27 @@ export const WarehouseView = () => {
   };
 
   // Reconcile and save audit to actual system stock
-  const handleReconcileStock = () => {
-    if (window.confirm(`هل أنت متأكد من اعتماد وتسوية الجرد الفعلي؟\nسيتم تحديث أرصدة النظام بالكميات المجرودة فوراً.`)) {
+  const handleReconcileStock = async () => {
+    const deficitItems = auditItems.filter(i => (Number(i.diff) || 0) < 0);
+    const deficitTotalValue = Math.abs(deficitItems.reduce((sum, i) => sum + (Number(i.diffValue) || 0), 0));
+
+    const confirmMsg = `هل أنت متأكد من اعتماد وتسوية الجرد الفعلي؟ سيتم تحديث أرصدة النظام بالكميات المجرودة فوراً.`;
+    const detailsMsg = deficitTotalValue > 0
+      ? `⚠️ تنبيه محاسبي: تم رصد عجز في (${deficitItems.length}) صنف بقيمة (${deficitTotalValue.toLocaleString()} ج.م). سيتم تسجيل هذا العجز تلقائياً كخسارة تشغيلية في قسم الحسابات.`
+      : '';
+
+    const ok = await confirmDialog({
+      title: 'اعتماد وتسوية الجرد المخزني',
+      message: confirmMsg,
+      details: detailsMsg,
+      confirmText: 'نعم، اعتماد التسوية',
+      cancelText: 'تراجع',
+      type: deficitTotalValue > 0 ? 'warning' : 'success'
+    });
+
+    if (ok) {
       if (reconcileInventoryAudit) {
-        reconcileInventoryAudit(auditItems);
+        reconcileInventoryAudit(auditItems, { auditorName });
       }
       setAuditSavedSuccess(true);
       setTimeout(() => setAuditSavedSuccess(false), 5000);
@@ -277,7 +336,7 @@ export const WarehouseView = () => {
       auditItems: filteredAuditItems,
       summary: {
         auditorName,
-        auditDate: new Date().toLocaleString('ar-EG'),
+        auditDate: new Date().toLocaleString('ar-EG-u-nu-latn'),
         totalItems: totalAuditItems,
         matchedCount: auditMatchedCount,
         deficitCount: auditDeficitCount,
@@ -307,24 +366,24 @@ export const WarehouseView = () => {
             style={{
               padding: '10px 20px',
               borderRadius: '12px',
-              border: activeWarehouseTab === 'batches' ? '2px solid var(--mint-600)' : '1px solid var(--border-light)',
-              background: activeWarehouseTab === 'batches' ? 'var(--mint-600)' : '#ffffff',
-              color: activeWarehouseTab === 'batches' ? '#ffffff' : 'var(--text-main)',
+              border: activeWarehouseTab === 'batches' ? '1.5px solid #96663B' : '1px solid #EDD9BD',
+              background: activeWarehouseTab === 'batches' ? 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)' : '#FFF8EE',
+              color: activeWarehouseTab === 'batches' ? '#FFFDF9' : '#6B4A2E',
               fontWeight: '800',
               fontSize: '0.9rem',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
               cursor: 'pointer',
-              boxShadow: activeWarehouseTab === 'batches' ? '0 3px 10px rgba(11,128,79,0.2)' : 'none',
+              boxShadow: activeWarehouseTab === 'batches' ? '0 3px 10px rgba(150, 102, 59, 0.25)' : 'none',
               transition: 'all 0.2s'
             }}
           >
             <Layers size={18} />
             <span>تشغيل ومتابعة الدفعات والصلاحيات</span>
             <span style={{
-              background: activeWarehouseTab === 'batches' ? 'rgba(255,255,255,0.25)' : 'var(--mint-100)',
-              color: activeWarehouseTab === 'batches' ? '#ffffff' : 'var(--mint-800)',
+              background: activeWarehouseTab === 'batches' ? 'rgba(255,255,255,0.25)' : '#FFFDF9',
+              color: activeWarehouseTab === 'batches' ? '#ffffff' : '#96663B',
               padding: '2px 8px',
               borderRadius: '12px',
               fontSize: '0.74rem'
@@ -338,16 +397,16 @@ export const WarehouseView = () => {
             style={{
               padding: '10px 20px',
               borderRadius: '12px',
-              border: activeWarehouseTab === 'audit' ? '2px solid #0284c7' : '1px solid var(--border-light)',
-              background: activeWarehouseTab === 'audit' ? '#0284c7' : '#ffffff',
-              color: activeWarehouseTab === 'audit' ? '#ffffff' : 'var(--text-main)',
+              border: activeWarehouseTab === 'audit' ? '1.5px solid #0284c7' : '1px solid #EDD9BD',
+              background: activeWarehouseTab === 'audit' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : '#FFF8EE',
+              color: activeWarehouseTab === 'audit' ? '#ffffff' : '#6B4A2E',
               fontWeight: '800',
               fontSize: '0.9rem',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
               cursor: 'pointer',
-              boxShadow: activeWarehouseTab === 'audit' ? '0 3px 10px rgba(2,132,199,0.25)' : 'none',
+              boxShadow: activeWarehouseTab === 'audit' ? '0 3px 10px rgba(2, 132, 199, 0.35)' : 'none',
               transition: 'all 0.2s'
             }}
           >
@@ -365,8 +424,53 @@ export const WarehouseView = () => {
           </button>
         </div>
 
-        {activeWarehouseTab === 'audit' && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => exportInventoryTemplate(products, categories)}
+            className="btn btn-outline"
+            style={{
+              height: '42px',
+              gap: '6px',
+              borderColor: '#15803d',
+              color: '#15803d',
+              background: '#f0fdf4',
+              fontWeight: '700'
+            }}
+            title="تحميل شيت إكسيل منظم يحتوي على جميع الأصناف الحالية لتعديل رصيدها وأسعارها"
+          >
+            <Download size={16} />
+            <span>تحميل قالب إكسيل</span>
+          </button>
+
+          <label
+            className="btn btn-outline"
+            style={{
+              height: '42px',
+              gap: '6px',
+              borderColor: '#2563eb',
+              color: '#2563eb',
+              background: '#eff6ff',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              margin: 0
+            }}
+            title="رفع شيت إكسيل / CSV لتحديث أرصدة المخزون دفعة واحدة"
+          >
+            <Upload size={16} />
+            <span>رفع شيت إكسيل</span>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv,.txt,.tsv"
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+              value=""
+            />
+          </label>
+
+          {activeWarehouseTab === 'audit' && (
             <button
               onClick={handleExportAuditPdf}
               className="btn btn-outline"
@@ -388,9 +492,15 @@ export const WarehouseView = () => {
               <FileText size={18} color="#dc2626" />
               <span>تصدير كشف الجرد PDF 📄</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Excel Import Success Toast Banner */}
+      <InventoryImportSuccessBanner
+        alertData={importSuccessAlert}
+        onClose={() => setImportSuccessAlert(null)}
+      />
 
       {/* ========================================================== */}
       {/* SECTION 1: PHYSICAL INVENTORY AUDIT (جزء جرد المخزن الفعلي) */}
@@ -501,7 +611,7 @@ export const WarehouseView = () => {
                 style={{ height: '36px', width: '200px', fontSize: '0.85rem', borderRadius: '8px' }}
               />
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                📅 {new Date().toLocaleDateString('ar-EG')}
+                📅 {new Date().toLocaleDateString('ar-EG-u-nu-latn')}
               </span>
             </div>
 
@@ -1258,6 +1368,31 @@ export const WarehouseView = () => {
                 </select>
               </div>
 
+              {/* Financial Loss Preview & Accounting Link */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1.5px dashed #cbd5e1',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                fontSize: '0.84rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>تكلفة الوحدة التقديرية:</span>
+                  <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>
+                    {Number(wasteModalBatch.costPrice || 0).toLocaleString()} ج.م
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>إجمالي الخسارة المالية:</span>
+                  <span style={{ fontWeight: '800', color: '#dc2626', fontSize: '0.95rem' }}>
+                    {(Math.round(Number(wasteQty || 0) * Number(wasteModalBatch.costPrice || 0))).toLocaleString()} ج.م
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px', lineHeight: 1.4 }}>
+                  💡 <strong>أثر محاسبي:</strong> سيتم قيد هذه القيمة تلقائياً في سجل المصروفات والخسائر كقيد دفتري لضمان دقة الأرباح، دون التأثير على الكاش بالخزينة.
+                </div>
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
                 <button type="button" onClick={() => setWasteModalBatch(null)} className="btn btn-outline">
                   إلغاء
@@ -1270,6 +1405,16 @@ export const WarehouseView = () => {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* 📊 EXCEL INVENTORY IMPORT PREVIEW & CONFIRMATION MODAL 📊                   */}
+      {/* ========================================================================= */}
+      <InventoryImportModal
+        isOpen={isImportModalOpen}
+        previewData={importPreviewData}
+        onClose={() => setIsImportModalOpen(false)}
+        onConfirm={handleConfirmImport}
+      />
 
     </div>
   );

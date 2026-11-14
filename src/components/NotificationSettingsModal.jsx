@@ -72,7 +72,7 @@ export const NotificationSettingsModal = ({ isOpen, onClose }) => {
     setPermission(res);
     if (res === 'granted') {
       sendSystemNotification({
-        title: 'تم تفعيل إشعارات كاتورا بنجاح! ☕🎉',
+        title: 'تم تفعيل إشعارات كاتورا بنجاح! ✨🎉',
         body: 'ستصلك الآن تنبيهات الطلبات الجديدة ونواقص المخزون فوراً على هاتفك.'
       });
       setTestStatus('تم تفعيل الإشعارات بنجاح وإرسال إشعار تجريبي!');
@@ -114,7 +114,7 @@ export const NotificationSettingsModal = ({ isOpen, onClose }) => {
     handleSaveTelegram();
     setTgTestStatus('loading');
     const res = await sendTelegramAlert(
-      `🔔 *إشعار تجريبي من منظومة كاتورا للقهوة المختصة ☕*\n━━━━━━━━━━━━━━━━━━━━\nتم ربط هاتفك بنجاح! ستصلك هنا كل تفاصيل الطلبات الجديدة والأصناف وتنبيهات المخزون فوراً وبشكل مجاني على مدار 24 ساعة. ✨`,
+      `🔔 *إشعار تجريبي من منظومة كاتورا للقهوة المختصة ✨*\n━━━━━━━━━━━━━━━━━━━━\nتم ربط هاتفك بنجاح! ستصلك هنا كل تفاصيل الطلبات الجديدة والأصناف وتنبيهات المخزون فوراً وبشكل مجاني على مدار 24 ساعة. ✨`,
       { botToken: tgToken, chatId: tgChatId, enabled: true }
     );
 

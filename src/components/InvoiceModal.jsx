@@ -12,67 +12,133 @@ import {
   Calendar,
   User,
   CreditCard,
-  DollarSign
+  DollarSign,
+  FileText
 } from 'lucide-react';
+import { sendInvoicePdfToWhatsApp, downloadInvoicePdf } from '../utils/exportUtils';
 
 export const InvoiceModal = () => {
-  const { isInvoiceModalOpen, activeInvoiceForModal, closeInvoiceModal, contactInfo } = useApp();
+  const { isInvoiceModalOpen, activeInvoiceForModal, closeInvoiceModal, contactInfo, invoices = [] } = useApp();
   const printAreaRef = useRef(null);
 
   if (!isInvoiceModalOpen || !activeInvoiceForModal) return null;
 
-  const inv = activeInvoiceForModal;
+  // Resolve live invoice from context so payment updates reflect immediately
+  const inv = (invoices || []).find(i => 
+    i.id === activeInvoiceForModal.id || 
+    i.invoiceNumber === activeInvoiceForModal.invoiceNumber
+  ) || activeInvoiceForModal;
 
-  // Handle direct print
+  // Handle direct print - Isolates ONLY the invoice receipt so the background page is never printed!
   const handlePrint = () => {
-    window.print();
+    if (!printAreaRef.current) {
+      window.print();
+      return;
+    }
+
+    let printFrame = document.getElementById('receipt-print-frame');
+    if (!printFrame) {
+      printFrame = document.createElement('iframe');
+      printFrame.id = 'receipt-print-frame';
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = 'none';
+      printFrame.style.zIndex = '-9999';
+      document.body.appendChild(printFrame);
+    }
+
+    const doc = printFrame.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html dir="ltr" lang="en">
+      <head>
+        <meta charset="utf-8">
+        <title>Order #${inv.invoiceNumber} - Caturra Coffee Roasters</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-variant-numeric: tabular-nums lining-nums;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body {
+            font-family: 'Outfit', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            direction: ltr;
+            background: #ffffff !important;
+            color: #242721 !important;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+          }
+          .no-print {
+            display: none !important;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          img {
+            max-width: 100%;
+          }
+        </style>
+      </head>
+      <body>
+        <div style="max-width: 680px; margin: 0 auto; background: #ffffff;">
+          ${printAreaRef.current.innerHTML}
+        </div>
+      </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    }, 280);
   };
 
-  // WhatsApp share link generator (Egyptian Prefix +20)
-  const handleWhatsAppShare = () => {
+  // Send genuine PDF file to WhatsApp directly
+  const handleWhatsAppShare = async () => {
     let phone = inv.customerPhone ? inv.customerPhone.replace(/[^0-9]/g, '') : '';
     if (phone.startsWith('0')) {
       phone = '20' + phone.substring(1);
     } else if (phone && !phone.startsWith('20')) {
       phone = '20' + phone;
     }
-
-    const itemsList = inv.items.map(it => `• ${it.name} (${it.qty}x) = ${it.total || (it.price * it.qty)} ج.م`).join('\n');
-    const brandTitle = contactInfo?.brandNameAr || 'كاتورا للقهوة المختصة';
-    const message = 
-`☕ *فاتورة شراء من ${brandTitle}* 🌿
-━━━━━━━━━━━━━━━━━━━━
-📄 *رقم الفاتورة:* ${inv.invoiceNumber}
-📅 *التاريخ:* ${inv.date}
-👤 *العميل:* ${inv.customerName}
-📱 *الموبايل:* ${inv.customerPhone || 'غير مسجل'}
-━━━━━━━━━━━━━━━━━━━━
-🛍️ *تفاصيل المشتريات:*
-${itemsList}
-━━━━━━━━━━━━━━━━━━━━
-💰 *الإجمالي:* ${inv.total} ج.م
-💵 *المدفوع:* ${inv.paidAmount} ج.م
-${inv.remainingDebt > 0 ? `⚠️ *المتبقي (آجل / على الحساب):* ${inv.remainingDebt} ج.م\n` : '✅ *حالة السداد: مدفوع بالكامل*\n'}
-نشكرك لاختيارك قهوة كاتورا المختصة! يسعدنا دائماً خدمتك. ✨`;
-
-    const encodedMsg = encodeURIComponent(message);
-    const waUrl = phone ? `https://wa.me/${phone}?text=${encodedMsg}` : `https://api.whatsapp.com/send?text=${encodedMsg}`;
-    window.open(waUrl, '_blank');
+    await sendInvoicePdfToWhatsApp(inv, contactInfo, phone);
   };
 
+  const orderDateFormatted = inv.date ? (inv.date.includes(' ') ? inv.date.split(' ')[0] : inv.date) : new Date().toLocaleDateString('en-US');
+  const deliveryDateFormatted = inv.deliveryDate || orderDateFormatted;
+  const accountManagerName = inv.cashierName || 'Omar Saad';
+
   return (
-    <div className="modal-overlay" onClick={closeInvoiceModal}>
+    <div className="modal-overlay" onClick={closeInvoiceModal} style={{ zIndex: 1200 }}>
       <div 
         className="modal-content invoice-modal-container"
         style={{
-          maxWidth: '580px',
-          maxHeight: '92vh',
-          height: '92vh',
+          maxWidth: '740px',
+          maxHeight: '94vh',
+          height: '94vh',
           display: 'flex',
           flexDirection: 'column',
           padding: '0',
           overflow: 'hidden',
-          borderRadius: '20px'
+          borderRadius: '24px',
+          boxShadow: '0 25px 70px rgba(0, 0, 0, 0.45)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -81,13 +147,13 @@ ${inv.remainingDebt > 0 ? `⚠️ *المتبقي (آجل / على الحساب)
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '14px 20px',
-          background: 'var(--mint-50)',
-          borderBottom: '1px solid var(--border-mint)',
+          padding: '12px 22px',
+          background: '#f8f7f4',
+          borderBottom: '1px solid #e7e5df',
           flexShrink: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: '800', color: 'var(--mint-900)', fontSize: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontWeight: '800', color: '#32362f', fontSize: '0.98rem' }}>
               معاينة الفاتورة #{inv.invoiceNumber}
             </span>
             <span
@@ -121,22 +187,31 @@ ${inv.remainingDebt > 0 ? `⚠️ *المتبقي (آجل / على الحساب)
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button 
+              onClick={() => downloadInvoicePdf(inv, contactInfo)} 
+              className="btn btn-outline"
+              style={{ padding: '6px 14px', fontSize: '0.85rem', color: '#505342', borderColor: '#c9c7bf', background: '#ffffff' }}
+              title="تحميل ملف الفاتورة PDF على جهازك"
+            >
+              <FileText size={16} />
+              <span>تحميل PDF</span>
+            </button>
+            <button 
               onClick={handleWhatsAppShare} 
               className="btn btn-outline"
-              style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#16a34a', borderColor: '#86efac' }}
-              title="إرسال الفاتورة عبر واتساب"
+              style={{ padding: '6px 14px', fontSize: '0.85rem', color: '#16a34a', borderColor: '#86efac', background: '#ffffff' }}
+              title="إرسال ملف الفاتورة PDF عبر واتساب"
             >
               <MessageSquare size={16} />
-              واتساب
+              <span>واتساب</span>
             </button>
             <button 
               onClick={handlePrint} 
               className="btn btn-primary"
-              style={{ padding: '6px 14px', fontSize: '0.85rem' }}
-              title="طباعة إيصال الفاتورة"
+              style={{ padding: '6px 16px', fontSize: '0.85rem', background: '#505342', borderColor: '#505342' }}
+              title="طباعة الفاتورة"
             >
               <Printer size={16} />
-              طباعة
+              <span>طباعة</span>
             </button>
             <button 
               onClick={closeInvoiceModal} 
@@ -148,247 +223,379 @@ ${inv.remainingDebt > 0 ? `⚠️ *المتبقي (آجل / على الحساب)
           </div>
         </div>
 
-        {/* Printable Receipt Paper (Scrollable) */}
+        {/* Printable Receipt Paper (Scrollable, Styled exactly like Bonds Image) */}
         <div 
           ref={printAreaRef}
           className="invoice-receipt print-only-container"
+          dir="ltr"
           style={{
-            padding: '24px 24px 32px',
+            position: 'relative',
+            padding: '36px 40px 30px',
             background: '#ffffff',
-            color: '#1e293b',
-            fontFamily: "'Cairo', sans-serif",
+            color: '#242721',
+            fontFamily: "'Outfit', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
             overflowY: 'auto',
-            flex: 1
+            flex: 1,
+            boxSizing: 'border-box'
           }}
         >
-          {/* Header with Caturra Brand Logo */}
-          <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px dashed var(--border-light)', paddingBottom: '16px' }}>
-            <img 
-              src="/caturra_logo.jpg" 
-              alt="Caturra Coffee Logo" 
-              style={{ 
-                width: '76px', 
-                height: '76px', 
-                borderRadius: '50%', 
-                objectFit: 'cover', 
-                margin: '0 auto 8px',
-                border: '2px solid var(--mint-500)',
-                boxShadow: '0 2px 8px rgba(11,128,79,0.2)'
-              }} 
-            />
-            <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--mint-900)', margin: '0' }}>
-              {contactInfo?.brandNameAr || 'كاتورا للقهوة المختصة'}
-            </h2>
-            <div style={{ fontSize: '0.85rem', color: 'var(--mint-700)', fontWeight: '700', marginTop: '2px' }}>
-              {contactInfo?.brandNameEn || 'CATURRA SPECIALTY COFFEE ROASTERS'}
+          {/* Top Subtle Organic Wave Background */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '95px',
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            zIndex: 0
+          }}>
+            <svg viewBox="0 0 1000 120" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+              <path d="M0,0 L1000,0 L1000,45 Q750,85 500,55 Q250,25 0,65 Z" fill="#f4f3ef"/>
+            </svg>
+          </div>
+
+          {/* Top Header Row: Logo & Roastery Name (Left) + Country & Tax ID (Right) */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start'
+          }}>
+            {/* Brand Logo & Name */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <img 
+                src="/caturra_logo.jpg" 
+                alt="Caturra Coffee Roasters" 
+                style={{ 
+                  width: '52px', 
+                  height: '52px', 
+                  borderRadius: '50%', 
+                  objectFit: 'cover', 
+                  border: '1.5px solid #dcdad3',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                }} 
+              />
+              <div>
+                <div style={{
+                  fontSize: '25px',
+                  fontWeight: '800',
+                  letterSpacing: '-0.5px',
+                  color: '#262923',
+                  lineHeight: '1.05'
+                }}>
+                  caturra
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  letterSpacing: '1.4px',
+                  color: '#6e7069',
+                  textTransform: 'lowercase',
+                  marginTop: '3px'
+                }}>
+                  coffee roasters
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              سجل تجاري: {contactInfo?.commercialRegister || '148920'} | بطاقة ضريبية: {contactInfo?.taxNumber || '582-934-211'} | {contactInfo?.address || 'القاهرة - مصر'}
+
+            {/* Country & Tax ID */}
+            <div style={{ textAlign: 'right', fontSize: '12.5px', color: '#464942', lineHeight: '1.55' }}>
+              <div style={{ fontWeight: '700', color: '#242721', fontSize: '13.5px' }}>Egypt</div>
+              <div>Tax ID: <strong style={{ color: '#242721' }}>{contactInfo?.taxNumber || '582-934-211'}</strong></div>
+              <div style={{ fontSize: '11px', color: '#7a7c75' }}>Reg: {contactInfo?.commercialRegister || '148920'}</div>
             </div>
           </div>
 
-          {/* Invoice Meta Grid */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
-            gap: '8px', 
-            fontSize: '0.85rem', 
-            background: 'var(--mint-50)', 
-            padding: '12px 14px', 
-            borderRadius: '10px', 
-            marginBottom: '18px',
-            border: '1px solid var(--border-mint)'
-          }}>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>رقم الفاتورة: </span>
-              <strong style={{ color: 'var(--mint-900)' }}>{inv.invoiceNumber}</strong>
+          {/* Customer / Client Name */}
+          <div style={{ position: 'relative', zIndex: 1, marginTop: '38px', marginBottom: '4px' }}>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#242721' }}>
+              {inv.customerName || (contactInfo?.brandNameAr ? 'عميل نقدي' : 'Retail Customer')}
             </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>التاريخ: </span>
-              <strong>{inv.date}</strong>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>العميل: </span>
-              <strong>{inv.customerName}</strong>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>الموبايل: </span>
-              <span dir="ltr"><strong>{inv.customerPhone || 'غير مسجل'}</strong></span>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>طريقة الدفع: </span>
-              <strong>
-                {inv.paymentMethod === 'cash' ? 'نقدي (Cash)' : inv.paymentMethod === 'card' ? 'فيزا / ميزة (Card)' : inv.paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : 'آجل (على الحساب)'}
-              </strong>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>الكاشير: </span>
-              <span>{inv.cashierName || 'نظام كاتورا'}</span>
-            </div>
-            {inv.customerAddress && (
-              <div style={{ gridColumn: 'span 2', marginTop: '2px', borderTop: '1px dashed var(--border-mint)', paddingTop: '6px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>عنوان التوصيل: </span>
-                <strong style={{ color: 'var(--mint-800)' }}>{inv.customerAddress}</strong>
+            {inv.customerPhone && (
+              <div style={{ fontSize: '12px', color: '#6f716a', marginTop: '2px' }}>
+                {inv.customerPhone}
               </div>
             )}
           </div>
 
-          {/* Items Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '18px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1.5px solid var(--border-light)', color: 'var(--text-secondary)' }}>
-                <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: '700' }}>الصنف</th>
-                <th style={{ textAlign: 'center', padding: '8px 4px', fontWeight: '700' }}>الكمية</th>
-                <th style={{ textAlign: 'center', padding: '8px 4px', fontWeight: '700' }}>السعر</th>
-                <th style={{ textAlign: 'left', padding: '8px 4px', fontWeight: '700' }}>المجموع</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inv.items.map((item, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '9px 4px', fontWeight: '600' }}>
-                    <div>{item.name}</div>
-                    {item.weightGram ? (
-                      <div style={{ fontSize: '0.74rem', color: 'var(--mint-700)', fontWeight: '500' }}>
-                        الوزن: <strong>{item.weightLabel || `${item.weightGram} جرام`}</strong>
-                        {item.grind ? ` • طحن: ${item.grind}` : ''}
-                      </div>
-                    ) : null}
-                  </td>
-                  <td style={{ textAlign: 'center', padding: '9px 4px' }}>
-                    {item.qty} {item.unitType === 'weight' ? 'عبوة' : 'ق'}
-                  </td>
-                  <td style={{ textAlign: 'center', padding: '9px 4px' }}>
-                    {item.price} ج.م
-                  </td>
-                  <td style={{ textAlign: 'left', padding: '9px 4px', fontWeight: '700', color: 'var(--mint-800)' }}>
-                    {item.total || (item.price * item.qty)} ج.م
-                  </td>
+          {/* Order Title */}
+          <h1 style={{
+            position: 'relative',
+            zIndex: 1,
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#242721',
+            margin: '4px 0 18px',
+            letterSpacing: '-0.5px'
+          }}>
+            Order # {inv.invoiceNumber}
+          </h1>
+
+          {/* Order Meta Pill Card (Rounded light-beige container) */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            background: '#ebe9e2',
+            borderRadius: '12px',
+            padding: '16px 22px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+            gap: '12px 20px',
+            marginBottom: '26px'
+          }}>
+            <div>
+              <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#242721', marginBottom: '3px' }}>
+                Order Date
+              </div>
+              <div style={{ fontSize: '13px', color: '#464942', fontWeight: '500' }}>
+                {orderDateFormatted}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#242721', marginBottom: '3px' }}>
+                Delivery Date
+              </div>
+              <div style={{ fontSize: '13px', color: '#464942', fontWeight: '500' }}>
+                {deliveryDateFormatted}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#242721', marginBottom: '3px' }}>
+                Account Manager
+              </div>
+              <div style={{ fontSize: '13px', color: '#464942', fontWeight: '500' }}>
+                {accountManagerName}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#242721', marginBottom: '3px' }}>
+                Payment Method
+              </div>
+              <div style={{ fontSize: '13px', color: '#464942', fontWeight: '500' }}>
+                {inv.paymentMethod === 'cash' 
+                  ? 'Cash' 
+                  : inv.paymentMethod === 'card' 
+                    ? 'Card / Visa' 
+                    : inv.paymentMethod === 'instapay' 
+                      ? 'InstaPay' 
+                      : inv.paymentMethod === 'wallet' 
+                        ? 'E-Wallet' 
+                        : 'On Account'}
+              </div>
+            </div>
+          </div>
+
+          {/* Items Table with Dark Olive-Coffee Header and Rounded Top Corners */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            border: '1px solid #dcdad1',
+            borderRadius: '8px 8px 0 0',
+            overflow: 'hidden',
+            background: '#ffffff'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#505342', color: '#ffffff' }}>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '700', fontSize: '13px' }}>
+                    Description
+                  </th>
+                  <th style={{ textAlign: 'center', padding: '12px 14px', fontWeight: '700', fontSize: '13px', width: '110px' }}>
+                    Quantity
+                  </th>
+                  <th style={{ textAlign: 'center', padding: '12px 14px', fontWeight: '700', fontSize: '13px', width: '110px' }}>
+                    Unit Price
+                  </th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontWeight: '700', fontSize: '13px', width: '130px' }}>
+                    Amount
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Totals Breakdown */}
-          <div style={{ 
-            borderTop: '2px dashed var(--border-light)', 
-            paddingTop: '12px', 
-            fontSize: '0.9rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-              <span>المجموع الفرعي:</span>
-              <span>{inv.subtotal || inv.total} ج.م</span>
-            </div>
-
-            {inv.discount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626' }}>
-                <span>الخصم الممنوح:</span>
-                <span>-{inv.discount} ج.م</span>
-              </div>
-            )}
-
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              fontSize: '1.2rem', 
-              fontWeight: '900', 
-              color: 'var(--mint-900)',
-              background: 'var(--mint-50)',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              marginTop: '4px',
-              border: '1px solid var(--border-mint)'
-            }}>
-              <span>الإجمالي الكلي:</span>
-              <span>{inv.total} ج.م</span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main)', marginTop: '4px' }}>
-              <span>المبلغ المدفوع:</span>
-              <strong style={{ color: '#16a34a' }}>{inv.paidAmount} ج.م</strong>
-            </div>
-
-            {inv.status === 'pending' ? (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                color: '#92400e', 
-                fontWeight: '700',
-                background: '#fef3c7',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid #fde68a',
-                marginTop: '6px'
-              }}>
-                <span>حالة التحصيل:</span>
-                <span>بانتظار التأكيد والاستلام عند التوصيل</span>
-              </div>
-            ) : inv.remainingDebt > 0 ? (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                color: '#dc2626', 
-                fontWeight: '700',
-                background: '#fee2e2',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                marginTop: '6px'
-              }}>
-                <span>المتبقي (مديونية مسجلة على العميل):</span>
-                <span>{inv.remainingDebt} ج.م</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontSize: '0.85rem', marginTop: '6px' }}>
-                <span>حالة الحساب:</span>
-                <span>مكتمل الدفع بالكامل ✓</span>
-              </div>
-            )}
+              </thead>
+              <tbody>
+                {(inv.items || []).map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #e5e3dc' }}>
+                    <td style={{ padding: '12px 16px', color: '#242721', fontWeight: '600' }}>
+                      <div>{item.name}</div>
+                      {(item.weightLabel || item.weightGram || item.grind) && (
+                        <div style={{ fontSize: '11px', color: '#73756e', marginTop: '3px', fontWeight: '500' }}>
+                          {item.weightLabel || (item.weightGram ? `${item.weightGram}g` : '')}
+                          {item.grind ? ` • ${item.grind}` : ''}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '12px 14px', color: '#444741' }}>
+                      {Number(item.qty).toFixed(2)} Units
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '12px 14px', color: '#444741' }}>
+                      {(Number(item.price) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', color: '#242721', fontWeight: '700' }}>
+                      {((Number(item.price) || 0) * (Number(item.qty) || 1)).toLocaleString('en-US', { minimumFractionDigits: 2 })} LE
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          {/* Dynamic Invoice QR Code & Verification */}
-          <div style={{ 
-            marginTop: '22px', 
-            borderTop: '1px solid var(--border-light)', 
-            paddingTop: '16px',
+          {/* Floating Total Bar attached to table right bottom */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '10px'
+            justifyContent: 'flex-end',
+            marginTop: '-1px'
           }}>
-            <InvoiceQrCode 
-              invoice={inv} 
-              contactInfo={contactInfo} 
-              size={115} 
-              showControls={true}
-            />
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '24px',
+              background: '#505342',
+              color: '#ffffff',
+              padding: '10px 22px',
+              borderRadius: '0 0 8px 8px',
+              fontWeight: '700',
+              fontSize: '14px',
+              minWidth: '240px'
+            }}>
+              <span>Total</span>
+              <span style={{ fontSize: '15px', fontWeight: '800' }}>
+                {(Number(inv.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} LE
+              </span>
+            </div>
+          </div>
 
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              فاتورة إلكترونية معتمدة - جمهورية مصر العربية 🇪🇬
+          {/* Subtotal & Discount breakdown if applicable */}
+          {((Number(inv.discount) || 0) > 0 || (inv.subtotal && inv.subtotal !== inv.total)) && (
+            <div style={{
+              position: 'relative',
+              zIndex: 1,
+              marginTop: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: '4px',
+              fontSize: '12px',
+              color: '#6e7069'
+            }}>
+              {inv.subtotal && (
+                <div>Subtotal: <strong>{(Number(inv.subtotal)).toLocaleString('en-US', { minimumFractionDigits: 2 })} LE</strong></div>
+              )}
+              {Number(inv.discount) > 0 && (
+                <div style={{ color: '#dc2626' }}>Discount: <strong>-{(Number(inv.discount)).toLocaleString('en-US', { minimumFractionDigits: 2 })} LE</strong></div>
+              )}
             </div>
-            <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--mint-700)', marginTop: '2px' }}>
-              نتمنى لك تجربة تذوق استثنائية مع كاتورا ☕
+          )}
+
+          {/* Transfer Receipt ScreenShot (if uploaded by online customer) */}
+          {inv.transferReceipt && (
+            <div style={{
+              position: 'relative',
+              zIndex: 1,
+              marginTop: '22px',
+              padding: '14px 18px',
+              background: '#faf9f6',
+              border: '1px dashed #c8c5bc',
+              borderRadius: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#505342' }}>
+                  📸 Attached Customer Transfer Proof (Screen Shot):
+                </span>
+                {inv.transferSenderPhone && (
+                  <span style={{ fontSize: '11px', color: '#047857', fontWeight: '700' }}>
+                    Sender: {inv.transferSenderPhone}
+                  </span>
+                )}
+              </div>
+              <a href={inv.transferReceipt} target="_blank" rel="noreferrer">
+                <img
+                  src={inv.transferReceipt}
+                  alt="Payment transfer proof"
+                  style={{ maxHeight: '160px', maxWidth: '100%', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0dfd7' }}
+                />
+              </a>
             </div>
+          )}
+
+          {/* Footer: Company & Bank Details (Left) + Verification QR Code (Right) */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            marginTop: '44px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: '24px'
+          }}>
+            {/* Bank and Company info */}
+            <div style={{ fontSize: '12.5px', color: '#444741', lineHeight: '1.9' }}>
+              <div><strong>Company Name :</strong> Caturra For Coffee Products</div>
+              <div><strong>Bank Name :</strong> Commercial International Bank (CIB)</div>
+              <div><strong>Bank Account No.:</strong> 100069514264 (EGP)</div>
+              <div><strong>TAX No.:</strong> {contactInfo?.taxNumber || '582-934-211'}</div>
+              {inv.customerAddress && <div><strong>Delivery Address :</strong> {inv.customerAddress}</div>}
+            </div>
+
+            {/* Electronic Invoice QR Code & Verification */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <InvoiceQrCode 
+                invoice={inv} 
+                contactInfo={contactInfo} 
+                size={94} 
+                showControls={false}
+              />
+              <div style={{ fontSize: '10.5px', color: '#7a7c75', textAlign: 'center' }}>
+                Scan to verify invoice
+              </div>
+              <div style={{ fontSize: '9.5px', color: '#9da098', fontWeight: '600' }}>
+                Official Electronic Invoice • Egypt
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Subtle Organic Wave Background */}
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '70px',
+            marginTop: '20px',
+            overflow: 'hidden',
+            pointerEvents: 'none'
+          }}>
+            <svg viewBox="0 0 1000 120" preserveAspectRatio="none" style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '60px' }}>
+              <path d="M0,70 Q250,20 500,55 Q750,90 1000,40 L1000,120 L0,120 Z" fill="#f4f3ef"/>
+            </svg>
           </div>
 
           {/* Bottom Actions Helper (Hidden on print) */}
-          <div className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             <button
               onClick={closeInvoiceModal}
               className="btn btn-outline"
-              style={{ flex: 1, padding: '10px', fontWeight: '700' }}
+              style={{ flex: 1, padding: '10px', fontWeight: '700', borderColor: '#dcdad1', color: '#505342' }}
             >
               إغلاق النافذة
             </button>
             <button
               onClick={handlePrint}
               className="btn btn-primary"
-              style={{ flex: 1, padding: '10px', fontWeight: '800' }}
+              style={{ flex: 1, padding: '10px', fontWeight: '800', background: '#505342', borderColor: '#505342' }}
             >
               <Printer size={16} />
-              <span>طباعة الإيصال</span>
+              <span>طباعة الإيصال (A4)</span>
             </button>
           </div>
         </div>

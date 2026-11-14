@@ -1,5 +1,22 @@
 {
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/caturra",
+      "permanent": true
+    },
+    {
+      "source": "/admin/",
+      "destination": "/caturra",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|invoices/).*)",
+      "destination": "/index.html"
+    }
   ]
 }

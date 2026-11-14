@@ -21,7 +21,8 @@ export const UsersPermissionsView = () => {
     currentUser,
     addUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    confirmDialog
   } = useApp();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,9 +34,11 @@ export const UsersPermissionsView = () => {
     { key: 'invoices', label: 'سجل الفواتير والطباعة والإرسال واتساب' },
     { key: 'customers', label: 'دليل العملاء وسداد المديونيات' },
     { key: 'purchases', label: 'إدخال فواتير المشتريات والتوريد' },
+    { key: 'suppliers', label: 'إدارة الموردين والمديونيات وكشوف الحساب' },
     { key: 'sales', label: 'تقارير المبيعات والتنبيهات الذكية والعروض' },
     { key: 'warehouse', label: 'إدارة المخزن وتسجيل الهالك والصلاحيات' },
     { key: 'accounts', label: 'الحسابات والمصروفات وصافي الأرباح' },
+    { key: 'treasury', label: 'الخزينة ومحافظ إنستاباي والتحويلات' },
     { key: 'users', label: 'إدارة المستخدمين والصلاحيات' }
   ];
 
@@ -44,7 +47,7 @@ export const UsersPermissionsView = () => {
     fullName: '',
     username: '',
     password: '',
-    role: 'cashier',
+    role: 'كاشير مبيعات',
     phone: '',
     email: '',
     status: 'active',
@@ -54,9 +57,11 @@ export const UsersPermissionsView = () => {
       invoices: true,
       customers: true,
       purchases: false,
+      suppliers: false,
       sales: false,
       warehouse: false,
       accounts: false,
+      treasury: false,
       users: false
     }
   });
@@ -67,7 +72,7 @@ export const UsersPermissionsView = () => {
       fullName: '',
       username: '',
       password: '',
-      role: 'cashier',
+      role: 'كاشير مبيعات',
       phone: '',
       email: '',
       status: 'active',
@@ -88,11 +93,12 @@ export const UsersPermissionsView = () => {
 
   const handleOpenEdit = (user) => {
     setEditingUser(user);
+    const resolvedRole = user.roleLabel || (user.role === 'manager' ? 'مدير فرع / عمليات' : user.role === 'cashier' ? 'كاشير مبيعات' : user.role === 'inventory' ? 'أمين مستودع ومخزون' : user.role) || '';
     setFormData({
       fullName: user.fullName,
       username: user.username,
-      password: user.password || '',
-      role: user.role,
+      password: '',
+      role: resolvedRole,
       phone: user.phone || '',
       email: user.email || '',
       status: user.status || 'active',
@@ -118,22 +124,35 @@ export const UsersPermissionsView = () => {
       return;
     }
 
-    if (editingUser) {
-      const finalPassword = (formData.password && formData.password.trim() !== '' && formData.password !== '••••••••')
-        ? formData.password.trim()
-        : (editingUser.password || '123');
+    if (!editingUser && (!formData.password || formData.password.trim().length < 4)) {
+      alert('يرجى إدخال كلمة مرور للمستخدم الجديد (4 خانات على الأقل)');
+      return;
+    }
 
-      updateUser(editingUser.id, {
+    const assignedRole = formData.role?.trim() || 'كاشير مبيعات';
+
+    if (editingUser) {
+      const updatePayload = {
         ...formData,
-        username: formData.username.trim(),
-        password: finalPassword
-      });
+        role: assignedRole,
+        roleLabel: assignedRole,
+        username: formData.username.trim()
+      };
+      if (formData.password && formData.password.trim() !== '' && formData.password !== '••••••••') {
+        updatePayload.password = formData.password.trim();
+      } else {
+        delete updatePayload.password;
+      }
+
+      updateUser(editingUser.id, updatePayload);
       alert('تم تحديث بيانات وصلاحيات المستخدم بنجاح!');
     } else {
       addUser({
         ...formData,
+        role: assignedRole,
+        roleLabel: assignedRole,
         username: formData.username.trim(),
-        password: formData.password ? formData.password.trim() : '123'
+        password: formData.password.trim()
       });
       alert('تم إضافة المستخدم وتعيين صلاحياته بنجاح!');
     }
@@ -233,7 +252,7 @@ export const UsersPermissionsView = () => {
                   </td>
                   <td>
                     <span className="badge badge-mint" style={{ fontSize: '0.78rem' }}>
-                      {u.isOwner ? 'مالك المشروع' : u.role === 'manager' ? 'مدير فرع' : u.role === 'cashier' ? 'كاشير مبيعات' : 'أمين مستودع'}
+                      {u.isOwner ? '👑 مالك المشروع' : (u.roleLabel || (u.role === 'manager' ? 'مدير فرع' : u.role === 'cashier' ? 'كاشير مبيعات' : u.role === 'inventory' ? 'أمين مستودع' : u.role) || 'موظف')}
                     </span>
                   </td>
                   <td dir="ltr" style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
@@ -260,11 +279,19 @@ export const UsersPermissionsView = () => {
                         <span>تعديل والصلاحيات</span>
                       </button>
 
-                      {/* Delete button (Disabled for Owner) */}
-                      {!u.isOwner ? (
+                      {/* Delete button (Disabled ONLY if it's the sole remaining owner) */}
+                      {!(u.isOwner && users.filter(usr => usr.isOwner).length <= 1) ? (
                         <button
-                          onClick={() => {
-                            if (window.confirm(`هل أنت متأكد من حذف حساب "${u.fullName}"؟`)) {
+                          onClick={async () => {
+                            const ok = await confirmDialog({
+                              title: 'حذف حساب المستخدم',
+                              message: `هل أنت متأكد من حذف حساب "${u.fullName}"؟`,
+                              details: `اسم الدخول: @${u.username} • لن يتمكن هذا المستخدم من الدخول للنظام بعد الحذف.`,
+                              confirmText: 'نعم، حذف الحساب',
+                              cancelText: 'إلغاء',
+                              type: 'danger'
+                            });
+                            if (ok) {
                               deleteUser(u.id);
                             }
                           }}
@@ -286,7 +313,7 @@ export const UsersPermissionsView = () => {
                             border: '1px solid #e2e8f0',
                             cursor: 'not-allowed'
                           }}
-                          title="حساب المالك محمي ولا يمكن حذفه"
+                          title="حساب المالك الأخير محمي للحفاظ على أمان النظام"
                         >
                           محمي
                         </button>
@@ -356,10 +383,10 @@ export const UsersPermissionsView = () => {
               {/* Password & Role */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">كلمة المرور</label>
+                  <label className="form-label">{editingUser ? 'تغيير كلمة المرور' : 'كلمة المرور *'}</label>
                   <input
-                    type="text"
-                    placeholder={editingUser ? "اتركها فارغة للإبقاء عليها أو اكتب كلمة جديدة" : "123"}
+                    type="password"
+                    placeholder={editingUser ? "اتركها فارغة للإبقاء عليها دون تغيير" : "كلمة مرور قوية (4 خانات فأكثر)"}
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                     className="form-input"
@@ -367,18 +394,57 @@ export const UsersPermissionsView = () => {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">الدور الوظيفي *</label>
-                  <select
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ margin: 0 }}>الدور الوظيفي *</label>
+                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 'bold' }}>
+                      ✍️ اكتب أي مسمى بحرية
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    list="role-suggestions"
                     disabled={editingUser?.isOwner}
+                    placeholder="اكتب الدور الوظيفي (مثال: كاشير، باريستا، محاسب...)"
                     value={formData.role}
                     onChange={e => setFormData({ ...formData, role: e.target.value })}
-                    className="form-select"
-                  >
-                    {editingUser?.isOwner && <option value="owner">المالك الأساسي (Owner)</option>}
-                    <option value="manager">مدير فرع / عمليات</option>
-                    <option value="cashier">كاشير مبيعات</option>
-                    <option value="inventory">أمين مستودع ومخزون</option>
-                  </select>
+                    className="form-input"
+                    autoComplete="off"
+                  />
+                  <datalist id="role-suggestions">
+                    {editingUser?.isOwner && <option value="المالك الأساسي (Owner)" />}
+                    <option value="كاشير مبيعات" />
+                    <option value="مدير فرع / عمليات" />
+                    <option value="باريستا متخصص" />
+                    <option value="أمين مستودع ومخزون" />
+                    <option value="محاسب مالي" />
+                    <option value="مشرف صالة وخدمة" />
+                    <option value="مسؤول مشتريات" />
+                  </datalist>
+
+                  {/* اقتراحات سريعة بنقرة واحدة */}
+                  {!editingUser?.isOwner && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px' }}>
+                      {['كاشير مبيعات', 'مدير فرع', 'باريستا', 'أمين مستودع', 'محاسب'].map((sug) => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, role: sug })}
+                          style={{
+                            background: formData.role === sug ? 'var(--mint-600, #059669)' : 'rgba(255,255,255,0.06)',
+                            color: formData.role === sug ? '#ffffff' : 'var(--text-muted)',
+                            border: `1px solid ${formData.role === sug ? 'var(--mint-500, #10b981)' : 'rgba(255,255,255,0.12)'}`,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.7rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

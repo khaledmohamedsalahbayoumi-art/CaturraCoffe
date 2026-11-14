@@ -98,9 +98,47 @@ export function convertFileToBase64(file) {
   });
 }
 
+export function parseDriveLink(url) {
+  if (!url || typeof url !== 'string') return null;
+  const cleanUrl = url.trim();
+
+  // Match file/d/ID or document/d/ID or open?id=ID or uc?id=ID
+  const fileIdMatch = cleanUrl.match(/\/(?:file\/d|document\/d|presentation\/d|spreadsheets\/d)\/([a-zA-Z0-9_-]+)/) ||
+                      cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+  if (fileIdMatch && fileIdMatch[1]) {
+    const fileId = fileIdMatch[1];
+    return {
+      isDrive: true,
+      fileId,
+      previewUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+      viewUrl: `https://drive.google.com/file/d/${fileId}/view?usp=sharing`,
+      downloadUrl: `https://drive.google.com/uc?export=download&id=${fileId}`
+    };
+  }
+
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('docs.google.com')) {
+    return {
+      isDrive: true,
+      previewUrl: cleanUrl,
+      viewUrl: cleanUrl,
+      downloadUrl: cleanUrl
+    };
+  }
+
+  return null;
+}
+
 export function createPdfBlobUrl(pdf) {
   if (!pdf) return null;
+  if (pdf.embedUrl) {
+    return pdf.embedUrl;
+  }
   if (pdf.url && !pdf.data) {
+    const driveInfo = parseDriveLink(pdf.url);
+    if (driveInfo?.previewUrl) {
+      return driveInfo.previewUrl;
+    }
     return pdf.url;
   }
   if (!pdf.data) return null;
@@ -123,7 +161,9 @@ export function createPdfBlobUrl(pdf) {
 export function openPdfInNewTab(pdf) {
   if (!pdf) return;
   if (pdf.url && !pdf.data) {
-    window.open(pdf.url, '_blank', 'noopener,noreferrer');
+    const driveInfo = parseDriveLink(pdf.url);
+    const targetUrl = driveInfo?.viewUrl || pdf.url;
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
     return;
   }
   const blobUrl = createPdfBlobUrl(pdf);
@@ -138,6 +178,17 @@ export function openPdfInNewTab(pdf) {
 
 export function downloadPdfFile(pdf) {
   if (!pdf) return;
+  
+  if (pdf.isDrive || (pdf.url && (pdf.url.includes('drive.google.com') || pdf.url.includes('docs.google.com')))) {
+    const driveInfo = parseDriveLink(pdf.url);
+    if (driveInfo?.fileId) {
+      window.open(`https://drive.google.com/uc?export=download&id=${driveInfo.fileId}`, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    window.open(pdf.url, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
   const fileName = pdf.name || 'caturra-academy-guide.pdf';
   let blobUrl = null;
   let shouldRevoke = false;

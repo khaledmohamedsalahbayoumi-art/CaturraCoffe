@@ -1,46 +1,71 @@
 // Notification Engine for Caturra Specialty Coffee
 // Supports: Web Audio Chime, Browser Web Push, Mobile Vibration, and Telegram Bot Webhooks
 
-// 1. Web Audio Chime (Synthesized Dual-Tone Melodic Chime)
+// 1. Web Audio Chime (Synthesized Dual-Tone Melodic Chime with Auto-Resume)
 export const playNotificationSound = () => {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
 
-    // Play tone 1 (high crystal ding)
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    // Play tone 1 (high crystal chime)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+    osc1.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
+    osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12); // A5
 
-    gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    gain1.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
 
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
     osc1.start();
-    osc1.stop(ctx.currentTime + 0.6);
+    osc1.stop(ctx.currentTime + 0.5);
 
-    // Play tone 2 (warm lower confirmation harmonic)
+    // Play tone 2 (harmonic bell)
     setTimeout(() => {
       try {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
         const osc2 = ctx.createOscillator();
         const gain2 = ctx.createGain();
         osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(1174.66, ctx.currentTime); // D6
-        gain2.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+        osc2.frequency.setValueAtTime(1318.51, ctx.currentTime); // E6
+        gain2.gain.setValueAtTime(0.28, ctx.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
 
         osc2.connect(gain2);
         gain2.connect(ctx.destination);
         osc2.start();
-        osc2.stop(ctx.currentTime + 0.7);
+        osc2.stop(ctx.currentTime + 0.6);
       } catch (e) {
-        // ignore audio context edge cases
+        // ignore
       }
-    }, 120);
+    }, 110);
+
+    // Play tone 3 (high celebratory ring)
+    setTimeout(() => {
+      try {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        const osc3 = ctx.createOscillator();
+        const gain3 = ctx.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(1760, ctx.currentTime); // A6
+        gain3.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain3.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+
+        osc3.connect(gain3);
+        gain3.connect(ctx.destination);
+        osc3.start();
+        osc3.stop(ctx.currentTime + 0.7);
+      } catch (e) {
+        // ignore
+      }
+    }, 220);
 
   } catch (err) {
     console.warn('AudioContext not allowed or not supported:', err);
@@ -193,7 +218,7 @@ export const dispatchStoreAlert = async ({
     if (details) {
       tgMessage += `\n\n📋 *التفاصيل:*\n${details}`;
     }
-    tgMessage += `\n\n⏰ *التوقيت:* ${new Date().toLocaleTimeString('ar-EG')}`;
+    tgMessage += `\n\n⏰ *التوقيت:* ${new Date().toLocaleTimeString('ar-EG-u-nu-latn')}`;
     sendTelegramAlert(tgMessage);
   }
 };

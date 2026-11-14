@@ -1,0 +1,75 @@
+Created At: 2026-10-14T01:55:26+03:00
+Completed At: 2026-10-14T01:55:27+03:00
+File Path: `file:///c:/Users/ElSakka%20Group/OneDrive/Desktop/work/caturra/src/views/ClientStorefront.jsx`
+Total Lines: 6400
+Total Bytes: 288368
+Showing lines 1125 to 1355
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1125:         
+1126:         {/* ======================================================== */}
+1127:         {/* 1. HERO BANNER SECTION (فيديو التحميص مع الشعار الفلسفي) */}
+1128:         {/* ======================================================== */}
+1129:         <section
+1130:           className="home-hero-section"
+1131:           style={{
+1132:             position: 'relative',
+1133:             width: '100%',
+1134:             minHeight: '88vh',
+1135:             display: 'flex',
+1136:             flexDirection: 'column',
+1137:             justifyContent: 'center',
+1138:             alignItems: 'center',
+1139:             overflow: 'hidden',
+1140:             backgroundColor: '#190a05',
+1141:             color: '#f5ebe1',
+1142:             padding: '120px 20px 60px'
+1143:           }}
+1144:         >
+1145:           {/* Ambient Video Background */}
+1146:           <video
+1147:             autoPlay
+1148:             loop
+1149:             muted
+1150:             playsInline
+1151:             poster="/caturra_hero.jpg"
+1152:             style={{
+1153:               position: 'absolute',
+1154:               top: 0,
+1155:               left: 0,
+1156:               width: '100%',
+1157:               height: '100%',
+1158:               objectFit: 'cover',
+1159:               zIndex: 0,
+1160:               pointerEvents: 'none',
+1161:               filter: 'brightness(0.75) contrast(1.1)'
+1162:             }}
+1163:           >
+1164:             <source src="/caturra_hero_video.mp4" type="video/mp4" />
+116
+<truncated 8036 bytes>
+ '32px',
+1332:                 paddingTop: '24px',
+1333:                 borderTop: '1px solid rgba(212, 163, 115, 0.25)'
+1334:               }}
+1335:             >
+1336:               {[
+1337:                 { icon: <Award size={22} color="#fbbf24" />, text: language === 'en' ? '100% Single Origin & Specialty' : 'بن مختص 100% بدون إضافات' },
+1338:                 { icon: <Scale size={22} color="#fbbf24" />, text: language === 'en' ? 'Custom Grams Weight Options' : 'خيارات وزن بالجرام مرنة' },
+1339:                 { icon: <Coffee size={22} color="#fbbf24" />, text: language === 'en' ? 'Fresh Custom Grind for Your Tool' : 'طحن طازج مخصص لأداتك' },
+1340:                 { icon: <Truck size={22} color="#fbbf24" />, text: language === 'en' ? 'Express Shipping in 24-48 Hours' : 'شحن سريع لكافة المحافظات' }
+1341:               ].map((item, idx) => (
+1342:                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+1343:                   <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(217, 119, 6, 0.2)', border: '1px solid rgba(217, 119, 6, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+1344:                     {item.icon}
+1345:                   </div>
+1346:                   <span style={{ fontSize: '0.92rem', fontWeight: '800', color: '#f5ebe1' }}>{item.text}</span>
+1347:                 </div>
+1348:               ))}
+1349:             </div>
+1350:           </div>
+1351:         </section>
+1352: 
+1353:         {/* ======================================================== */}
+1354:         {/* 2. SECTION: قهوة تناسب طريقتك (Coffee By Brewing Method) */}
+1355:         {/* ======================================================== */}
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
