@@ -240,6 +240,17 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Save to localStorage
+  const saveState = (key, value) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`caturra_eg_${key}`, JSON.stringify(value));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // Bilingual Language Support (Arabic & English)
   const [language, setLanguageState] = useState(() => {
     try {
