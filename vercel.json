@@ -15,7 +15,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|invoices/).*)",
+      "source": "/((?!api/|invoices/|.*\\.[\\w]+$).*)",
       "destination": "/index.html"
     }
   ]
