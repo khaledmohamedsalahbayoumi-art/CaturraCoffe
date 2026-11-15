@@ -37,6 +37,19 @@ import {
   formatPrice
 } from '../utils/translations';
 
+// ⚡ Zero-latency cross-tab live synchronization via BroadcastChannel
+const liveSyncChannel = typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined'
+  ? new window.BroadcastChannel('caturra_live_sync')
+  : null;
+
+const broadcastLiveSync = (key, payload) => {
+  if (liveSyncChannel) {
+    try {
+      liveSyncChannel.postMessage({ type: 'LIVE_SYNC_UPDATE', key, payload, timestamp: Date.now() });
+    } catch { }
+  }
+};
+
 // URL Routing helper to distinguish between Customer Storefront (/) and Admin ERP Dashboard (/caturra or /admin)
 const getRouteFromUrl = () => {
   if (typeof window === 'undefined') return 'client';
@@ -1336,71 +1349,152 @@ export const AppProvider = ({ children }) => {
     }
   }, [b2bRequests]);
 
-  // Synchronize B2B requests across different browser windows / tabs in real-time
+  // 🌟 UNIVERSAL ZERO-LATENCY REAL-TIME AUTO SYNC (CROSS-TAB & CROSS-DEVICE) 🌟
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handleStorageChange = (e) => {
-      if (e.key === 'caturra_eg_b2b_requests' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setB2bRequests(parsed);
-          }
-        } catch (_) { }
+
+    // 1. Instant Cross-Tab Sync via BroadcastChannel (0ms latency)
+    const handleBroadcast = (event) => {
+      const { type, key, payload } = event.data || {};
+      if (type !== 'LIVE_SYNC_UPDATE' || !payload) return;
+
+      if (key === 'contactInfo') {
+        setContactInfo(prev => ({ ...prev, ...payload }));
+      } else if (key === 'products' && Array.isArray(payload)) {
+        setProducts(payload);
+      } else if (key === 'batches' && Array.isArray(payload)) {
+        setBatches(payload);
+      } else if (key === 'categories' && Array.isArray(payload)) {
+        setCategories(payload);
+      } else if (key === 'brewingGuides' && typeof payload === 'object') {
+        setBrewingGuides(payload);
+      } else if (key === 'b2bRequests' && Array.isArray(payload)) {
+        setB2bRequests(payload);
+      } else if (key === 'b2bStandingOrders' && Array.isArray(payload)) {
+        setB2bStandingOrders(payload);
+      } else if (key === 'invoices' && Array.isArray(payload)) {
+        setInvoices(payload);
       }
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('caturra_eg_b2b_standing_orders', JSON.stringify(b2bStandingOrders));
-    } catch (e) {
-      console.warn('Failed to save b2b_standing_orders to localStorage', e);
+    if (liveSyncChannel) {
+      liveSyncChannel.addEventListener('message', handleBroadcast);
     }
-  }, [b2bStandingOrders]);
 
-  // Synchronize B2B Standing Orders across tabs
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // 2. Storage event listener (fallback when another tab updates localStorage)
     const handleStorageChange = (e) => {
-      if (e.key === 'caturra_eg_b2b_standing_orders' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setB2bStandingOrders(parsed);
-          }
-        } catch (_) { }
-      }
+      if (!e.newValue) return;
+      try {
+        const val = JSON.parse(e.newValue);
+        if (e.key === 'caturra_eg_contact_info' && val && typeof val === 'object') {
+          setContactInfo(prev => ({ ...prev, ...val }));
+        } else if (e.key === 'caturra_eg_products' && Array.isArray(val)) {
+          setProducts(val);
+        } else if (e.key === 'caturra_eg_batches' && Array.isArray(val)) {
+          setBatches(val);
+        } else if (e.key === 'caturra_eg_categories' && Array.isArray(val)) {
+          setCategories(val);
+        } else if (e.key === 'caturra_eg_brewing_guides' && typeof val === 'object') {
+          setBrewingGuides(val);
+        } else if (e.key === 'caturra_eg_b2b_requests' && Array.isArray(val)) {
+          setB2bRequests(val);
+        } else if (e.key === 'caturra_eg_b2b_standing_orders' && Array.isArray(val)) {
+          setB2bStandingOrders(val);
+        }
+      } catch (_) { }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('caturra_eg_brewing_guides', JSON.stringify(brewingGuides));
-    } catch (e) {
-      console.warn('Failed to save brewing_guides to localStorage', e);
-    }
-  }, [brewingGuides]);
+    // 3. Cloud Auto-Sync Heartbeat (Cross-Device: checks every 4 seconds + on tab focus)
+    let lastKnownVersion = null;
+    let isPolling = false;
 
-  // Synchronize Brewing Guides across tabs
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleStorageChange = (e) => {
-      if (e.key === 'caturra_eg_brewing_guides' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed && typeof parsed === 'object') {
-            setBrewingGuides(parsed);
-          }
-        } catch (_) { }
+    const pollServerState = async () => {
+      if (isPolling) return;
+      isPolling = true;
+      try {
+        const res = await fetch('/api/sync');
+        if (!res.ok) return;
+        const serverData = await res.json();
+        if (!serverData || typeof serverData !== 'object') return;
+
+        const serverVersion = serverData._version || serverData.updated_at || '';
+        if (serverVersion && lastKnownVersion && lastKnownVersion === serverVersion) {
+          return;
+        }
+        lastKnownVersion = serverVersion || Date.now();
+
+        // 1. Sync contactInfo / story
+        if (serverData.contactInfo && typeof serverData.contactInfo === 'object') {
+          setContactInfo(prev => {
+            const prevStr = JSON.stringify(prev || {});
+            const nextStr = JSON.stringify(serverData.contactInfo);
+            if (prevStr !== nextStr) {
+              try { localStorage.setItem('caturra_eg_contact_info', nextStr); } catch { }
+              return { ...prev, ...serverData.contactInfo };
+            }
+            return prev;
+          });
+        }
+
+        // 2. Sync products
+        if (Array.isArray(serverData.products) && serverData.products.length > 0) {
+          setProducts(prev => {
+            if (prev.length !== serverData.products.length || JSON.stringify(prev) !== JSON.stringify(serverData.products)) {
+              try { localStorage.setItem('caturra_eg_products', JSON.stringify(serverData.products)); } catch { }
+              return serverData.products;
+            }
+            return prev;
+          });
+        }
+
+        // 3. Sync batches
+        if (Array.isArray(serverData.batches)) {
+          setBatches(prev => {
+            if (prev.length !== serverData.batches.length || JSON.stringify(prev) !== JSON.stringify(serverData.batches)) {
+              try { localStorage.setItem('caturra_eg_batches', JSON.stringify(serverData.batches)); } catch { }
+              return serverData.batches;
+            }
+            return prev;
+          });
+        }
+
+        // 4. Sync categories
+        if (Array.isArray(serverData.categories) && serverData.categories.length > 0) {
+          setCategories(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(serverData.categories)) {
+              try { localStorage.setItem('caturra_eg_categories', JSON.stringify(serverData.categories)); } catch { }
+              return serverData.categories;
+            }
+            return prev;
+          });
+        }
+      } catch {
+        // network or offline
+      } finally {
+        isPolling = false;
       }
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    const pollTimer = setInterval(pollServerState, 4000);
+
+    const handleVisibilityOrFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        pollServerState();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
+    return () => {
+      if (liveSyncChannel) {
+        liveSyncChannel.removeEventListener('message', handleBroadcast);
+      }
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      clearInterval(pollTimer);
+    };
   }, []);
 
   // Hydrate large PDFs from IndexedDB if stripped from localStorage
@@ -1678,7 +1772,11 @@ export const AppProvider = ({ children }) => {
       ...prodData
     };
 
-    setProducts(prev => [newProduct, ...prev]);
+    setProducts(prev => {
+      const next = [newProduct, ...prev];
+      broadcastLiveSync('products', next);
+      return next;
+    });
 
     // If initial stock provided, add an initial batch in warehouse
     if (newProduct.stock > 0) {
@@ -1732,6 +1830,7 @@ export const AppProvider = ({ children }) => {
       try {
         localStorage.setItem('caturra_eg_products', JSON.stringify(next));
       } catch { }
+      broadcastLiveSync('products', next);
       return next;
     });
 
@@ -1759,6 +1858,8 @@ export const AppProvider = ({ children }) => {
     skipNextProductSyncRef.current = true;
     setProducts(nextProducts);
     setBatches(nextBatches);
+    broadcastLiveSync('products', nextProducts);
+    broadcastLiveSync('batches', nextBatches);
     try {
       localStorage.setItem('caturra_eg_products', JSON.stringify(nextProducts));
       localStorage.setItem('caturra_eg_batches', JSON.stringify(nextBatches));
@@ -1779,7 +1880,11 @@ export const AppProvider = ({ children }) => {
   const addCategory = (name) => {
     const id = `cat-${Date.now()}`;
     const newCat = { id, name };
-    setCategories(prev => [...prev, newCat]);
+    setCategories(prev => {
+      const next = [...prev, newCat];
+      broadcastLiveSync('categories', next);
+      return next;
+    });
     return newCat;
   };
 
@@ -3674,6 +3779,7 @@ export const AppProvider = ({ children }) => {
       try {
         localStorage.setItem('caturra_eg_contact_info', JSON.stringify(updated));
       } catch { }
+      broadcastLiveSync('contactInfo', updated);
       if (typeof fetch !== 'undefined') {
         fetch('/api/sync', {
           method: 'POST',
@@ -4470,13 +4576,17 @@ export const AppProvider = ({ children }) => {
 
   // Brewing Recipes & Grind Guides Management
   const updateBrewingGuide = useCallback((guideId, updatedGuide) => {
-    setBrewingGuides(prev => ({
-      ...prev,
-      [guideId]: {
-        ...(prev[guideId] || {}),
-        ...updatedGuide
-      }
-    }));
+    setBrewingGuides(prev => {
+      const next = {
+        ...prev,
+        [guideId]: {
+          ...(prev[guideId] || {}),
+          ...updatedGuide
+        }
+      };
+      broadcastLiveSync('brewingGuides', next);
+      return next;
+    });
   }, []);
 
   const resetBrewingGuides = useCallback(() => {

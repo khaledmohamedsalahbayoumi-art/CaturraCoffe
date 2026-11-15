@@ -135,7 +135,9 @@ export default async function handler(req, res) {
         ...incoming,
         products: mergedProducts,
         invoices: mergedInvoices,
-        users: mergedUsers
+        users: mergedUsers,
+        _version: Date.now(),
+        updated_at: new Date().toISOString()
       };
 
       if (supabase) {
