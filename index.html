@@ -81,10 +81,17 @@
     }
     </script>
 
-    <!-- Google Fonts: Unified Cairo (Arabic 400, 600, 700, 900) + Outfit (Latin 500, 700) -->
+    <!-- Preload Hero LCP Image for Blazing 0ms Mobile Rendering -->
+    <link rel="preload" as="image" href="/caturra_b2b_hero.jpg" fetchpriority="high" />
+
+    <!-- Google Fonts: Unified Cairo (Arabic 400, 600, 700, 900) + Outfit (Latin 500, 700) Non-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@500;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@500;700&display=swap">
+    </noscript>
   </head>
   <body>
     <noscript>

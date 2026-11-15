@@ -276,6 +276,23 @@ function serverDbPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), serverDbPlugin()],
+  build: {
+    target: 'es2020',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('lucide-react')) return 'vendor-lucide';
+            if (id.includes('canvas-confetti')) return 'vendor-confetti';
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) return 'vendor-react';
+            return 'vendor-libs';
+          }
+        }
+      }
+    }
+  },
   server: {
     host: true,
     port: 5174,
