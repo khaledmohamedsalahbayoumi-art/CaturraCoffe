@@ -532,7 +532,7 @@ const NOTE_GROUPS = [
   ['فواكه', ['Blueberry', 'Strawberry', 'Raspberry', 'Blackcurrant', 'Berries', 'Cherry', 'Dark Cherry', 'Red Apple', 'Green Apple', 'Peach', 'Apricot', 'Nectarine', 'Mango', 'Pineapple', 'Ripe Banana', 'Cantaloupe', 'Orange', 'Lemon', 'Grapefruit', 'Citrus', 'Citrus Peel', 'Bergamot', 'Dates', 'Raisin']],
   ['زهور وشاي', ['Floral', 'Jasmine', 'Rose', 'Black Tea', 'Lemon Tea', 'Herbal']],
   ['حلاوة', ['Brown Sugar', 'Raw Sugar', 'Burnt Sugar', 'Caramel', 'Honey', 'Maple', 'Molasses', 'High Sweetness', 'Cream']],
-  ['شوكولاتة ومكسرات', ['Chocolate', 'Milk Chocolate', 'Dark Chocolate', 'Nutty Chocolate', 'Cocoa', 'Dark Cocoa', 'Hazelnut', 'Almond', 'Nuts', 'Nutty']],
+  ['شوكولاتة ومكسرات', ['Chocolate', 'Milk Chocolate', 'White Chocolate', 'Dark Chocolate', 'Nutty Chocolate', 'Cocoa', 'Dark Cocoa', 'Hazelnut', 'Almond', 'Nuts', 'Nutty']],
   ['توابل وأخرى', ['Cardamom', 'Cinnamon', 'Spices', 'Rice', 'Smoky', 'Earthy', 'Bold', 'Rich', 'Aromatic', 'Balanced', 'Full-bodied']]
 ];
 
@@ -783,7 +783,7 @@ const BODIES = ['Light', 'Medium', 'Full'];
 const AR_BODY = { 'Light': 'خفيف', 'Medium': 'متوسط', 'Full': 'كامل' };
 const AR_NOTE = { 'Blueberry': 'توت أزرق', 'Strawberry': 'فراولة', 'Raspberry': 'توت العليق', 'Blackcurrant': 'كشمش أسود', 'Berries': 'توت', 'Cherry': 'كرز', 'Dark Cherry': 'كرز داكن', 'Red Apple': 'تفاح أحمر', 'Green Apple': 'تفاح أخضر', 'Peach': 'خوخ', 'Apricot': 'مشمش', 'Nectarine': 'نكتارين', 'Mango': 'مانجو', 'Pineapple': 'أناناس', 'Ripe Banana': 'موز ناضج', 'Cantaloupe': 'شمام', 'Orange': 'برتقال', 'Lemon': 'ليمون', 'Grapefruit': 'جريب فروت', 'Citrus': 'حمضيات', 'Citrus Peel': 'قشر حمضيات', 'Mild Citrus': 'حمضيات خفيفة', 'Bergamot': 'برغموت', 'Dates': 'تمر', 'Raisin': 'زبيب', 'Winey': 'نبيذي',
   'Floral': 'أزهار', 'Jasmine': 'ياسمين', 'Rose': 'ورد', 'Black Tea': 'شاي أسود', 'Lemon Tea': 'شاي بالليمون', 'Herbal': 'أعشاب', 'Brown Sugar': 'سكر بني', 'Raw Sugar': 'سكر خام', 'Burnt Sugar': 'سكر محروق', 'Caramel': 'كراميل', 'Honey': 'عسل', 'Maple': 'قيقب', 'Molasses': 'دبس', 'High Sweetness': 'حلاوة عالية', 'Sweet': 'حلو', 'Smooth': 'ناعم', 'Cream': 'كريمة',
-  'Chocolate': 'شوكولاتة', 'Milk Chocolate': 'شوكولاتة بالحليب', 'Dark Chocolate': 'شوكولاتة داكنة', 'Nutty Chocolate': 'شوكولاتة بالمكسرات', 'Cocoa': 'كاكاو', 'Dark Cocoa': 'كاكاو داكن', 'Hazelnut': 'بندق', 'Almond': 'لوز', 'Nuts': 'مكسرات', 'Nutty': 'مكسرات',
+  'Chocolate': 'شوكولاتة', 'Milk Chocolate': 'شوكولاتة بالحليب', 'White Chocolate': 'شوكولاتة بيضاء', 'white chocolate': 'شوكولاتة بيضاء', 'White chocolate': 'شوكولاتة بيضاء', 'Dark Chocolate': 'شوكولاتة داكنة', 'Nutty Chocolate': 'شوكولاتة بالمكسرات', 'Cocoa': 'كاكاو', 'Dark Cocoa': 'كاكاو داكن', 'Hazelnut': 'بندق', 'Almond': 'لوز', 'Nuts': 'مكسرات', 'Nutty': 'مكسرات',
   'Cardamom': 'هيل', 'Cinnamon': 'قرفة', 'Spices': 'توابل', 'Spice': 'توابل', 'Rice': 'أرز', 'Smoky': 'مدخّن', 'Earthy': 'ترابي', 'Bold': 'قوي', 'Rich': 'غني', 'Aromatic': 'عطري', 'Balanced': 'متوازن', 'Full-bodied': 'ثقيل القوام' };
 /* typical (editable) defaults per origin */
 const ACIDITY = { ethiopia: 4.5, kenya: 5, colombia: 3.75, costarica: 4, guatemala: 3.75, panama: 4.25, rwanda: 4, brazil: 2.5, jamaica: 3, indonesia: 2, peru: 3.25, yemen: 3.25, elsalvador: 3.5, honduras: 3.5, nicaragua: 3.5, mexico: 3.25, india: 2.5, vietnam: 2.5, tanzania: 4, uganda: 3.5 };
@@ -820,8 +820,8 @@ function deriveTexts(st) {
       { en: 'Roast', ar: 'التحميص', ve: c.roast, va: AR_ROAST[c.roast] || c.roast },
       { en: 'Body', ar: 'القوام', ve: c.body, va: AR_BODY[c.body] || c.body }];
   } else {
-    const b = st.blend || {}; out.nameEn = b.name || 'Coffee'; out.nameAr = b.nameAr || ''; out.lineEn = b.sub || b.subEn || ''; out.lineAr = b.subAr || '';
-    out.notesEn = c.notes.join(' · '); out.notesAr = trNotes(c.notes).join(' · ');
+    const b = st.blend || {}; out.nameEn = (st.front && st.front.nameEn) || b.name || 'Coffee'; out.nameAr = (st.front && st.front.nameAr) || b.nameAr || ''; out.lineEn = b.sub || b.subEn || ''; out.lineAr = b.subAr || '';
+    out.notesEn = (c.notes || []).join(' · '); out.notesAr = trNotes(c.notes || []).join(' · ');
     out.gaugeEn = 'Roast'; out.gaugeAr = 'التحميص'; out.gaugeVal = c.roast; out.gaugeOf = '';
     out.rows = [
       { en: 'Grind', ar: 'الطحن', ve: c.grind, va: AR_GRIND[c.grind] || c.grind },
@@ -893,20 +893,57 @@ const LG = (() => {
     return fmt === 'wide' ? { layout: 'landscape', widthMM: 195, heightMM: 150, textureOpacity: 0.8, weight: w } : { layout: 'portrait', widthMM: f.widthMM, heightMM: f.heightMM, textureOpacity: 0.6, weight: w }; };
   const colors = S => { const o = {}; ['bagTop', 'bagColor', 'bagBottom', 'panelTop', 'panelBottom', 'inkColor', 'cherryColor'].forEach(k => { if (S.front[k]) o[k] = S.front[k]; }); return o; };
   const blendOf = S => (BLENDS.find(b => S.blend && b.id === S.blend.id)) || {};
-  function front(S, fmt) { const f = S.front, c = S.crop, g = geo(S, fmt); let d;
-    if (f.variant === 'blend') { const b = blendOf(S), nt = pack(b.notes);
-      d = { ...BASE, ...g, variant: 'blend', profileName: b.name, profileSub: b.sub, rows: [{ icon: 'flame', label: 'ROAST', value: b.roast }, { icon: 'grain', label: 'GRIND', value: b.grind }], notes: nt.text, notesSize: nt.size, badge1a: 'FRESHLY', badge1b: 'ROASTED', badge1c: 'COFFEE', badge2a: (b.badge2 || [])[0], badge2b: (b.badge2 || [])[1], badge2c: (b.badge2 || [])[2] };
-    } else { const K = CROPS[c.country], nt = pack((c.notes || []).join(', '));
-      d = { ...BASE, ...g, origin: up(cname(c)), flagKey: K ? c.country : 'custom', variety: up(c.variety || ''), row3Label: 'ALTITUDE', row3Icon: 'mountain', row3Value: up(c.altitude || '').replace(' M', ' m'), notes: nt.text, notesSize: nt.size, profileName: autoName(c) }; }
+  function front(S, fmt) { const f = S.front, c = S.crop || {}, g = geo(S, fmt); let d;
+    if (f.variant === 'blend') {
+      const b = blendOf(S);
+      const activeNotes = (c.notes && c.notes.length > 0) ? c.notes : (b.notes ? b.notes.split(/,\s*/) : []);
+      const nt = pack(activeNotes.join(', '));
+      const activeRoast = c.roast || f.roast || (b && b.roast) || 'Dark';
+      const activeGrind = c.grind || f.grind || (b && b.grind) || 'Medium';
+      d = {
+        ...BASE,
+        ...g,
+        variant: 'blend',
+        profileName: f.nameEn || (b && b.name) || 'Coffee',
+        profileSub: (f.nameEn && !b.sub) ? '' : (b.sub || ''),
+        rows: [
+          { icon: 'flame', label: 'ROAST', value: activeRoast },
+          { icon: 'grain', label: 'GRIND', value: activeGrind }
+        ],
+        notes: nt.text,
+        notesSize: nt.size,
+        badge1a: 'FRESHLY',
+        badge1b: 'ROASTED',
+        badge1c: 'COFFEE',
+        badge2a: (b && b.badge2 || [])[0],
+        badge2b: (b && b.badge2 || [])[1],
+        badge2c: (b && b.badge2 || [])[2]
+      };
+    } else {
+      const K = CROPS[c.country], nt = pack((c.notes || []).join(', '));
+      d = {
+        ...BASE,
+        ...g,
+        origin: up(cname(c)),
+        flagKey: K ? c.country : 'custom',
+        variety: up(c.variety || ''),
+        row3Label: 'ALTITUDE',
+        row3Icon: 'mountain',
+        row3Value: up(c.altitude || '').replace(' M', ' m'),
+        notes: nt.text,
+        notesSize: nt.size,
+        profileName: autoName(c)
+      };
+    }
     if (fmt === 'wide' && d.profileSub) { d.profileName = d.profileName + ' · ' + d.profileSub; d.profileSub = ''; }
     Object.assign(d, colors(S));
     if (f.artSrc) d.artSrc = f.artSrc; else if (typeof ARTS !== 'undefined' && f.theme && f.artMode !== 'photo' && ARTS[f.theme]) d.artSrc = ARTS[f.theme];
     return d; }
-  function back(S, fmt) { const f = S.front, c = S.crop, g = geo(S, fmt), isB = f.variant === 'blend', b = isB ? blendOf(S) : null, o = S.back || {};
-    const method = isB ? (BLEND_METHOD[b.id] || 'drip') : (S.usage === 'espresso' ? 'espresso' : 'v60'), M = BREW[method] || BREW.v60, roast = isB ? b.roast : c.roast, rows = M.rows(roastKey(roast));
-    const name = isB ? (b.name + (b.sub ? ' · ' + b.sub : '')) : autoName(c);
+  function back(S, fmt) { const f = S.front, c = S.crop || {}, g = geo(S, fmt), isB = f.variant === 'blend', b = isB ? blendOf(S) : null, o = S.back || {};
+    const method = isB ? ((b && BLEND_METHOD[b.id]) || 'drip') : (S.usage === 'espresso' ? 'espresso' : 'v60'), M = BREW[method] || BREW.v60, roast = isB ? (c.roast || (b && b.roast) || 'Medium') : c.roast, rows = M.rows(roastKey(roast));
+    const name = isB ? ((f.nameEn || (b && b.name) || 'Coffee') + (b && b.sub ? ' · ' + b.sub : '')) : autoName(c);
     let roastD = BL, expD = BL; if (S.dates && S.dates.roast) { const r = new Date(S.dates.roast + 'T12:00:00'); roastD = fmtD(r); expD = fmtD(addM(r, +S.dates.months || 12)); }
-    const d = { ...BACKBASE, ...g, ...colors(S), variant: isB ? 'blend' : undefined, storyTitle: up(name), story: wrapW(isB ? b.story : autoStory(c), 44), roastLevel: roast, ingredients: isB ? '100% Coffee' : BACKBASE.ingredients,
+    const d = { ...BACKBASE, ...g, ...colors(S), variant: isB ? 'blend' : undefined, storyTitle: up(name), story: wrapW(isB ? ((b && b.story) || autoStory(c)) : autoStory(c), 44), roastLevel: roast, ingredients: isB ? '100% Coffee' : BACKBASE.ingredients,
       storage: f.storageEn || STORAGE_DEFAULT, roastDate: roastD, expiryDate: expD, brew1: rows[0], brew2: rows[1], brew3: rows[2], brew4: rows[3], bestBefore: expD, brewMethod: M.label, degas: restText(roast, M.espresso), lot: '' };
     if (f.ean && d.barcode === undefined) d.ean = f.ean;
     if (f.barcodeImg) d.barcodeImg = f.barcodeImg;
@@ -1394,10 +1431,38 @@ function NotesPicker() {
   const sync = () => chips.forEach(([b, n]) => b.classList.toggle('on', c.notes.includes(n)));
   groups.forEach(([g, list]) => { const row = el('div', { class: 'chipgrp' }, el('b', {}, g));
     list.forEach(n => { const b = el('button', { type: 'button', class: 'chip' }, n); chips.push([b, n]);
-      b.addEventListener('click', () => { dirty = true; const i = c.notes.indexOf(n); if (i >= 0) { if (c.notes.length > 1) c.notes.splice(i, 1); } else { if (c.notes.length >= 4) { toast('الحد الأقصى 4 نكهات عشان تتسع في اللوحة. شيل نكهة الأول.'); return; } c.notes.push(n); } sync(); redo(); setSide('front'); });
+      b.addEventListener('click', () => {
+        dirty = true;
+        const i = c.notes.indexOf(n);
+        if (i >= 0) {
+          if (c.notes.length > 1) c.notes.splice(i, 1);
+        } else {
+          if (c.notes.length >= 4) { toast('الحد الأقصى 4 نكهات عشان تتسع في اللوحة. شيل نكهة الأول.'); return; }
+          c.notes.push(n);
+        }
+        if (S.front && S.front.manual) {
+          delete S.front.manual.notesEn;
+          delete S.front.manual.notesAr;
+        }
+        sync(); redo(); setSide('front');
+      });
       row.append(b); }); box.append(row); });
   const add = el('input', { type: 'text', placeholder: 'نكهة تانية (بالإنجليزي) ثم Enter' });
-  add.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); const v = add.value.trim(); if (!v) return; if (c.notes.length >= 4) { toast('الحد الأقصى 4 نكهات.'); return; } if (!c.notes.includes(v)) c.notes.push(v); dirty = true; redo(); buildForm(); });
+  add.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const v = add.value.trim();
+    if (!v) return;
+    if (c.notes.length >= 4) { toast('الحد الأقصى 4 نكهات.'); return; }
+    if (!c.notes.includes(v)) c.notes.push(v);
+    if (S.front && S.front.manual) {
+      delete S.front.manual.notesEn;
+      delete S.front.manual.notesAr;
+    }
+    dirty = true;
+    redo();
+    buildForm();
+  });
   box.append(add, Note('اختار لحد 4 نكهات بالترتيب اللي تحبه — اللوحة الخضرا والقصة في الضهر بيتحدثوا لوحدهم.')); sync(); return box; }
 
 const slug = s => String(s || 'caturra').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'caturra';
@@ -1504,13 +1569,13 @@ function buildForm() {
       Pick('الارتفاع', al, () => cr.altitude, v => { cr.altitude = v; redo(); }),
       Pick('المعالجة (Process) — اختياري', ['', ...PROCESSES], () => cr.process, v => { cr.process = v; redo(); }),
       Pick('درجة التحميص', ROASTS, () => cr.roast, v => { cr.roast = v; redo(); }),
-      Sel('القوام (Body)', BODIES.map(b => [b, b + ' — ' + AR_BODY[b]]), () => cr.body, v => { cr.body = v; applyTexts(S); }),
-      F('front', '__acidity', 'الحموضة (من 10) — تقدير مبدئي حسب البلد، عدّله بعد تقييم الكبينج', { type: 'number', step: 0.25, min: 0, max: 10, from: () => cr.acidity, to: v => { cr.acidity = v; applyTexts(S); return v; } }));
+      Sel('القوام (Body)', BODIES.map(b => [b, b + ' — ' + AR_BODY[b]]), () => cr.body, v => { cr.body = v; redo(); }),
+      F('front', '__acidity', 'الحموضة (من 10) — تقدير مبدئي حسب البلد، عدّله بعد تقييم الكبينج', { type: 'number', step: 0.25, min: 0, max: 10, from: () => cr.acidity, to: v => { cr.acidity = v; redo(); return v; } }));
   } else {
     cn.push(Pick('درجة التحميص', BLEND_ROASTS, () => cr.roast, v => { cr.roast = v; redo(); }), Pick('درجة الطحن', GRINDS, () => cr.grind, v => { cr.grind = v; redo(); }),
-      Sel('القوام (Body)', BODIES.map(b => [b, b + ' — ' + AR_BODY[b]]), () => cr.body, v => { cr.body = v; applyTexts(S); }));
+      Sel('القوام (Body)', BODIES.map(b => [b, b + ' — ' + AR_BODY[b]]), () => cr.body, v => { cr.body = v; redo(); }));
   }
-  cn.push(Sel('طريقة التحضير — تغيّر وصفة التحضير ومدة الراحة (Degassing)', [['filter', 'فلتر (V60) / تركي / فرنساوي'], ['espresso', 'إسبريسو']], () => S.usage, v => { S.usage = v; applyTexts(S); }),
+  cn.push(Sel('طريقة التحضير — تغيّر وصفة التحضير ومدة الراحة (Degassing)', [['filter', 'فلتر (V60) / تركي / فرنساوي'], ['espresso', 'إسبريسو']], () => S.usage, v => { S.usage = v; redo(); }),
     NotesPicker(), Btn('↺ رجّع كل النصوص للتلقائي (يلغي تعديلاتي اليدوية)', () => { S.front.manual = {}; applyTexts(S); drawPreview(); buildForm(); }));
   root.append(Section('crop', 'المحصول — اختيار تلقائي', 'front', cn, true));
   /* identity (theme) — automatic from the crop */
