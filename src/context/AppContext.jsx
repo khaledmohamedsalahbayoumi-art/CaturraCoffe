@@ -1232,6 +1232,18 @@ export const AppProvider = ({ children }) => {
               try {
                 localStorage.setItem('caturra_eg_categories', JSON.stringify(serverData.categories));
               } catch { }
+            }
+
+            // Sync server contactInfo & brand story if provided
+            if (isMounted && serverData.contactInfo && typeof serverData.contactInfo === 'object' && Object.keys(serverData.contactInfo).length > 0) {
+              setContactInfo(prev => ({
+                ...prev,
+                ...serverData.contactInfo
+              }));
+              try {
+                localStorage.setItem('caturra_eg_contact_info', JSON.stringify(serverData.contactInfo));
+                saveState('contact_info', serverData.contactInfo);
+              } catch { }
             } else {
               // Auto-register any true custom categories present on synced products (strictly excluding coffee subcategories)
               setCategories(prevCats => {
@@ -1288,7 +1300,20 @@ export const AppProvider = ({ children }) => {
   }, [currentUserId]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_contact_info', JSON.stringify(contactInfo));
+    saveState('contact_info', contactInfo);
+    try {
+      localStorage.setItem('caturra_eg_contact_info', JSON.stringify(contactInfo));
+    } catch { }
+    if (typeof fetch !== 'undefined' && contactInfo && Object.keys(contactInfo).length > 0) {
+      const timer = setTimeout(() => {
+        fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contactInfo })
+        }).catch(() => { });
+      }, 800);
+      return () => clearTimeout(timer);
+    }
   }, [contactInfo]);
 
   useEffect(() => {
@@ -3643,7 +3668,21 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateContactInfo = (newInfo) => {
-    setContactInfo(prev => ({ ...prev, ...newInfo }));
+    setContactInfo(prev => {
+      const updated = { ...prev, ...newInfo };
+      saveState('contact_info', updated);
+      try {
+        localStorage.setItem('caturra_eg_contact_info', JSON.stringify(updated));
+      } catch { }
+      if (typeof fetch !== 'undefined') {
+        fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contactInfo: updated })
+        }).catch(() => { });
+      }
+      return updated;
+    });
   };
 
   const resetContactInfo = () => {

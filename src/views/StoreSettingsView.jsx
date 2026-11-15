@@ -86,6 +86,10 @@ export const StoreSettingsView = () => {
     facebook: contactInfo?.facebook || 'https://facebook.com',
     tiktok: contactInfo?.tiktok || 'https://tiktok.com',
     aboutUs: contactInfo?.aboutUs || '',
+    storyTag: contactInfo?.storyTag || 'من نحن • شغف البن المختص',
+    storySubtitle: contactInfo?.storySubtitle || 'محمصة كاتورا للقهوة المختصة',
+    aboutStoryP1: contactInfo?.aboutStoryP1 || contactInfo?.aboutUs || 'في محمصة كاتورا للقهوة المختصة، بدأنا بشغف حقيقي لاستكشاف سحر البن وأسراره العميقة. نؤمن بأن كل حبة بن تحمل في طياتها حكاية فريدة تبدأ من سفوح الجبال وأعالي مزارع البن العالمية في إثيوبيا، كولومبيا، جواتيمالا، والبرازيل وصولاً إلى فنجانك اليومي.',
+    aboutStoryP2: contactInfo?.aboutStoryP2 || 'ننتقي محاصيلنا بعناية فائقة ونحمصها محلياً بحرفية وفق بروفايلات تحميص دقيقة ومتوازنة لتكشف عن أرقى النوتات العطرية والنكهات الغنية، لنمنح عشاق القهوة في مصر تجربة حسية استثنائية تأسر الحواس في كل رشفة.',
     commercialRegister: contactInfo?.commercialRegister || '148920',
     taxNumber: contactInfo?.taxNumber || '582-934-211',
     bannerEnabled: contactInfo?.bannerEnabled !== undefined ? contactInfo.bannerEnabled : false,
@@ -103,6 +107,15 @@ export const StoreSettingsView = () => {
   const [isTestingGemini, setIsTestingGemini] = useState(false);
   const [geminiTestStatus, setGeminiTestStatus] = useState(null);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
+
+  useEffect(() => {
+    if (contactInfo && Object.keys(contactInfo).length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        ...contactInfo
+      }));
+    }
+  }, [contactInfo]);
 
   // ☕ Brewing Guides Management State
   const [selectedBrewingMethod, setSelectedBrewingMethod] = useState('v60'); // 'v60' | 'espresso' | 'french_press' | 'whole_beans'
@@ -234,6 +247,10 @@ export const StoreSettingsView = () => {
         facebook: 'https://facebook.com',
         tiktok: 'https://tiktok.com',
         aboutUs: 'كاتورا (Caturra) محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.',
+        storyTag: 'من نحن • شغف البن المختص',
+        storySubtitle: 'محمصة كاتورا للقهوة المختصة',
+        aboutStoryP1: 'في محمصة كاتورا للقهوة المختصة، بدأنا بشغف حقيقي لاستكشاف سحر البن وأسراره العميقة. نؤمن بأن كل حبة بن تحمل في طياتها حكاية فريدة تبدأ من سفوح الجبال وأعالي مزارع البن العالمية في إثيوبيا، كولومبيا، جواتيمالا، والبرازيل وصولاً إلى فنجانك اليومي.',
+        aboutStoryP2: 'ننتقي محاصيلنا بعناية فائقة ونحمصها محلياً بحرفية وفق بروفايلات تحميص دقيقة ومتوازنة لتكشف عن أرقى النوتات العطرية والنكهات الغنية، لنمنح عشاق القهوة في مصر تجربة حسية استثنائية تأسر الحواس في كل رشفة.',
         commercialRegister: '148920',
         taxNumber: '582-934-211',
         bannerEnabled: true,
@@ -2000,20 +2017,90 @@ export const StoreSettingsView = () => {
                 </div>
               </div>
 
-              {/* About Us */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
-                  نبذة "من نحن" في فوتر المتجر:
-                </label>
-                <textarea
-                  name="aboutUs"
-                  rows={3}
-                  value={formData.aboutUs}
-                  onChange={handleChange}
-                  placeholder="اكتب قصة كاتورا المختصة ومصادر المحاصيل الفاخرة..."
-                  className="form-input"
-                  style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
-                />
+              {/* About Us & Complete Roastery Story */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(196, 154, 92, 0.08)', padding: '20px', borderRadius: '16px', border: '1.5px solid rgba(196, 154, 92, 0.35)', marginTop: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={18} color="#96663B" />
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: '#4A3220' }}>
+                    قصة العلامة التجارية وقسم "من نحن" الكامل (About Us Story)
+                  </h4>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    نبذة سريعة عن المحمصة (تظهر في فوتر المتجر وبطاقات النبذة السريعة):
+                  </label>
+                  <textarea
+                    name="aboutUs"
+                    rows={2}
+                    value={formData.aboutUs}
+                    onChange={handleChange}
+                    placeholder="اكتب نبذة مختصرة عن قصة كاتورا ومصادر المحاصيل الفاخرة..."
+                    className="form-input"
+                    style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                      شارة / بادئة قسم من نحن (Story Tag):
+                    </label>
+                    <input
+                      type="text"
+                      name="storyTag"
+                      value={formData.storyTag}
+                      onChange={handleChange}
+                      placeholder="من نحن • شغف البن المختص"
+                      className="form-input"
+                      style={{ fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                      عنوان قصة المحمصة (Story Subtitle):
+                    </label>
+                    <input
+                      type="text"
+                      name="storySubtitle"
+                      value={formData.storySubtitle}
+                      onChange={handleChange}
+                      placeholder="محمصة كاتورا للقهوة المختصة"
+                      className="form-input"
+                      style={{ fontSize: '0.85rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    نص قصة المحمصة - الفقرة الأولى (تظهر في قسم من نحن بالموقع):
+                  </label>
+                  <textarea
+                    name="aboutStoryP1"
+                    rows={3}
+                    value={formData.aboutStoryP1}
+                    onChange={handleChange}
+                    placeholder="في محمصة كاتورا للقهوة المختصة، بدأنا بشغف حقيقي لاستكشاف سحر البن..."
+                    className="form-input"
+                    style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    نص قصة المحمصة - الفقرة الثانية:
+                  </label>
+                  <textarea
+                    name="aboutStoryP2"
+                    rows={3}
+                    value={formData.aboutStoryP2}
+                    onChange={handleChange}
+                    placeholder="ننتقي محاصيلنا بعناية فائقة ونحمصها محلياً بحرفية وفق بروفايلات تحميص دقيقة..."
+                    className="form-input"
+                    style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
+                  />
+                </div>
               </div>
 
             </div>

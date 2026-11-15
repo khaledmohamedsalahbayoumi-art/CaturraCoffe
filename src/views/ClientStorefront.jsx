@@ -2516,10 +2516,10 @@ export const ClientStorefront = () => {
                 </span>
               </div>
             </div>
-            <p style={{ fontSize: '1.15rem', color: '#FFF8EE', lineHeight: '1.9', margin: 0 }}>
-              {language === 'en'
+            <p style={{ fontSize: '1.15rem', color: '#FFF8EE', lineHeight: '1.9', margin: 0, whiteSpace: 'pre-line' }}>
+              {contactInfo?.aboutUs || (language === 'en'
                 ? 'Caturra was founded in Cairo out of a genuine passion for 100% pure specialty coffee. Inspired by the legendary Caturra varietal known for its exceptional balance and rich cup profile, we handpick green beans from Ethiopia, Colombia, and Brazil, roasting locally with zero artificial additives to ensure an honest, exceptional cup in every sip.'
-                : 'تأسست كاتورا (Caturra) في قلب القاهرة كشغف حقيقي بالقهوة المختصة النقية 100%. استلهمنا اسمنا من سلالة "كاتورا" العريقة، أحد أشهر سلالات البن التي تميزت بالتوازن الاستثنائي والنكهات الغنية. ننتقي حبوب البن الخضراء بعناية من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها محلياً في القاهرة بدون أي إضافات أو نكهات صناعية لنضمن لك فنجاناً صادقاً وفاخراً في كل رشفة.'}
+                : 'تأسست كاتورا (Caturra) في قلب القاهرة كشغف حقيقي بالقهوة المختصة النقية 100%. استلهمنا اسمنا من سلالة "كاتورا" العريقة، أحد أشهر سلالات البن التي تميزت بالتوازن الاستثنائي والنكهات الغنية. ننتقي حبوب البن الخضراء بعناية من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها محلياً في القاهرة بدون أي إضافات أو نكهات صناعية لنضمن لك فنجاناً صادقاً وفاخراً في كل رشفة.')}
             </p>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '8px' }}>
               <span style={{ fontSize: '0.95rem', fontWeight: '700', background: 'rgba(196, 154, 92, 0.15)', color: '#C49A5C', padding: '7px 16px', borderRadius: '10px', border: '1px solid rgba(196, 154, 92, 0.3)' }}>
@@ -3235,24 +3235,26 @@ export const ClientStorefront = () => {
               {/* Narrative Story Text */}
               <div className="about-story-text-container" style={{ textAlign: isRtl ? 'right' : 'left' }}>
                 <span className="about-story-tag anim-stagger-1">
-                  {t('ourStoryTag')}
+                  {contactInfo?.storyTag || t('ourStoryTag')}
                 </span>
 
                 <h2 className="about-story-title anim-stagger-2">
-                  CATURRA
+                  {contactInfo?.brandNameEn || 'CATURRA'}
                 </h2>
 
                 <div className="about-story-subtitle anim-stagger-3">
-                  {t('roasterySubtitle')}
+                  {contactInfo?.storySubtitle || contactInfo?.brandNameAr || t('roasterySubtitle')}
                 </div>
 
-                <p className="about-story-p1 anim-stagger-4">
-                  {t('aboutStoryP1')}
+                <p className="about-story-p1 anim-stagger-4" style={{ whiteSpace: 'pre-line' }}>
+                  {contactInfo?.aboutStoryP1 || contactInfo?.aboutUs || t('aboutStoryP1')}
                 </p>
 
-                <p className="about-story-p2 anim-stagger-5">
-                  {t('aboutStoryP2')}
-                </p>
+                {(contactInfo?.aboutStoryP2 || (!contactInfo?.aboutStoryP1 && !contactInfo?.aboutUs)) && (
+                  <p className="about-story-p2 anim-stagger-5" style={{ whiteSpace: 'pre-line' }}>
+                    {contactInfo?.aboutStoryP2 || t('aboutStoryP2')}
+                  </p>
+                )}
 
                 {/* Bullet highlights with individual stagger animations */}
                 <div className="about-story-bullets">
@@ -4257,7 +4259,7 @@ export const ClientStorefront = () => {
                   </span>
                 </h2>
                 <p style={{ margin: '4px 0 0 0', fontSize: '0.86rem', color: '#6B4A2E', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
-                  <span>{t('footerBrandDesc')}</span>
+                  <span>{contactInfo?.aboutUs || t('footerBrandDesc')}</span>
                   <Coffee size={16} color="#96663B" strokeWidth={2.2} />
                 </p>
               </div>
