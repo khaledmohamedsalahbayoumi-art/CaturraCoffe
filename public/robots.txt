@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /caturra
 Disallow: /api/
 
 Sitemap: https://www.caturracoffeeroaster.com/sitemap.xml

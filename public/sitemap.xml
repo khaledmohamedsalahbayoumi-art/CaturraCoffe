@@ -1,18 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage & Main Roastery Experience -->
   <url>
     <loc>https://www.caturracoffeeroaster.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+  <!-- Full Storefront & Coffee Catalog -->
   <url>
-    <loc>https://www.caturracoffeeroaster.com/caturra</loc>
+    <loc>https://www.caturracoffeeroaster.com/?entered=true</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <!-- Specialty Single Origins -->
+  <url>
+    <loc>https://www.caturracoffeeroaster.com/?entered=true&amp;category=specialty</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Espresso Roasts & Blends -->
   <url>
-    <loc>https://www.caturracoffeeroaster.com/label-studio.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://www.caturracoffeeroaster.com/?entered=true&amp;category=espresso</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- Classic & Flavored Coffees -->
+  <url>
+    <loc>https://www.caturracoffeeroaster.com/?entered=true&amp;category=classic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- Barista Tools & Brewing Equipment -->
+  <url>
+    <loc>https://www.caturracoffeeroaster.com/?entered=true&amp;category=tools</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- B2B Wholesale Partnerships for Cafes & Restaurants -->
+  <url>
+    <loc>https://www.caturracoffeeroaster.com/?b2b=true</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <!-- Coffee Academy & Brewing Guides -->
+  <url>
+    <loc>https://www.caturracoffeeroaster.com/?academy=true</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
 </urlset>

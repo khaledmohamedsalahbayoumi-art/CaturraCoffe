@@ -242,6 +242,7 @@ export const ClientStorefront = () => {
   const [isBagZoomed, setIsBagZoomed] = useState(false);
   const [bagPreviewVariant, setBagPreviewVariant] = useState('landscape'); // 'landscape' | 'vertical'
   const [activeBagSide, setActiveBagSide] = useState('front'); // 'front' | 'back' (interactive bag flip)
+  const [legalModalType, setLegalModalType] = useState(null); // 'returns' | 'privacy' | 'terms' | null
 
   // Live synchronization of open product details modal when products or specs update
   useEffect(() => {
@@ -428,6 +429,28 @@ export const ClientStorefront = () => {
     setContactForm({ name: '', email: '', phone: '', subject: '', message: '' });
     setTimeout(() => setContactFormSent(false), 7000);
   };
+
+  // 🔍 Dynamic Document Title for SEO and Browser Tabs
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (selectedProductDetails) {
+      const pName = (language === 'en' && selectedProductDetails.nameEn) ? selectedProductDetails.nameEn : selectedProductDetails.name;
+      document.title = `${pName} | محمصة كاتورا للقهوة المختصة (Caturra)`;
+    } else if (selectedAcademyArticle) {
+      const aTitle = (language === 'en' && selectedAcademyArticle.titleEn) ? selectedAcademyArticle.titleEn : selectedAcademyArticle.title;
+      document.title = `${aTitle} | أكاديمية كاتورا للقهوة`;
+    } else if (activeNav === 'b2b') {
+      document.title = language === 'en' ? 'B2B Wholesale Specialty Coffee Cairo | Caturra Coffee' : 'شراكات وتوريد القهوة المختصة B2B للمقاهي والشركات | كاتورا';
+    } else if (activeNav === 'academy') {
+      document.title = language === 'en' ? 'Coffee Academy & Brewing Guides | Caturra Roastery' : 'أكاديمية ووصفات تحضير القهوة المختصة | محمصة كاتورا';
+    } else if (activeNav === 'store') {
+      document.title = language === 'en' ? 'Shop Specialty Coffee Beans | Caturra Coffee Roaster' : 'تسوق أرقى محاصيل القهوة المختصة | محمصة كاتورا';
+    } else {
+      document.title = language === 'en'
+        ? 'Caturra Specialty Coffee | Roastery in Cairo & Heliopolis'
+        : 'كاتورا للقهوة المختصة | بن مختص وتحميص محلي بالقاهرة ومصر الجديدة (Caturra)';
+    }
+  }, [selectedProductDetails, selectedAcademyArticle, activeNav, language]);
 
   const toggleWishlist = (productId) => {
     setWishlist(prev => {
@@ -4650,8 +4673,35 @@ export const ClientStorefront = () => {
 
           {/* Footer Bottom Bar */}
           <div className="store-footer-bottom">
-            <div style={{ fontSize: '0.84rem', color: '#6B4A2E', fontWeight: '600' }}>
-              {t('footerCopyright')} • {t('madeWithLove')}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '0.84rem', color: '#6B4A2E', fontWeight: '600' }}>
+                {t('footerCopyright')} • {t('madeWithLove')}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.82rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setLegalModalType('returns')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: '#7A4B24', cursor: 'pointer', textDecoration: 'underline', fontWeight: '700' }}
+                >
+                  {language === 'en' ? 'Quality Guarantee & Returns' : 'سياسة الاسترجاع والضمان'}
+                </button>
+                <span style={{ color: '#EDD9BD' }}>•</span>
+                <button
+                  type="button"
+                  onClick={() => setLegalModalType('privacy')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: '#7A4B24', cursor: 'pointer', textDecoration: 'underline', fontWeight: '700' }}
+                >
+                  {language === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية'}
+                </button>
+                <span style={{ color: '#EDD9BD' }}>•</span>
+                <button
+                  type="button"
+                  onClick={() => setLegalModalType('terms')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: '#7A4B24', cursor: 'pointer', textDecoration: 'underline', fontWeight: '700' }}
+                >
+                  {language === 'en' ? 'Terms & Conditions' : 'الشروط والأحكام'}
+                </button>
+              </div>
             </div>
 
             {/* Accepted Payment Badges & Track Order */}
@@ -7765,6 +7815,107 @@ export const ClientStorefront = () => {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📜 STORE LEGAL & POLICIES MODAL (سياسة الاسترجاع والضمان، الخصوصية، والشروط) 📜 */}
+      {legalModalType && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(44, 24, 16, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease'
+          }}
+          onClick={() => setLegalModalType(null)}
+        >
+          <div
+            style={{
+              background: '#FFFDF9',
+              border: '2px solid #EDD9BD',
+              borderRadius: '24px',
+              maxWidth: '620px',
+              width: '100%',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              padding: '32px 28px',
+              boxShadow: '0 25px 65px rgba(44, 24, 16, 0.35)',
+              position: 'relative'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1.5px solid #EDD9BD', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Shield size={24} color="#96663B" />
+                <h3 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#4A3220', margin: 0 }}>
+                  {legalModalType === 'returns' && (language === 'en' ? 'Quality Guarantee & Returns Policy' : 'سياسة الاسترجاع والضمان الذهبي')}
+                  {legalModalType === 'privacy' && (language === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية وحماية البيانات')}
+                  {legalModalType === 'terms' && (language === 'en' ? 'Terms & Conditions' : 'الشروط والأحكام')}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLegalModalType(null)}
+                style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFF8EE', border: '1px solid #EDD9BD', color: '#4A3220', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.98rem', color: '#4A3220', lineHeight: '1.9' }}>
+              {legalModalType === 'returns' && (
+                <div>
+                  <h4 style={{ color: '#96663B', marginBottom: '6px' }}>ضمان الجودة والطزاجة:</h4>
+                  <p>في محمصة كاتورا للقهوة المختصة، نضمن لك وصول حبوب بن فاخرة، منتقاة بعناية ومحمصة طازجاً بأعلى معايير الجمعية التخصصية للقهوة (SCA).</p>
+                  
+                  <h4 style={{ color: '#96663B', marginBottom: '6px', marginTop: '16px' }}>شروط الاسترجاع والاستبدال:</h4>
+                  <ul>
+                    <li>يحق للعميل طلب استبدال أو استرجاع أي عبوة خلال <strong>14 يوماً</strong> من تاريخ استلام الشحنة في حال وجود تلف أو خطأ في المحصول أو درجة الطحن.</li>
+                    <li>يتم استرداد المبلغ بالكامل دون أي رسوم إضافية عبر محفظة فودافون كاش أو حساب إنستاباي في غضون 24-48 ساعة عمل.</li>
+                  </ul>
+                  
+                  <h4 style={{ color: '#96663B', marginBottom: '6px', marginTop: '16px' }}>كيفية طلب الاسترجاع:</h4>
+                  <p>تواصل مباشرة مع فريق خدمة العملاء عبر واتساب <strong>01033144498</strong> مع تزويدنا برقم الفاتورة وصورة العبوة لتنفيذ طلبك فوراً.</p>
+                </div>
+              )}
+
+              {legalModalType === 'privacy' && (
+                <div>
+                  <h4 style={{ color: '#96663B', marginBottom: '6px' }}>أمان وسرية بياناتك:</h4>
+                  <p>نحن نحترم خصوصيتك التامة. نجمع فقط البيانات الأساسية اللازمة لمعالجة وشحن طلبك (الاسم، الهاتف، العنوان، والبريد الإلكتروني).</p>
+                  
+                  <h4 style={{ color: '#96663B', marginBottom: '6px', marginTop: '16px' }}>عدم مشاركة البيانات:</h4>
+                  <p>لا نقوم ببيع، تأجير، أو مشاركة أي بيانات شخصية مع أي جهة خارجية أو أطراف إعلانية على الإطلاق. تُستخدم بياناتك حصرياً لتوصيل طلباتك والتواصل بشأن الشحنة.</p>
+                </div>
+              )}
+
+              {legalModalType === 'terms' && (
+                <div>
+                  <h4 style={{ color: '#96663B', marginBottom: '6px' }}>نطاق الخدمة والشحن:</h4>
+                  <p>تخدم محمصة كاتورا عملاء التجزئة والشركات والمقاهي (B2B) داخل جمهورية مصر العربية مع شحن سريع لجميع المحافظات خلال 24–48 ساعة عمل.</p>
+                  
+                  <h4 style={{ color: '#96663B', marginBottom: '6px', marginTop: '16px' }}>الأسعار والدفع:</h4>
+                  <p>كافة الأسعار المعروضة بالجنيه المصري (EGP). نوفر الدفع الفوري الآمن عبر إنستاباي، المحافظ الإلكترونية (فودافون كاش)، أو الدفع نقداً عند الاستلام.</p>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setLegalModalType(null)}
+                style={{ padding: '10px 28px', background: '#96663B', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
+              >
+                إغلاق
+              </button>
             </div>
           </div>
         </div>
