@@ -2460,21 +2460,21 @@ body.caturra-store-body ::-webkit-scrollbar-thumb:hover {
     padding-bottom: 96px !important;
   }
 
-  /* 🌟 GLOBAL MOBILE TYPOGRAPHY & WEIGHT DE-BOLDING (Tajawal for Mobile Only) 🌟 */
+  /* 🌟 GLOBAL UNIFIED TYPOGRAPHY (Cairo for Arabic, Outfit for Latin) 🌟 */
   html, body, #root {
-    font-family: 'Tajawal', 'Outfit', system-ui, -apple-system, sans-serif !important;
+    font-family: 'Cairo', 'Outfit', system-ui, -apple-system, sans-serif !important;
     font-size: 14px !important;
     font-weight: 400 !important;
   }
 
   html[dir="ltr"], html[dir="ltr"] body, html[dir="ltr"] #root {
-    font-family: 'Outfit', 'Tajawal', system-ui, -apple-system, sans-serif !important;
+    font-family: 'Outfit', 'Cairo', system-ui, -apple-system, sans-serif !important;
   }
 
   /* Headlines & Titles refined without harsh black bold on mobile */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Tajawal', 'Outfit', sans-serif !important;
-    font-weight: 600 !important;
+    font-family: 'Cairo', 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
     letter-spacing: -0.2px;
   }
 

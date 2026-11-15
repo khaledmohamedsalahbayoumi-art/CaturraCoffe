@@ -109,6 +109,8 @@ export const ClientStorefront = () => {
   const {
     products,
     categories,
+    invoices = [],
+    batches = [],
     createSale,
     openInvoiceModal,
     setViewMode,
@@ -1482,14 +1484,109 @@ export const ClientStorefront = () => {
   // 🌟 FULL HOME PAGE RENDERER (STRUCTURE MATCHING BONALQAHERA.COM/EG) 🌟
   // =========================================================================
   const renderHomePage = () => {
-    // 1. New Harvest Crops (محاصيلنا الجديدة)
-    const newHarvests = products.filter(p => p.category === 'specialty' || p.category === 'classic_blends' || p.category === 'espresso' || p.category === 'filter' || p.category === 'coffee').slice(0, 4);
+    // Helper: only genuine coffee crops (exclude machines, tools, accessories, pieces)
+    const isCoffeeCrop = (p) => {
+      if (!p) return false;
+      if (p.category === 'tools' || p.category === 'accessories' || p.category === 'equipment') return false;
+      if (p.unitType === 'piece') return false;
+      return true;
+    };
 
-    // 2. Customer Favorites (الأكثر مبيعاً)
-    const bestSellers = [...products]
-      .filter(p => p.id !== 'prod-6')
-      .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
-      .slice(0, 4);
+    const isAvailableInStock = (p) => {
+      if (!p) return false;
+      const stockKg = Number(p.stock) || 0;
+      const stockG = Number(p.stockGram) || 0;
+      if (stockKg > 0 || stockG > 0) return true;
+      return batches.some(b => b.productId === p.id && b.status === 'good' && ((Number(b.quantity) || 0) > 0 || (Number(b.quantityGram) || 0) > 0));
+    };
+
+    // Calculate dynamic live sales volume from all non-cancelled website invoices + salesCount
+    const salesVolumeMap = {};
+    (invoices || []).forEach(inv => {
+      if (inv && inv.status !== 'cancelled') {
+        const items = inv.items || inv.cart || [];
+        items.forEach(it => {
+          const pId = it.productId || it.id;
+          if (pId) {
+            salesVolumeMap[pId] = (salesVolumeMap[pId] || 0) + (Number(it.qty || it.quantity || 1));
+          }
+        });
+      }
+    });
+
+    const curatedPopularityPriority = {
+      'prod-colombia-supremo': 100,
+      'prod-french-coffee': 95,
+      'prod-colombia-fermented-strawberry': 90,
+      'prod-colombia-fermented-cantaloupe': 85,
+      'prod-brazil-santos': 80,
+      'prod-ethiopia-yirgacheffe': 75,
+      'prod-espresso-house-blend': 70,
+      'prod-colombia-fermented-citrus': 65
+    };
+
+    const curatedNewHarvestPriority = {
+      'prod-colombia-fermented-strawberry': 100,
+      'prod-colombia-fermented-citrus': 95,
+      'prod-colombia-fermented-cantaloupe': 90,
+      'prod-colombia-supremo': 85,
+      'prod-colombia-fermented-banana': 80,
+      'prod-ethiopia-guji': 75,
+      'prod-brazil-cerrado': 70,
+      'prod-brazil-santos': 65
+    };
+
+    // 1. 🌟 NEW HARVEST CROPS (محاصيلنا الجديدة) - Dynamically calculated from newest roast/batch arrivals & inventory
+    const getProductNewnessTimestamp = (p) => {
+      const productBatches = batches.filter(b => b.productId === p.id && (b.status === 'good' || !b.status));
+      if (productBatches.length > 0) {
+        const timestamps = productBatches
+          .map(b => b.entryDate || b.createdAt)
+          .filter(Boolean)
+          .map(d => new Date(d).getTime())
+          .filter(t => !isNaN(t));
+        if (timestamps.length > 0) return Math.max(...timestamps);
+      }
+      if (p.entryDate) {
+        const t = new Date(p.entryDate).getTime();
+        if (!isNaN(t)) return t;
+      }
+      if (p.harvestDate) {
+        const t = new Date(p.harvestDate).getTime();
+        if (!isNaN(t)) return t;
+      }
+      if (p.createdAt) {
+        const t = new Date(p.createdAt).getTime();
+        if (!isNaN(t)) return t;
+      }
+      return 0;
+    };
+
+    const coffeeCrops = (products || []).filter(isCoffeeCrop);
+    const inStockCoffeeCrops = coffeeCrops.filter(isAvailableInStock);
+
+    const sortedNewHarvests = [...(inStockCoffeeCrops.length >= 4 ? inStockCoffeeCrops : coffeeCrops)]
+      .sort((a, b) => {
+        const timeDiff = getProductNewnessTimestamp(b) - getProductNewnessTimestamp(a);
+        if (timeDiff !== 0) return timeDiff;
+        const prioA = curatedNewHarvestPriority[a.id] || 0;
+        const prioB = curatedNewHarvestPriority[b.id] || 0;
+        if (prioB !== prioA) return prioB - prioA;
+        return (Number(b.stock) || 0) - (Number(a.stock) || 0);
+      });
+    const newHarvests = sortedNewHarvests.slice(0, 4);
+
+    // 2. 🌟 BEST SELLERS (الأكثر مبيعاً) - Dynamically calculated from live store transactions & sales volume
+    const sortedBestSellers = [...coffeeCrops]
+      .sort((a, b) => {
+        const salesA = (salesVolumeMap[a.id] || 0) + (Number(a.salesCount) || 0);
+        const salesB = (salesVolumeMap[b.id] || 0) + (Number(b.salesCount) || 0);
+        if (salesB !== salesA) return salesB - salesA;
+        const prioA = curatedPopularityPriority[a.id] || 0;
+        const prioB = curatedPopularityPriority[b.id] || 0;
+        return prioB - prioA;
+      });
+    const bestSellers = sortedBestSellers.slice(0, 4);
 
     return (
       <div className="caturra-home-page-view" style={{ width: '100%', overflow: 'hidden' }}>
