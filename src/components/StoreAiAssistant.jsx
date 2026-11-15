@@ -64,8 +64,8 @@ export const StoreAiAssistant = ({
       id: 1,
       sender: 'bot',
       text: language === 'en'
-        ? 'Welcome to Caturra Specialty Coffee! ✨🌿\nI am **Caturra AI Barista**, your guide to exceptional beans, brew ratio calculations, and order tracking. How can I assist you today?'
-        : 'مرحباً بك في كاتورا للقهوة المختصة! ✨🌿\nأنا **باريستا كاتورا الذكي (AI)**، خبيرك لاختيار محاصيل البن الفاخرة، حساب نسب الاستخلاص، ومتابعة شحناتك. كيف يمكنني مساعدتك اليوم؟',
+        ? 'Welcome to Caturra Specialty Coffee! ✨🌿\nI am **Caturra AI Assistant**, your guide to exceptional beans, brew ratio calculations, and order tracking. How can I assist you today?'
+        : 'مرحباً بك في كاتورا للقهوة المختصة! ✨🌿\nأنا **مساعد كاتورا الذكي (AI)**، خبيرك لاختيار محاصيل البن الفاخرة، حساب نسب الاستخلاص، ومتابعة شحناتك. كيف يمكنني مساعدتك اليوم؟',
       products: [],
       invoice: null,
       time: language === 'en' ? 'Now' : 'الآن'
@@ -81,8 +81,8 @@ export const StoreAiAssistant = ({
             id: 1,
             sender: 'bot',
             text: isEn
-              ? 'Welcome to Caturra Specialty Coffee! ✨🌿\nI am **Caturra AI Barista**, your guide to exceptional beans, brew ratio calculations, and order tracking. How can I assist you today?'
-              : 'مرحباً بك في كاتورا للقهوة المختصة! ✨🌿\nأنا **باريستا كاتورا الذكي (AI)**، خبيرك لاختيار محاصيل البن الفاخرة، حساب نسب الاستخلاص، ومتابعة شحناتك. كيف يمكنني مساعدتك اليوم؟',
+              ? 'Welcome to Caturra Specialty Coffee! ✨🌿\nI am **Caturra AI Assistant**, your guide to exceptional beans, brew ratio calculations, and order tracking. How can I assist you today?'
+              : 'مرحباً بك في كاتورا للقهوة المختصة! ✨🌿\nأنا **مساعد كاتورا الذكي (AI)**، خبيرك لاختيار محاصيل البن الفاخرة، حساب نسب الاستخلاص، ومتابعة شحناتك. كيف يمكنني مساعدتك اليوم؟',
             products: [],
             invoice: null,
             time: isEn ? 'Now' : 'الآن'
@@ -474,8 +474,8 @@ export const StoreAiAssistant = ({
     if (q.includes('مين انت') || q.includes('انت مين') || q.includes('انت انسان') || q.includes('انت روبوت') || q.includes('بتعمل ايه') || q.includes('وظيفتك')) {
       return {
         text: isEn
-          ? `I am **Caturra AI Barista** 🤖☕!\nA virtual specialty coffee connoisseur trained on coffee genetics, roast chemistry, precision extraction ratios, and Caturra's live store inventory to be your personalized guide to the ultimate coffee experience in Egypt.`
-          : `أنا **باريستا كاتورا الذكي (Caturra AI Barista)** 🤖☕!\nباريستا افتراضي وخبير مدرب على كل أسرار القهوة المختصة، السلالات، المعالجات، نسب الاستخلاص الدقيقة، ومخزون متجر كاتورا عشان أكون رفيقك ومرشدك لأحسن تجربة قهوة في مصر. كيف تحب نبدأ؟`,
+          ? `I am **Caturra AI Assistant** 🤖☕!\nA virtual specialty coffee connoisseur trained on coffee genetics, roast chemistry, precision extraction ratios, and Caturra's live store inventory to be your personalized guide to the ultimate coffee experience in Egypt.`
+          : `أنا **مساعد كاتورا الذكي (Caturra AI Assistant)** 🤖☕!\nمساعد وخبير افتراضي مدرب على كل أسرار القهوة المختصة، السلالات، المعالجات، نسب الاستخلاص الدقيقة، ومخزون متجر كاتورا عشان أكون رفيقك ومرشدك لأحسن تجربة قهوة في مصر. كيف تحب نبدأ؟`,
         products: products.slice(0, 2)
       };
     }
@@ -863,8 +863,8 @@ export const StoreAiAssistant = ({
     // ==========================================
     return {
       text: isEn
-        ? `I am delighted to help! As your Caturra AI Barista, feel free to ask me about:\n\n• Exploring world specialty coffee origins (Ethiopia, Colombia, Yemen, Geisha, Kenya).\n• Exact extraction recipes and ratios (V60, Espresso, French Press, Cold Brew).\n• Calibrating custom weights in grams and free grind sizes for your machine.\n• Live shipment tracking via invoice number or phone number.\n\nWhat would you like to explore today? ☕✨`
-        : `يسعدني جداً الإجابة على استفسارك يا فندم! بصفتي باريستا كاتورا الذكي، أنا في خدمتك دائماً لمساعدتك في:\n\n• ترشيح محاصيل القهوة المختصة المناسبة لذوقك وأداتك (V60، إسبريسو، فرينش بريس، تركي).\n• تفاصيل ومعلومات أي محصول بن عالمي (مثل الجيشا، البن اليمني، كينيا، كولومبيا، إثيوبيا).\n• الوصفات الدقيقة ونسب الاستخلاص ومراحل الصب والحرارة.\n• تتبع شحنتك لحظة بلحظة برقم الفاتورة أو الهاتف.\n\nإيه اللي تحب نبدأ بيه أو محتاج تسأل عنه؟ ☕✨`,
+        ? `I am delighted to help! As your Caturra AI Assistant, feel free to ask me about:\n\n• Exploring world specialty coffee origins (Ethiopia, Colombia, Yemen, Geisha, Kenya).\n• Exact extraction recipes and ratios (V60, Espresso, French Press, Cold Brew).\n• Calibrating custom weights in grams and free grind sizes for your machine.\n• Live shipment tracking via invoice number or phone number.\n\nWhat would you like to explore today? ☕✨`
+        : `يسعدني جداً الإجابة على استفسارك يا فندم! بصفتي مساعد كاتورا الذكي، أنا في خدمتك دائماً لمساعدتك في:\n\n• ترشيح محاصيل القهوة المختصة المناسبة لذوقك وأداتك (V60، إسبريسو، فرينش بريس، تركي).\n• تفاصيل ومعلومات أي محصول بن عالمي (مثل الجيشا، البن اليمني، كينيا، كولومبيا، إثيوبيا).\n• الوصفات الدقيقة ونسب الاستخلاص ومراحل الصب والحرارة.\n• تتبع شحنتك لحظة بلحظة برقم الفاتورة أو الهاتف.\n\nإيه اللي تحب نبدأ بيه أو محتاج تسأل عنه؟ ☕✨`,
       products: products.slice(0, 2)
     };
   };
@@ -954,8 +954,8 @@ export const StoreAiAssistant = ({
         id: 1,
         sender: 'bot',
         text: isEn
-          ? 'Conversation reset! ✨🌿\nI am Caturra AI Barista, ready to assist you with coffee recommendations, brew ratios, or tracking your shipments.'
-          : 'تمت إعادة ضبط المحادثة! ✨🌿\nأنا باريستا كاتورا الذكي جاهز لمساعدتك في أي استفسار، حساب نسب الاستخلاص، أو تتبع طلباتك.',
+          ? 'Conversation reset! ✨🌿\nI am Caturra AI Assistant, ready to assist you with coffee recommendations, brew ratios, or tracking your shipments.'
+          : 'تمت إعادة ضبط المحادثة! ✨🌿\nأنا مساعد كاتورا الذكي جاهز لمساعدتك في أي استفسار، حساب نسب الاستخلاص، أو تتبع طلباتك.',
         products: [],
         invoice: null,
         time: isEn ? 'Now' : 'الآن'
@@ -1042,7 +1042,7 @@ export const StoreAiAssistant = ({
             </div>
             <div style={{ lineHeight: '1.3', textAlign: isRtl ? 'right' : 'left' }}>
               <div style={{ fontSize: '0.66rem', color: '#EDD9BD' }}>
-                {isEn ? 'Caturra AI Barista' : 'باريستا كاتورا الذكي (AI)'}
+                {isEn ? 'Caturra AI Assistant' : 'مساعد كاتورا الذكي (AI)'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span>{isEn ? 'Need help or track order?' : 'محتاج مساعدة أو تتبع طلبك؟'}</span>
@@ -1109,7 +1109,7 @@ export const StoreAiAssistant = ({
           }}
           title={activeIsOpen
             ? (isEn ? 'Close Assistant' : 'إغلاق المساعد')
-            : (isEn ? 'Chat with Caturra AI Barista' : 'تحدث مع باريستا كاتورا الذكي')}
+            : (isEn ? 'Chat with Caturra AI Assistant' : 'تحدث مع مساعد كاتورا الذكي')}
         >
           {activeIsOpen ? (
             <X size={18} />
@@ -1133,7 +1133,7 @@ export const StoreAiAssistant = ({
               </div>
               <span>
                 {isEn
-                  ? `Caturra AI Barista ${hasGeminiKey ? '(Gemini AI)' : '(AI)'}`
+                  ? `Caturra AI Assistant ${hasGeminiKey ? '(Gemini AI)' : '(AI)'}`
                   : `مساعد كاتورا الذكي ${hasGeminiKey ? '(Gemini AI)' : '(AI)'}`}
               </span>
               <Sparkles size={13} style={{ color: '#C49A5C' }} />
@@ -1236,7 +1236,7 @@ export const StoreAiAssistant = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: '900', color: '#FFFDF9' }}>
-                    {isEn ? 'Caturra AI Barista' : 'باريستا كاتورا الذكي'}
+                    {isEn ? 'Caturra AI Assistant' : 'مساعد كاتورا الذكي'}
                   </h4>
                   <span
                     style={{
@@ -1660,7 +1660,7 @@ export const StoreAiAssistant = ({
                     >
                       <Bot size={13} style={{ color: '#96663B' }} />
                       <span style={{ fontSize: '0.76rem', color: '#5C3D2E' }}>
-                        {isEn ? 'Caturra Barista is typing...' : 'باريستا كاتورا يكتب...'}
+                        {isEn ? 'Caturra Assistant is typing...' : 'مساعد كاتورا يكتب...'}
                       </span>
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#96663B', animation: 'pulseGlow 1s infinite' }} />
