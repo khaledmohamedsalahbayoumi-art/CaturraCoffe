@@ -701,7 +701,11 @@ export const PosView = () => {
           boxShadow: 'var(--shadow-md)',
           display: (!isMobile || mobileTab === 'cart') ? 'flex' : 'none',
           flexDirection: 'column',
-          maxHeight: isMobile ? 'none' : 'calc(100vh - 120px)',
+          height: isMobile ? 'calc(100dvh - 130px)' : 'calc(100vh - 84px)',
+          minHeight: isMobile ? 'calc(100dvh - 130px)' : 'calc(100vh - 84px)',
+          maxHeight: isMobile ? 'calc(100dvh - 130px)' : 'calc(100vh - 84px)',
+          position: isMobile ? 'static' : 'sticky',
+          top: '8px',
           overflow: 'hidden'
         }}
       >
@@ -713,7 +717,8 @@ export const PosView = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: '#FFF8EE'
+            background: '#FFF8EE',
+            flexShrink: 0
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -743,7 +748,8 @@ export const PosView = () => {
               fontSize: '0.84rem',
               borderColor: 'var(--mint-300)',
               color: 'var(--mint-900)',
-              background: 'var(--mint-50)'
+              background: 'var(--mint-50)',
+              flexShrink: 0
             }}
           >
             <ArrowRight size={16} />
@@ -752,7 +758,7 @@ export const PosView = () => {
         )}
 
         {/* 🌟 DIRECT CUSTOMER REGISTRATION BOX IN CASHIER 🌟 */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #EDD9BD', background: 'linear-gradient(180deg, #FFF8EE 0%, #FFFDF9 100%)', position: 'relative' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #EDD9BD', background: 'linear-gradient(180deg, #FFF8EE 0%, #FFFDF9 100%)', position: 'relative', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800', color: 'var(--mint-900)' }}>
               <User size={15} color="var(--mint-600)" />
@@ -864,6 +870,7 @@ export const PosView = () => {
         <div
           style={{
             flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
             padding: '12px 16px',
             display: 'flex',
@@ -872,10 +879,40 @@ export const PosView = () => {
           }}
         >
           {cart.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--text-muted)' }}>
-              <Coffee size={36} color="var(--mint-300)" style={{ margin: '0 auto 8px' }} />
-              <p style={{ fontSize: '0.85rem' }}>اختر أصنافاً من القائمة لبدء الفاتورة</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--mint-700)' }}>يمكنك وزن البن بالجرام (250، 300، 500، 1 كجم) بدقة</p>
+            <div
+              style={{
+                flex: 1,
+                minHeight: '160px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                padding: '24px 16px',
+                color: 'var(--text-muted)'
+              }}
+            >
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFF8EE',
+                  border: '1.5px dashed #EDD9BD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '12px'
+                }}
+              >
+                <Coffee size={32} color="#8B5E34" />
+              </div>
+              <p style={{ fontSize: '0.94rem', fontWeight: '800', color: '#4A3220', margin: '0 0 6px 0' }}>
+                اختر أصنافاً من القائمة لبدء الفاتورة
+              </p>
+              <p style={{ fontSize: '0.78rem', color: '#8B5E34', margin: 0, fontWeight: '600' }}>
+                يمكنك وزن البن بالجرام (250، 300، 500، 1 كجم) بدقة
+              </p>
             </div>
           ) : (
             cart.map((item) => (
@@ -962,7 +999,15 @@ export const PosView = () => {
         </div>
 
         {/* Calculations & Egyptian Payment Methods */}
-        <div style={{ borderTop: '1px solid #EDD9BD', padding: '12px 16px', background: '#FAF7F2' }}>
+        <div
+          style={{
+            borderTop: '1.5px solid #EDD9BD',
+            padding: '12px 16px',
+            background: '#FAF7F2',
+            marginTop: 'auto',
+            flexShrink: 0
+          }}
+        >
           
           {/* Discount input */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
