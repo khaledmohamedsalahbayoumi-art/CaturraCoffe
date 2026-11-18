@@ -200,10 +200,29 @@ export const StoreB2BView = ({ onNavigateToStore }) => {
           }}
         >
           <video
+            ref={(el) => {
+              if (el) {
+                try {
+                  el.defaultMuted = true;
+                  el.muted = true;
+                  el.playsInline = true;
+                  el.setAttribute('playsinline', '');
+                  el.setAttribute('webkit-playsinline', '');
+                  const p = el.play();
+                  if (p !== undefined) p.catch(() => {});
+                  const onInteraction = () => { if (el && el.paused) el.play().catch(() => {}); };
+                  window.addEventListener('touchstart', onInteraction, { once: true, passive: true });
+                  window.addEventListener('scroll', onInteraction, { once: true, passive: true });
+                } catch (_) {}
+              }
+            }}
             autoPlay
             loop
             muted
+            defaultMuted
             playsInline
+            webkit-playsinline="true"
+            preload="auto"
             poster="/caturra_wholesale_hero.jpg"
             style={{
               width: '100%',

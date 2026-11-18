@@ -105,6 +105,37 @@ const uploadReceiptToCloud = async (_file) => {
   return '';
 };
 
+// Bulletproof Mobile / iOS Safari Autoplay Video Enforcer
+const setupAutoplayVideo = (el) => {
+  if (!el) return;
+  try {
+    el.defaultMuted = true;
+    el.muted = true;
+    el.playsInline = true;
+    el.setAttribute('playsinline', '');
+    el.setAttribute('webkit-playsinline', '');
+
+    const startPlay = () => {
+      const p = el.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
+    };
+
+    startPlay();
+
+    const handleInteraction = () => {
+      if (el && el.paused) {
+        startPlay();
+      }
+    };
+
+    window.addEventListener('touchstart', handleInteraction, { once: true, passive: true });
+    window.addEventListener('scroll', handleInteraction, { once: true, passive: true });
+    window.addEventListener('click', handleInteraction, { once: true, passive: true });
+  } catch (_) { }
+};
+
 
 
 export const ClientStorefront = () => {
@@ -1654,48 +1685,31 @@ export const ClientStorefront = () => {
             padding: '120px 20px 80px'
           }}
         >
-          {/* Ambient Video Background on Desktop / High-Performance Instant Image on Mobile */}
-          {isMobileScreen ? (
-            <img
-              src="/caturra_b2b_hero.jpg"
-              alt="محمصة ومتجر كاتورا للقهوة المختصة"
-              fetchPriority="high"
-              decoding="async"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: isRtl ? '20% center' : '80% center',
-                zIndex: 0,
-                pointerEvents: 'none'
-              }}
-            />
-          ) : (
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              poster="/caturra_b2b_hero.jpg"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: isRtl ? '20% center' : '80% center',
-                zIndex: 0,
-                pointerEvents: 'none'
-              }}
-            >
-              <source src="/caturra_b2b_video.mp4" type="video/mp4" />
-            </video>
-          )}
+          {/* Ambient Video Background on Both Mobile & Desktop with Smooth Autoplay */}
+          <video
+            ref={setupAutoplayVideo}
+            autoPlay
+            loop
+            muted
+            defaultMuted
+            playsInline
+            webkit-playsinline="true"
+            preload="auto"
+            poster="/caturra_b2b_hero.jpg"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: isRtl ? '20% center' : '80% center',
+              zIndex: 0,
+              pointerEvents: 'none'
+            }}
+          >
+            <source src="/caturra_b2b_video.mp4" type="video/mp4" />
+          </video>
 
           {/* Hero Content Box (Text and Button Only) */}
           <div
@@ -3655,49 +3669,32 @@ export const ClientStorefront = () => {
               boxSizing: 'border-box'
             }}
           >
-            {/* Ambient Background Video on Desktop / Lightweight Poster on Mobile */}
-            {isMobileScreen ? (
-              <img
-                src="/caturra_store_video.jpg"
-                alt="محمصة كاتورا للقهوة المختصة"
-                loading="lazy"
-                decoding="async"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  zIndex: 0,
-                  pointerEvents: 'none'
-                }}
-              />
-            ) : (
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="none"
-                poster="/caturra_store_video.jpg"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  zIndex: 0,
-                  pointerEvents: 'none'
-                }}
-              >
-                <source src="/hero_video.mp4" type="video/mp4" />
-                <source src="/caturra_store_video.mp4" type="video/mp4" />
-              </video>
-            )}
+            {/* Ambient Roastery Video on Mobile & Desktop */}
+            <video
+              ref={setupAutoplayVideo}
+              autoPlay
+              loop
+              muted
+              defaultMuted
+              playsInline
+              webkit-playsinline="true"
+              preload="auto"
+              poster="/caturra_store_video.jpg"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                zIndex: 0,
+                pointerEvents: 'none'
+              }}
+            >
+              <source src="/hero_video.mp4" type="video/mp4" />
+              <source src="/caturra_store_video.mp4" type="video/mp4" />
+            </video>
 
             {/* Clear, Minimal Gradient Overlay (Maximizes video clarity & brightness while preserving text readability) */}
             <div
