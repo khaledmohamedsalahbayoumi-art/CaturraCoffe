@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>كاتورا للقهوة المختصة | بن مختص وتحميص محلي بالقاهرة ومصر الجديدة (Caturra)</title>
     
+    <!-- Immediate Source & Context Menu Protection -->
+    <script>
+      (function(){
+        document.addEventListener('contextmenu', function(e){
+          var t = e.target;
+          var tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+          if (tag !== 'input' && tag !== 'textarea' && !(t && t.isContentEditable)) {
+            e.preventDefault();
+            return false;
+          }
+        }, true);
+        document.addEventListener('keydown', function(e){
+          var ctrl = e.ctrlKey || e.metaKey;
+          var k = (e.key || '').toLowerCase();
+          var c = e.keyCode || e.which;
+          if (k === 'f12' || c === 123 || (ctrl && (k === 'u' || c === 85 || k === 's' || c === 83)) || (ctrl && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || c === 73 || c === 74 || c === 67))) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+        }, true);
+      })();
+    </script>
+
     <!-- Canonical URL -->
     <link rel="canonical" href="https://www.caturracoffeeroaster.com/" />
 

@@ -146,6 +146,15 @@ body {
   line-height: 1.6;
 }
 
+/* Brand Assets & Media Protection */
+img, video {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+}
+
 /* LTR English Overrides */
 html[dir="ltr"] body {
   direction: ltr;
