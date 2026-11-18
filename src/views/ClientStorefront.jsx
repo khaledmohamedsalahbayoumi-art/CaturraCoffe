@@ -1638,9 +1638,7 @@ export const ClientStorefront = () => {
     };
 
     const coffeeCrops = (products || []).filter(isCoffeeCrop);
-    const inStockCoffeeCrops = coffeeCrops.filter(isAvailableInStock);
-
-    const sortedNewHarvests = [...(inStockCoffeeCrops.length >= 4 ? inStockCoffeeCrops : coffeeCrops)]
+    const sortedNewHarvests = [...coffeeCrops]
       .sort((a, b) => {
         const timeDiff = getProductNewnessTimestamp(b) - getProductNewnessTimestamp(a);
         if (timeDiff !== 0) return timeDiff;
@@ -2117,6 +2115,7 @@ export const ClientStorefront = () => {
 
           <div className="caturra-home-products-grid">
             {newHarvests.map(prod => {
+              const isOutOfStock = (Number(prod.stock) || 0) <= 0;
               const localizedName = getLocalizedName(prod, language);
               const localizedOrigin = getLocalizedOrigin(prod.country || prod.coffeeOrigin?.country || prod.origin, language);
               const localizedNotes = getLocalizedNotes(prod.sensoryProfile?.flavorNotes || prod.flavorNotes || prod.notes || prod, language);
@@ -2164,6 +2163,27 @@ export const ClientStorefront = () => {
                     >
                       <Heart size={16} fill={isWishlisted(prod.id) ? '#C0392B' : 'none'} />
                     </button>
+
+                    {/* Out of Stock Overlay */}
+                    {isOutOfStock && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'rgba(44, 24, 16, 0.85)',
+                          backdropFilter: 'blur(3px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#FFF8EE',
+                          fontWeight: '800',
+                          fontSize: '0.95rem',
+                          zIndex: 4
+                        }}
+                      >
+                        {t('outOfStock')}
+                      </div>
+                    )}
                   </div>
 
                   {/* Details */}
@@ -2206,12 +2226,17 @@ export const ClientStorefront = () => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleOpenProductDetails(prod);
+                          if (!isOutOfStock) handleOpenProductDetails(prod);
                         }}
+                        disabled={isOutOfStock}
                         className="store-product-btn"
+                        style={{
+                          opacity: isOutOfStock ? 0.55 : 1,
+                          cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                        }}
                       >
                         <ShoppingCart size={16} />
-                        <span>{language === 'en' ? 'Add to Cart' : 'أضف للسلة'}</span>
+                        <span>{isOutOfStock ? (language === 'en' ? 'Out of Stock' : 'نفذت الكمية') : (language === 'en' ? 'Add to Cart' : 'أضف للسلة')}</span>
                       </button>
                     </div>
                   </div>
@@ -2274,6 +2299,7 @@ export const ClientStorefront = () => {
 
           <div className="caturra-home-products-grid">
             {bestSellers.map(prod => {
+              const isOutOfStock = (Number(prod.stock) || 0) <= 0;
               const localizedName = getLocalizedName(prod, language);
               const localizedOrigin = getLocalizedOrigin(prod.country || prod.coffeeOrigin?.country || prod.origin, language);
               const localizedNotes = getLocalizedNotes(prod.sensoryProfile?.flavorNotes || prod.flavorNotes || prod.notes || prod, language);
@@ -2312,6 +2338,27 @@ export const ClientStorefront = () => {
                     >
                       <Heart size={16} fill={isWishlisted(prod.id) ? '#C0392B' : 'none'} />
                     </button>
+
+                    {/* Out of Stock Overlay */}
+                    {isOutOfStock && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'rgba(44, 24, 16, 0.85)',
+                          backdropFilter: 'blur(3px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#FFF8EE',
+                          fontWeight: '800',
+                          fontSize: '0.95rem',
+                          zIndex: 4
+                        }}
+                      >
+                        {t('outOfStock')}
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -2362,12 +2409,17 @@ export const ClientStorefront = () => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleOpenProductDetails(prod);
+                          if (!isOutOfStock) handleOpenProductDetails(prod);
                         }}
+                        disabled={isOutOfStock}
                         className="store-product-btn"
+                        style={{
+                          opacity: isOutOfStock ? 0.55 : 1,
+                          cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                        }}
                       >
                         <ShoppingCart size={16} />
-                        <span>{language === 'en' ? 'Add to Cart' : 'أضف للسلة'}</span>
+                        <span>{isOutOfStock ? (language === 'en' ? 'Out of Stock' : 'نفذت الكمية') : (language === 'en' ? 'Add to Cart' : 'أضف للسلة')}</span>
                       </button>
                     </div>
                   </div>
@@ -2749,14 +2801,17 @@ export const ClientStorefront = () => {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleOpenProductDetails(prod);
+                if (!isOutOfStock) handleOpenProductDetails(prod);
               }}
               disabled={isOutOfStock}
               className="store-product-btn"
-              style={{ opacity: isOutOfStock ? 0.5 : 1 }}
+              style={{
+                opacity: isOutOfStock ? 0.55 : 1,
+                cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+              }}
             >
               <ShoppingCart size={15} />
-              <span>{language === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+              <span>{isOutOfStock ? (language === 'ar' ? 'نفذت الكمية' : 'Out of Stock') : (language === 'ar' ? 'أضف للسلة' : 'Add to Cart')}</span>
             </button>
           </div>
         </div>
