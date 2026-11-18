@@ -626,20 +626,22 @@ h1, h2, h3, h4, h5, h6 {
 /* POS Responsive System */
 .pos-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 390px;
   gap: 14px;
-  min-height: calc(100vh - 84px);
-  min-height: calc(100dvh - 84px);
+  min-height: calc(100vh - 28px);
+  min-height: calc(100dvh - 28px);
   align-items: stretch;
 }
 
 .pos-cart-panel {
   display: flex !important;
   flex-direction: column !important;
-  height: calc(100vh - 84px) !important;
-  height: calc(100dvh - 84px) !important;
-  max-height: calc(100vh - 84px) !important;
-  max-height: calc(100dvh - 84px) !important;
+  height: calc(100vh - 28px) !important;
+  height: calc(100dvh - 28px) !important;
+  min-height: calc(100vh - 28px) !important;
+  min-height: calc(100dvh - 28px) !important;
+  max-height: calc(100vh - 28px) !important;
+  max-height: calc(100dvh - 28px) !important;
   position: sticky !important;
   top: 8px !important;
   border-radius: 18px !important;
@@ -668,8 +670,8 @@ h1, h2, h3, h4, h5, h6 {
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
-    min-height: calc(100vh - 130px) !important;
-    min-height: calc(100dvh - 130px) !important;
+    min-height: calc(100vh - 72px) !important;
+    min-height: calc(100dvh - 72px) !important;
     flex: 1 !important;
   }
 
@@ -723,12 +725,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .pos-cart-panel {
-    height: calc(100vh - 130px) !important;
-    height: calc(100dvh - 130px) !important;
-    min-height: calc(100vh - 130px) !important;
-    min-height: calc(100dvh - 130px) !important;
-    max-height: calc(100vh - 130px) !important;
-    max-height: calc(100dvh - 130px) !important;
+    height: calc(100vh - 72px) !important;
+    height: calc(100dvh - 72px) !important;
+    min-height: calc(100vh - 72px) !important;
+    min-height: calc(100dvh - 72px) !important;
+    max-height: calc(100vh - 72px) !important;
+    max-height: calc(100dvh - 72px) !important;
     position: static !important;
     border-radius: 16px !important;
     display: flex !important;

@@ -701,9 +701,9 @@ export const PosView = () => {
           boxShadow: 'var(--shadow-md)',
           display: (!isMobile || mobileTab === 'cart') ? 'flex' : 'none',
           flexDirection: 'column',
-          height: isMobile ? 'calc(100dvh - 130px)' : 'calc(100vh - 84px)',
-          minHeight: isMobile ? 'calc(100dvh - 130px)' : 'calc(100vh - 84px)',
-          maxHeight: isMobile ? 'calc(100dvh - 130px)' : 'calc(100vh - 84px)',
+          height: isMobile ? 'calc(100dvh - 72px)' : 'calc(100vh - 28px)',
+          minHeight: isMobile ? 'calc(100dvh - 72px)' : 'calc(100vh - 28px)',
+          maxHeight: isMobile ? 'calc(100dvh - 72px)' : 'calc(100vh - 28px)',
           position: isMobile ? 'static' : 'sticky',
           top: '8px',
           overflow: 'hidden'
@@ -870,47 +870,48 @@ export const PosView = () => {
         <div
           style={{
             flex: 1,
-            minHeight: 0,
+            minHeight: '260px',
             overflowY: 'auto',
-            padding: '12px 16px',
+            padding: '16px 18px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: '10px'
           }}
         >
           {cart.length === 0 ? (
             <div
               style={{
                 flex: 1,
-                minHeight: '160px',
+                minHeight: '240px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 textAlign: 'center',
-                padding: '24px 16px',
+                padding: '36px 20px',
                 color: 'var(--text-muted)'
               }}
             >
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
+                  width: '84px',
+                  height: '84px',
                   borderRadius: '50%',
                   backgroundColor: '#FFF8EE',
-                  border: '1.5px dashed #EDD9BD',
+                  border: '2px dashed #D6C7B8',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '12px'
+                  marginBottom: '16px',
+                  boxShadow: '0 4px 14px rgba(139, 94, 52, 0.08)'
                 }}
               >
-                <Coffee size={32} color="#8B5E34" />
+                <Coffee size={42} color="#8B5E34" />
               </div>
-              <p style={{ fontSize: '0.94rem', fontWeight: '800', color: '#4A3220', margin: '0 0 6px 0' }}>
+              <p style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2D1810', margin: '0 0 10px 0', letterSpacing: '-0.3px', lineHeight: 1.3 }}>
                 اختر أصنافاً من القائمة لبدء الفاتورة
               </p>
-              <p style={{ fontSize: '0.78rem', color: '#8B5E34', margin: 0, fontWeight: '600' }}>
+              <p style={{ fontSize: '0.88rem', color: '#8B5E34', margin: 0, fontWeight: '700', background: '#FFF8EE', border: '1px solid #EDD9BD', padding: '6px 16px', borderRadius: '20px' }}>
                 يمكنك وزن البن بالجرام (250، 300، 500، 1 كجم) بدقة
               </p>
             </div>
