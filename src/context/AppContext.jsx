@@ -1317,16 +1317,6 @@ export const AppProvider = ({ children }) => {
     try {
       localStorage.setItem('caturra_eg_contact_info', JSON.stringify(contactInfo));
     } catch { }
-    if (typeof fetch !== 'undefined' && contactInfo && Object.keys(contactInfo).length > 0) {
-      const timer = setTimeout(() => {
-        fetch('/api/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contactInfo })
-        }).catch(() => { });
-      }, 800);
-      return () => clearTimeout(timer);
-    }
   }, [contactInfo]);
 
   useEffect(() => {
@@ -3772,23 +3762,35 @@ export const AppProvider = ({ children }) => {
     return { updatedCount, addedCount, removedCount, total: items.length };
   };
 
-  const updateContactInfo = (newInfo) => {
+  const updateContactInfo = async (newInfo) => {
+    let updatedPayload = null;
     setContactInfo(prev => {
       const updated = { ...prev, ...newInfo };
+      updatedPayload = updated;
       saveState('contact_info', updated);
       try {
         localStorage.setItem('caturra_eg_contact_info', JSON.stringify(updated));
       } catch { }
-      broadcastLiveSync('contactInfo', updated);
-      if (typeof fetch !== 'undefined') {
-        fetch('/api/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contactInfo: updated })
-        }).catch(() => { });
-      }
       return updated;
     });
+
+    if (updatedPayload) {
+      broadcastLiveSync('contactInfo', updatedPayload);
+      if (typeof fetch !== 'undefined') {
+        try {
+          const res = await fetch('/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contactInfo: updatedPayload })
+          });
+          return res.ok;
+        } catch (err) {
+          console.warn('Sync contactInfo error:', err);
+          return false;
+        }
+      }
+    }
+    return true;
   };
 
   const resetContactInfo = () => {

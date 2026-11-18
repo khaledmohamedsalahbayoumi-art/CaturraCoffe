@@ -221,10 +221,10 @@ export const StoreSettingsView = () => {
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e?.preventDefault();
     const cleanTransferPhone = formData.instapayPhone?.trim() || '01033144498';
-    updateContactInfo({
+    await updateContactInfo({
       ...formData,
       instapayPhone: cleanTransferPhone,
       instapayAccount: cleanTransferPhone,

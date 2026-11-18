@@ -2092,7 +2092,7 @@ export const B2BAdminView = () => {
                   Caturra Coffee & Roasters • سجل تجاري: 148920 • بطاقة ضريبية: 582-934-211
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#666', marginTop: '2px' }}>
-                  القاهرة، مصر الجديدة - شارع الثورة • هاتف المبيعات: {contactInfo?.phone || '01033144498'}
+                  {contactInfo?.address || 'القاهرة، مصر الجديدة'} • هاتف المبيعات: {contactInfo?.phone || '01033144498'}
                 </div>
               </div>
               <div style={{ textAlign: isRtl ? 'left' : 'right' }}>

@@ -130,9 +130,19 @@ export default async function handler(req, res) {
         }
       }
 
+      // Merge contactInfo safely so partial or incoming updates don't drop fields
+      let mergedContactInfo = { ...(current.contactInfo || {}) };
+      if (incoming.contactInfo && typeof incoming.contactInfo === 'object') {
+        mergedContactInfo = {
+          ...mergedContactInfo,
+          ...incoming.contactInfo
+        };
+      }
+
       const merged = {
         ...current,
         ...incoming,
+        contactInfo: mergedContactInfo,
         products: mergedProducts,
         invoices: mergedInvoices,
         users: mergedUsers,
