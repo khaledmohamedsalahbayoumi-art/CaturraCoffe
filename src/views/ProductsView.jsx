@@ -472,19 +472,26 @@ export const ProductsView = () => {
     } else if (selectedCategory === 'filter') {
       matchesCategory = p.category === 'filter' || p.subCategory === 'filter';
     } else if (selectedCategory === 'fermented') {
-      matchesCategory = p.category === 'fermented' || p.subCategory === 'fermented' || (p.nameEn && p.nameEn.toLowerCase().includes('fermented'));
+      const pNameEn = String(p.nameEn || '').toLowerCase();
+      matchesCategory = p.category === 'fermented' || p.subCategory === 'fermented' || pNameEn.includes('fermented');
     } else if (selectedCategory !== 'all') {
       matchesCategory = p.category === selectedCategory;
     }
 
-    const q = searchQuery.toLowerCase().trim();
+    const q = String(searchQuery || '').toLowerCase().trim();
+    const pName = String(p.name || '').toLowerCase();
+    const pNameEn = String(p.nameEn || '').toLowerCase();
+    const pSku = String(p.sku || '').toLowerCase();
+    const pCountry = String(p.coffeeOrigin?.country || p.country || '').toLowerCase();
+    const pNotes = String(p.notes || '').toLowerCase();
+
     const matchesSearch = !q ||
-      p.name.toLowerCase().includes(q) ||
-      (p.nameEn && p.nameEn.toLowerCase().includes(q)) ||
-      (p.sku && p.sku.toLowerCase().includes(q)) ||
-      (p.barcode && p.barcode.includes(q)) ||
-      (p.coffeeOrigin?.country && p.coffeeOrigin.country.toLowerCase().includes(q)) ||
-      (p.notes && p.notes.toLowerCase().includes(q));
+      pName.includes(q) ||
+      pNameEn.includes(q) ||
+      pSku.includes(q) ||
+      (p.barcode && String(p.barcode).includes(q)) ||
+      pCountry.includes(q) ||
+      pNotes.includes(q);
 
     return matchesCategory && matchesSearch;
   }).sort((a, b) => {

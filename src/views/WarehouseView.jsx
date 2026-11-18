@@ -115,8 +115,10 @@ export const WarehouseView = () => {
 
   // Filter batches
   const filteredBatches = batches.filter(b => {
-    const matchesSearch = b.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          b.batchCode.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = (searchQuery || '').toLowerCase();
+    const pName = (b.productName || '').toLowerCase();
+    const bCode = (b.batchCode || '').toLowerCase();
+    const matchesSearch = pName.includes(q) || bCode.includes(q);
     
     const isExpiring = nearExpiryBatches.some(nb => nb.id === b.id);
     const isLow = b.quantity <= 5;
@@ -209,8 +211,10 @@ export const WarehouseView = () => {
 
   // Filtered audit items
   const filteredAuditItems = auditItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(auditSearchQuery.toLowerCase()) ||
-                          item.sku.toLowerCase().includes(auditSearchQuery.toLowerCase());
+    const q = (auditSearchQuery || '').toLowerCase();
+    const iName = (item.name || '').toLowerCase();
+    const iSku = (item.sku || '').toLowerCase();
+    const matchesSearch = iName.includes(q) || iSku.includes(q);
     if (auditFilter === 'discrepancy') return matchesSearch && item.diff !== 0;
     if (auditFilter === 'deficit') return matchesSearch && item.diff < 0;
     if (auditFilter === 'surplus') return matchesSearch && item.diff > 0;

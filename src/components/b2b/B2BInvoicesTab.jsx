@@ -825,7 +825,7 @@ const CreateDirectB2BInvoiceModal = ({ products, customers, b2bRequests = [], tr
                     const matchedItems = cust.preferredProducts.map(pIdOrName => {
                       const p = (products || []).find(prod =>
                         prod.id === pIdOrName ||
-                        prod.name.toLowerCase().includes(String(pIdOrName).toLowerCase()) ||
+                        (prod.name && prod.name.toLowerCase().includes(String(pIdOrName).toLowerCase())) ||
                         (prod.nameEn && prod.nameEn.toLowerCase().includes(String(pIdOrName).toLowerCase()))
                       );
                       if (!p) return null;

@@ -138,8 +138,8 @@ export const CustomersView = () => {
           const directMatch = (products || []).find(p => p.id === item);
           if (directMatch) return directMatch.id;
           const nameMatch = (products || []).find(p =>
-            p.name.toLowerCase().includes(item.toLowerCase()) ||
-            (p.nameEn && p.nameEn.toLowerCase().includes(item.toLowerCase()))
+            (p?.name && p.name.toLowerCase().includes(item.toLowerCase())) ||
+            (p?.nameEn && p.nameEn.toLowerCase().includes(item.toLowerCase()))
           );
           return nameMatch ? nameMatch.id : item;
         }
@@ -154,8 +154,8 @@ export const CustomersView = () => {
         const itemNames = match[1].split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
         itemNames.forEach(name => {
           const matchedProd = (products || []).find(p =>
-            p.name.toLowerCase().includes(name) ||
-            (p.nameEn && p.nameEn.toLowerCase().includes(name)) ||
+            (p?.name && p.name.toLowerCase().includes(name)) ||
+            (p?.nameEn && p.nameEn.toLowerCase().includes(name)) ||
             (name.includes('brazil') && p.id.includes('brazil')) ||
             (name.includes('colomb') && p.id.includes('colomb')) ||
             (name.includes('turkish') && p.id.includes('turkish')) ||

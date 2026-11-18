@@ -239,11 +239,13 @@ export const ClientStorefront = () => {
   const productMatchesCategory = (p, catId) => {
     if (!p) return false;
     if (catId === 'all') return true;
+    const pNameEn = String(p.nameEn || '').toLowerCase();
+    const pName = String(p.name || '');
     if (catId === 'fermented') {
-      return p.category === 'fermented' || p.subCategory === 'fermented' || (p.nameEn && p.nameEn.toLowerCase().includes('fermented')) || (p.name && p.name.includes('مخمر'));
+      return p.category === 'fermented' || p.subCategory === 'fermented' || pNameEn.includes('fermented') || pName.includes('مخمر');
     }
     if (catId === 'specialty') {
-      const isFermented = p.category === 'fermented' || p.subCategory === 'fermented' || (p.nameEn && p.nameEn.toLowerCase().includes('fermented')) || (p.name && p.name.includes('مخمر'));
+      const isFermented = p.category === 'fermented' || p.subCategory === 'fermented' || pNameEn.includes('fermented') || pName.includes('مخمر');
       return !isFermented && (p.category === 'specialty' || p.category === 'espresso' || p.category === 'filter' || p.category === 'beans');
     }
     if (catId === 'classic_blends') {
@@ -869,10 +871,12 @@ export const ClientStorefront = () => {
   }, [categories, products, language, getLocalizedCategory]);
 
   const getOriginCount = (query) => {
-    if (!query) return products.filter(p => p.category === 'specialty' || p.category === 'classic_blends' || p.category === 'coffee' || p.category === 'espresso' || p.category === 'filter').length;
-    return products.filter(p => {
-      const origStr = `${p.country || ''} ${p.coffeeOrigin?.country || ''} ${p.origin || ''} ${p.name || ''} ${p.notes || ''} ${p.flavorNotes || ''}`;
-      return origStr.toLowerCase().includes(query.toLowerCase());
+    if (!query) return (products || []).filter(p => p && (p.category === 'specialty' || p.category === 'classic_blends' || p.category === 'coffee' || p.category === 'espresso' || p.category === 'filter')).length;
+    const q = String(query || '').toLowerCase().trim();
+    return (products || []).filter(p => {
+      if (!p) return false;
+      const origStr = `${p.country || ''} ${p.coffeeOrigin?.country || ''} ${p.origin || ''} ${p.name || ''} ${p.notes || ''} ${p.flavorNotes || ''}`.toLowerCase();
+      return origStr.includes(q);
     }).length;
   };
 
@@ -890,7 +894,8 @@ export const ClientStorefront = () => {
   };
 
   // Filter products by category, origin, and search query (Always Coffee first, Tools at the end)
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = (products || []).filter(p => {
+    if (!p) return false;
     let matchesCat = true;
     if (selectedCategory && selectedCategory !== 'all') {
       matchesCat = productMatchesCategory(p, selectedCategory);
@@ -900,19 +905,31 @@ export const ClientStorefront = () => {
     if (selectedOrigin && selectedOrigin !== 'all_origins') {
       const oObj = coffeeOriginsList.find(o => o.id === selectedOrigin);
       if (oObj && oObj.query) {
+        const qOrigin = String(oObj.query || '').toLowerCase().trim();
         const pText = `${p.country || ''} ${p.coffeeOrigin?.country || ''} ${p.origin || ''} ${p.name || ''} ${p.notes || ''} ${p.flavorNotes || ''} ${p.description || ''}`.toLowerCase();
-        matchesOrigin = pText.includes(oObj.query.toLowerCase());
+        matchesOrigin = pText.includes(qOrigin);
       }
     }
 
-    const matchesQuery = !searchQuery.trim() ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.notes && p.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.flavorNotes && p.flavorNotes.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.country && p.country.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.coffeeOrigin?.country && p.coffeeOrigin.country.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.origin && p.origin.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const q = String(searchQuery || '').toLowerCase().trim();
+    const pName = String(p.name || '').toLowerCase();
+    const pNameEn = String(p.nameEn || '').toLowerCase();
+    const pNotes = String(p.notes || '').toLowerCase();
+    const pFlavorNotes = String(p.flavorNotes || '').toLowerCase();
+    const pCountry = String(p.country || '').toLowerCase();
+    const pCoffeeOriginCountry = String(p.coffeeOrigin?.country || '').toLowerCase();
+    const pOrigin = String(p.origin || '').toLowerCase();
+    const pDesc = String(p.description || '').toLowerCase();
+
+    const matchesQuery = !q ||
+      pName.includes(q) ||
+      pNameEn.includes(q) ||
+      pNotes.includes(q) ||
+      pFlavorNotes.includes(q) ||
+      pCountry.includes(q) ||
+      pCoffeeOriginCountry.includes(q) ||
+      pOrigin.includes(q) ||
+      pDesc.includes(q);
 
     return matchesCat && matchesOrigin && matchesQuery;
   }).sort((a, b) => {

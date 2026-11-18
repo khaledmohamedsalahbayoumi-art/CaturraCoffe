@@ -103,7 +103,11 @@ export const resolveProductImage = (p = {}) => {
  * - Preserves existing custom images
  */
 export const sanitizeProductData = (product, existingProduct = null) => {
+  if (!product) return null;
   const isTool = isToolProduct(product) || (existingProduct && isToolProduct(existingProduct));
+
+  const name = String(product.name || product.customBagDesign?.front?.nameAr || existingProduct?.name || 'قهوة كاتورا').trim();
+  const nameEn = String(product.nameEn || product.customBagDesign?.front?.nameEn || existingProduct?.nameEn || 'Caturra Coffee').trim();
 
   // Determine image: preserve user custom image, otherwise resolve cleanly
   let image = product.image || existingProduct?.image;
@@ -117,7 +121,7 @@ export const sanitizeProductData = (product, existingProduct = null) => {
   );
 
   if (!image || isExistingCorrupted) {
-    image = resolveProductImage({ ...existingProduct, ...product, unitType: isTool ? 'piece' : (product.unitType || 'weight') });
+    image = resolveProductImage({ ...existingProduct, ...product, name, nameEn, unitType: isTool ? 'piece' : (product.unitType || 'weight') });
   }
 
   const cat = String(product.category || existingProduct?.category || '').toLowerCase();
@@ -126,6 +130,8 @@ export const sanitizeProductData = (product, existingProduct = null) => {
   return {
     ...existingProduct,
     ...product,
+    name,
+    nameEn,
     unitType: isTool ? 'piece' : (product.unitType || existingProduct?.unitType || 'weight'),
     // Tools NEVER have bagVariant; Coffee has 'vertical' for classic or 'landscape' for specialty
     bagVariant: isTool ? undefined : (product.bagVariant || existingProduct?.bagVariant || (isClassic ? 'vertical' : 'landscape')),

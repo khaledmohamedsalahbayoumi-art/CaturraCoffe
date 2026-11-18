@@ -84,9 +84,12 @@ export const PosView = () => {
     } else if (selectedCategory !== 'all') {
       matchesCat = p.category === selectedCategory;
     }
-    const matchesQuery = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (p.barcode && p.barcode.includes(searchQuery)) ||
-                         (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+    const q = String(searchQuery || '').toLowerCase().trim();
+    const pName = String(p?.name || '').toLowerCase();
+    const pSku = String(p?.sku || '').toLowerCase();
+    const matchesQuery = !q || pName.includes(q) ||
+                         (p?.barcode && String(p.barcode).includes(q)) ||
+                         (pSku && pSku.includes(q));
     return matchesCat && matchesQuery;
   });
 

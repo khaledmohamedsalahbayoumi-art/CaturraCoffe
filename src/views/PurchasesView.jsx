@@ -185,10 +185,12 @@ export const PurchasesView = () => {
   };
 
   // Filter purchases
-  const filteredPurchases = purchases.filter(p =>
-    p.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPurchases = purchases.filter(p => {
+    const q = (searchQuery || '').toLowerCase();
+    const sup = (p.supplierName || '').toLowerCase();
+    const inv = (p.invoiceNumber || '').toLowerCase();
+    return sup.includes(q) || inv.includes(q);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
