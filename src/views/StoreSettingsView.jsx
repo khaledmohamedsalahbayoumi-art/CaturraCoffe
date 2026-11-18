@@ -5,10 +5,7 @@ import { initialBrewingGuides } from '../data/initialData';
 import {
   Phone,
   MessageCircle,
-  Mail,
   MapPin,
-  Clock,
-  Truck,
   Share2,
   Building,
   Save,
@@ -16,7 +13,6 @@ import {
   Eye,
   CheckCircle,
   Sparkles,
-  HelpCircle,
   ExternalLink,
   Shield,
   Coffee,
@@ -24,22 +20,18 @@ import {
   Megaphone,
   Copy,
   Check,
-  Link,
   Store,
   Bot,
   Zap,
-  Key,
-  BookOpen,
   Plus,
   Trash2,
   Thermometer,
   Timer,
   Scale,
-  Sliders,
-  ChevronDown,
-  ChevronUp
+  BarChart3
 } from 'lucide-react';
 import { testGeminiApiKey } from '../utils/geminiAi';
+import { calculateStoreStats, formatStatNumber } from '../utils/storeStats';
 
 export const StoreSettingsView = () => {
   const {
@@ -50,7 +42,10 @@ export const StoreSettingsView = () => {
     confirmDialog,
     brewingGuides = {},
     updateBrewingGuide,
-    resetBrewingGuides
+    resetBrewingGuides,
+    products = [],
+    invoices = [],
+    academyArticles = []
   } = useApp();
   const [copiedKey, setCopiedKey] = useState('');
 
@@ -99,7 +94,29 @@ export const StoreSettingsView = () => {
     bannerLinkText: contactInfo?.bannerLinkText || 'تسوق الآن ⚡',
     promoCode: contactInfo?.promoCode || 'CATURRA10',
     promoDiscountPercent: contactInfo?.promoDiscountPercent || 10,
-    geminiApiKey: contactInfo?.geminiApiKey || ''
+    geminiApiKey: contactInfo?.geminiApiKey || '',
+    // Live Storefront Statistics Settings
+    statsAutoCalc: contactInfo?.statsAutoCalc !== undefined ? contactInfo.statsAutoCalc : true,
+    statsBaseCups: contactInfo?.statsBaseCups !== undefined ? contactInfo.statsBaseCups : 20000,
+    foundingYear: contactInfo?.foundingYear || 2021,
+    statsCerts: contactInfo?.statsCerts !== undefined ? contactInfo.statsCerts : 3,
+    statsBranches: contactInfo?.statsBranches !== undefined ? contactInfo.statsBranches : 2,
+    statsAcademy: contactInfo?.statsAcademy !== undefined ? contactInfo.statsAcademy : 1,
+    customStatLots: contactInfo?.customStatLots || '',
+    customStatYears: contactInfo?.customStatYears || '',
+    customStatCerts: contactInfo?.customStatCerts || '',
+    customStatBranches: contactInfo?.customStatBranches || '',
+    customStatAcademy: contactInfo?.customStatAcademy || '',
+    customStatArabica: contactInfo?.customStatArabica || '100%',
+    customStatCups: contactInfo?.customStatCups || ''
+  });
+
+  // Calculate live preview statistics based on form data and actual catalog/invoice records
+  const previewStats = calculateStoreStats({
+    products,
+    invoices,
+    contactInfo: formData,
+    academyArticles
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -259,7 +276,20 @@ export const StoreSettingsView = () => {
         bannerTheme: 'mint',
         bannerLinkText: 'تسوق الآن ⚡',
         promoCode: 'CATURRA10',
-        promoDiscountPercent: 10
+        promoDiscountPercent: 10,
+        statsAutoCalc: true,
+        statsBaseCups: 20000,
+        foundingYear: 2021,
+        statsCerts: 3,
+        statsBranches: 2,
+        statsAcademy: 1,
+        customStatLots: '',
+        customStatYears: '',
+        customStatCerts: '',
+        customStatBranches: '',
+        customStatAcademy: '',
+        customStatArabica: '100%',
+        customStatCups: ''
       });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
@@ -2100,6 +2130,373 @@ export const StoreSettingsView = () => {
                     className="form-input"
                     style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
                   />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* 📊 Card: شريط إحصائيات وأرقام المتجر المباشرة */}
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div style={{
+              padding: '16px 22px',
+              borderBottom: '1px solid var(--border-light)',
+              background: 'linear-gradient(135deg, #2b1d16 0%, #1a100b 100%)',
+              color: '#ffffff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '11px',
+                  background: 'linear-gradient(135deg, #d4a373, #a66a38)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 3px 10px rgba(166, 106, 56, 0.35)'
+                }}>
+                  <BarChart3 size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', color: '#ffffff' }}>
+                    📊 شريط إحصائيات وأرقام المحمصة (Live Stats Banner)
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: '#e5d5c5' }}>
+                    شريط الأرقام البارز في قسم "عن كاتورا" - يقرأ تلقائياً من مبيعات وفواتير ومحاصيل المتجر
+                  </span>
+                </div>
+              </div>
+
+              {/* Auto Calc Toggle Switch */}
+              <label style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                userSelect: 'none',
+                background: 'rgba(255, 255, 255, 0.12)',
+                padding: '6px 14px',
+                borderRadius: '10px',
+                border: '1.5px solid ' + (formData.statsAutoCalc ? '#d4a373' : 'rgba(255, 255, 255, 0.2)'),
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              }}>
+                <span style={{ fontWeight: '800', fontSize: '0.84rem', color: formData.statsAutoCalc ? '#fde047' : '#cbd5e1' }}>
+                  {formData.statsAutoCalc ? '⚡ الحساب التلقائي الحي مفعل' : '⏸️ إدخال يدوي مخصص'}
+                </span>
+                <input
+                  type="checkbox"
+                  name="statsAutoCalc"
+                  checked={!!formData.statsAutoCalc}
+                  onChange={handleChange}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#d4a373' }}
+                />
+              </label>
+            </div>
+
+            <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Explanatory Info Alert */}
+              <div style={{
+                background: '#fefce8',
+                border: '1px solid #fef08a',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                fontSize: '0.82rem',
+                color: '#854d0e',
+                lineHeight: '1.6',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px'
+              }}>
+                <Sparkles size={18} color="#ca8a04" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong>كيف يعمل الحساب التلقائي الذكي؟</strong>
+                  <div style={{ marginTop: '3px' }}>
+                    • <strong>فنجان قُدّم بشغف:</strong> يجمع الفناجين التأسيسية للمحمصة مع عدد الفناجين المحسوبة تلقائياً من كمية الجرامات والعبوات المباعة في فواتير المتجر (حوالي 18 جرام لكل فنجان قهوة).<br />
+                    • <strong>محصول وسلالة عالمية:</strong> يحسب عدد محاصيل القهوة النشطة والمتوفرة بالمتجر حالياً ({products.filter(p => p.category === 'coffee' || p.category === 'specialty' || p.category === 'espresso' || p.isBlend || p.coffeeOrigin).length} محصول).<br />
+                    • <strong>سنوات من الريادة:</strong> تحسب ديناميكياً بناءً على سنة التأسيس ({new Date().getFullYear()} - {formData.foundingYear || 2021} = {Math.max(5, new Date().getFullYear() - (formData.foundingYear || 2021))} سنوات).
+                  </div>
+                </div>
+              </div>
+
+              {/* Foundational Settings Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+                
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    ☕ رصيد الفناجين التأسيسي (Base Cups):
+                  </label>
+                  <input
+                    type="number"
+                    name="statsBaseCups"
+                    value={formData.statsBaseCups}
+                    onChange={handleChange}
+                    placeholder="20000"
+                    className="form-input"
+                    style={{ fontSize: '0.9rem', fontWeight: '700' }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    الفناجين السابقة وتُضاف تلقائياً لمبيعات الموقع (+{previewStats.raw.soldCups} فنجان مباع حالياً).
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    📅 سنة التأسيس (Founding Year):
+                  </label>
+                  <input
+                    type="number"
+                    name="foundingYear"
+                    value={formData.foundingYear}
+                    onChange={handleChange}
+                    placeholder="2021"
+                    className="form-input"
+                    style={{ fontSize: '0.9rem', fontWeight: '700' }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    تحسب سنوات الريادة تلقائياً: {previewStats.displayYears}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    🏆 شهادات الجودة الدولية (SCA / Q-Grader):
+                  </label>
+                  <input
+                    type="number"
+                    name="statsCerts"
+                    value={formData.statsCerts}
+                    onChange={handleChange}
+                    placeholder="3"
+                    className="form-input"
+                    style={{ fontSize: '0.9rem', fontWeight: '700' }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    تظهر: {previewStats.displayCerts} شهادات جودة
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    📍 المقرات والفروع (Branches):
+                  </label>
+                  <input
+                    type="number"
+                    name="statsBranches"
+                    value={formData.statsBranches}
+                    onChange={handleChange}
+                    placeholder="2"
+                    className="form-input"
+                    style={{ fontSize: '0.9rem', fontWeight: '700' }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    تظهر: {previewStats.displayBranches} مقر وفرع
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    🎓 أكاديمية تدريب معتمدة:
+                  </label>
+                  <input
+                    type="number"
+                    name="statsAcademy"
+                    value={formData.statsAcademy}
+                    onChange={handleChange}
+                    placeholder="1"
+                    className="form-input"
+                    style={{ fontSize: '0.9rem', fontWeight: '700' }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    تظهر: {previewStats.displayAcademy} أكاديمية معتمدة
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Optional Custom Overrides Collapsible / Section */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px dashed #cbd5e1',
+                borderRadius: '12px',
+                padding: '16px',
+                marginTop: '6px'
+              }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>✏️ تخصيص يدوي مباشر للأرقام (اختياري - اتركه فارغاً للحساب التلقائي):</span>
+                </div>
+                <p style={{ margin: '0 0 14px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  في حال رغبتك في تثبيت نصوص مخصصة تظهر للعملاء بغض النظر عن الحساب التلقائي، يمكنك ملء الخانات أدناه:
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      تخصيص المحاصيل (بدلاً من {previewStats.raw.lots}+):
+                    </label>
+                    <input
+                      type="text"
+                      name="customStatLots"
+                      value={formData.customStatLots}
+                      onChange={handleChange}
+                      placeholder={formData.statsAutoCalc ? `تلقائي (${previewStats.displayLots})` : '+12'}
+                      className="form-input"
+                      style={{ fontSize: '0.84rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      تخصيص الفناجين (بدلاً من {formatStatNumber(previewStats.raw.totalCups)}):
+                    </label>
+                    <input
+                      type="text"
+                      name="customStatCups"
+                      value={formData.customStatCups}
+                      onChange={handleChange}
+                      placeholder={formData.statsAutoCalc ? `تلقائي (${previewStats.displayCups})` : '+20k'}
+                      className="form-input"
+                      style={{ fontSize: '0.84rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      تخصيص سنوات الريادة:
+                    </label>
+                    <input
+                      type="text"
+                      name="customStatYears"
+                      value={formData.customStatYears}
+                      onChange={handleChange}
+                      placeholder={previewStats.displayYears}
+                      className="form-input"
+                      style={{ fontSize: '0.84rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      تخصيص نسبة الأرابيكا:
+                    </label>
+                    <input
+                      type="text"
+                      name="customStatArabica"
+                      value={formData.customStatArabica}
+                      onChange={handleChange}
+                      placeholder="100%"
+                      className="form-input"
+                      style={{ fontSize: '0.84rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Preview of the Stats Banner */}
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Eye size={16} color="var(--mint-700)" />
+                  <span>معاينة حية لشريط الإحصائيات كما يظهر للعملاء في المتجر:</span>
+                </div>
+
+                <div style={{
+                  background: 'linear-gradient(135deg, #24160f 0%, #170d08 100%)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  color: '#ffffff',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+                  border: '1px solid rgba(212, 163, 115, 0.25)',
+                  overflowX: 'auto'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-around',
+                    flexWrap: 'wrap',
+                    gap: '20px',
+                    textAlign: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayLots}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        محصول وسلالة عالمية
+                      </div>
+                    </div>
+
+                    <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
+
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayYears}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        سنوات من الريادة
+                      </div>
+                    </div>
+
+                    <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
+
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayCerts}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        شهادات جودة دولية
+                      </div>
+                    </div>
+
+                    <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
+
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayBranches}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        مقر وفرع لخدمتكم
+                      </div>
+                    </div>
+
+                    <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
+
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayAcademy}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        أكاديمية تدريب معتمدة
+                      </div>
+                    </div>
+
+                    <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
+
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayArabica}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        أرابيكا مختصة نقية
+                      </div>
+                    </div>
+
+                    <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
+
+                    <div>
+                      <div style={{ fontSize: '1.7rem', fontWeight: '900', color: '#d4a373', fontFamily: 'system-ui' }}>
+                        {previewStats.displayCups}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
+                        فنجان قُدّم بشغف
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

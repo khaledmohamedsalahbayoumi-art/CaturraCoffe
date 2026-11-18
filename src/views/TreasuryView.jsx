@@ -6,28 +6,20 @@ import {
   Zap,
   ArrowRightLeft,
   Plus,
-  ArrowDownLeft,
-  ArrowUpRight,
   Search,
-  Filter,
-  Calendar,
   Building2,
   Smartphone,
-  CheckCircle,
   FileText,
-  Printer,
   Trash2,
   Edit2,
   X,
   ExternalLink,
-  DollarSign,
   TrendingUp,
   TrendingDown
 } from 'lucide-react';
 
 export const TreasuryView = () => {
   const {
-    invoices,
     openInvoiceModal,
     treasuryAccounts,
     addTreasuryAccount,
@@ -37,7 +29,6 @@ export const TreasuryView = () => {
     addTreasuryTransaction,
     deleteTreasuryTransaction,
     getTreasuryAccountBalance,
-    contactInfo,
     confirmDialog,
     resetAllFinancials
   } = useApp();

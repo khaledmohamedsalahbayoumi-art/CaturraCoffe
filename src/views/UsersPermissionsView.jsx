@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  ShieldCheck,
   UserPlus,
   Edit2,
   Trash2,
-  Lock,
-  Key,
   Check,
-  Shield,
-  User,
-  Phone,
-  Mail,
   X
 } from 'lucide-react';
 

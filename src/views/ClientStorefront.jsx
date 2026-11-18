@@ -75,6 +75,7 @@ import {
   downloadInvoicePdf,
   sendInvoicePdfToWhatsApp
 } from '../utils/exportUtils';
+import { calculateStoreStats } from '../utils/storeStats';
 
 const GoogleDriveIcon = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 87.3 78" fill="none" style={{ flexShrink: 0, display: 'inline-block', verticalAlign: 'middle' }}>
@@ -149,6 +150,16 @@ export const ClientStorefront = () => {
   const activeInstagram = contactInfo?.instagram || 'https://instagram.com';
   const activeFacebook = contactInfo?.facebook || 'https://facebook.com';
   const activeTiktok = contactInfo?.tiktok || 'https://tiktok.com';
+
+  // 📊 Live Dynamic Roastery & Storefront Statistics (Sales, Cups, Lots, Experience)
+  const storeStats = useMemo(() => {
+    return calculateStoreStats({
+      products,
+      invoices,
+      contactInfo,
+      academyArticles
+    });
+  }, [products, invoices, contactInfo, academyArticles]);
 
   const [hasEnteredStore, setHasEnteredStore] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -3365,38 +3376,38 @@ export const ClientStorefront = () => {
 
             <div className="about-stats-grid">
 
-              <div className="about-stat-item anim-stat-1">
-                <span className="about-stat-number">+12</span>
+              <div className="about-stat-item anim-stat-1" title={`${storeStats.raw.lots} محصول وسلالة قهوة مختصة متوفرة`}>
+                <span className="about-stat-number">{storeStats.displayLots}</span>
                 <span className="about-stat-label">{t('aboutStatLots')}</span>
               </div>
 
-              <div className="about-stat-item anim-stat-2">
-                <span className="about-stat-number">+5</span>
+              <div className="about-stat-item anim-stat-2" title={`تأسست المحمصة عام ${contactInfo?.foundingYear || 2021}`}>
+                <span className="about-stat-number">{storeStats.displayYears}</span>
                 <span className="about-stat-label">{t('aboutStatYears')}</span>
               </div>
 
-              <div className="about-stat-item anim-stat-3">
-                <span className="about-stat-number">+3</span>
+              <div className="about-stat-item anim-stat-3" title="شهادات اعتماد الجودة وتحكيم القهوة المختصة">
+                <span className="about-stat-number">{storeStats.displayCerts}</span>
                 <span className="about-stat-label">{t('aboutStatCerts')}</span>
               </div>
 
-              <div className="about-stat-item anim-stat-4">
-                <span className="about-stat-number">+2</span>
+              <div className="about-stat-item anim-stat-4" title="فروع ومقرات لخدمتكم المباشرة وتذوق القهوة">
+                <span className="about-stat-number">{storeStats.displayBranches}</span>
                 <span className="about-stat-label">{t('aboutStatBranches')}</span>
               </div>
 
-              <div className="about-stat-item anim-stat-5">
-                <span className="about-stat-number">+1</span>
+              <div className="about-stat-item anim-stat-5" title="أكاديمية وبرامج تدريب باريستا وتحميص معتمدة">
+                <span className="about-stat-number">{storeStats.displayAcademy}</span>
                 <span className="about-stat-label">{t('aboutStatAcademy')}</span>
               </div>
 
-              <div className="about-stat-item anim-stat-6">
-                <span className="about-stat-number">100%</span>
+              <div className="about-stat-item anim-stat-6" title="100% حبوب أرابيكا مختصة نقية من أفضل المزارع العالمية">
+                <span className="about-stat-number">{storeStats.displayArabica}</span>
                 <span className="about-stat-label">{t('aboutStatArabica')}</span>
               </div>
 
-              <div className="about-stat-item anim-stat-7">
-                <span className="about-stat-number">+20k</span>
+              <div className="about-stat-item anim-stat-7" title={`${storeStats.raw.totalCups.toLocaleString('ar-EG')} فنجان قهوة قُدم وحُضّر بحرفية وشغف من مبيعات المحمصة`}>
+                <span className="about-stat-number">{storeStats.displayCups}</span>
                 <span className="about-stat-label">{t('aboutStatCups')}</span>
               </div>
 

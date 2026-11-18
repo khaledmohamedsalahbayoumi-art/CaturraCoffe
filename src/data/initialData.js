@@ -2416,7 +2416,21 @@ export const initialContactInfo = {
   bannerText: '🚚 شحن سريع لكافة المحافظات خلال 24-48 ساعة | حبوب بن طازجة محمصة بحرفية عالية ☕',
   bannerBadge: 'عرض حصري',
   bannerTheme: 'mint', // 'mint' | 'gold' | 'dark' | 'crimson'
-  bannerLinkText: 'تصفح المحاصيل'
+  bannerLinkText: 'تصفح المحاصيل',
+  // Live Storefront Statistics Settings (شريط إحصائيات وأرقام المتجر المباشرة)
+  statsAutoCalc: true,          // تفعيل الحساب التلقائي الذكي من واقع الفواتير والمنتجات
+  statsBaseCups: 20000,         // فنجان أساسي (رصيد بداية المحمصة والتاريخ التأسيسي)
+  foundingYear: 2021,           // سنة التأسيس لحساب سنوات الريادة
+  statsCerts: 3,                // شهادات الجودة الدولية
+  statsBranches: 2,             // المقرات والفروع الحالية
+  statsAcademy: 1,              // الأكاديمية التدريبية المعتمدة
+  customStatLots: '',           // مخصص: محصول وسلالة (اتركه فارغاً للحساب التلقائي)
+  customStatYears: '',          // مخصص: سنوات من الريادة
+  customStatCerts: '',          // مخصص: شهادات الجودة
+  customStatBranches: '',       // مخصص: المقرات والفروع
+  customStatAcademy: '',        // مخصص: أكاديمية تدريب
+  customStatArabica: '100%',    // مخصص: نسبة الأرابيكا
+  customStatCups: ''            // مخصص: فنجان قُدّم بشغف (اتركه فارغاً للحساب التلقائي)
 };
 
 // Initial Treasury & Wallet Accounts

@@ -37,6 +37,7 @@ const AdminLoadingFallback = () => (
   </div>
 );
 
+const allTabs = ['pos', 'products', 'invoices', 'customers', 'b2b', 'purchases', 'suppliers', 'sales', 'warehouse', 'accounts', 'treasury', 'academy', 'settings', 'users'];
 
 const MainLayout = () => {
   const {
@@ -53,7 +54,6 @@ const MainLayout = () => {
   } = useApp();
 
   // Enforce permissions: if current tab is not allowed for this user, switch to the first allowed tab
-  const allTabs = ['pos', 'products', 'invoices', 'customers', 'b2b', 'purchases', 'suppliers', 'sales', 'warehouse', 'accounts', 'treasury', 'academy', 'settings', 'users'];
   const hasAccess = currentUser?.isOwner || (currentUser?.permissions && currentUser.permissions[activeTab]) || activeTab === 'academy' || activeTab === 'settings' || activeTab === 'b2b';
 
   useEffect(() => {
@@ -63,7 +63,7 @@ const MainLayout = () => {
         setActiveTab(firstAllowed);
       }
     }
-  }, [isAuthenticated, activeTab, hasAccess, currentUser]);
+  }, [isAuthenticated, activeTab, hasAccess, currentUser, setActiveTab]);
 
   // Automatically open native datepicker popup on click for any date input
   useEffect(() => {
