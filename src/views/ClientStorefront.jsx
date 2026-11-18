@@ -7342,9 +7342,9 @@ export const ClientStorefront = () => {
             className="modal-content academy-reader-modal"
             onClick={e => e.stopPropagation()}
             style={{
-              maxWidth: '820px',
-              width: '95%',
-              maxHeight: '90vh',
+              maxWidth: '1180px',
+              width: 'min(1180px, 95vw)',
+              maxHeight: '94vh',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -7363,30 +7363,30 @@ export const ClientStorefront = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '16px 22px',
+                padding: '18px 28px',
                 borderBottom: '1px solid #EDD9BD',
                 background: 'linear-gradient(135deg, #2C1810 0%, #4A3220 100%)'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   background: 'rgba(196, 154, 92, 0.2)',
                   color: '#C49A5C',
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: '1px solid rgba(196, 154, 92, 0.35)'
                 }}>
-                  <GraduationCap size={20} />
+                  <GraduationCap size={22} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: '900', fontSize: '1.05rem', color: '#FFFDF9' }}>
+                  <div style={{ fontWeight: '900', fontSize: '1.15rem', color: '#FFFDF9' }}>
                     {t('academyArticleModalTitle')}
                   </div>
-                  <div style={{ fontSize: '0.74rem', color: '#EDD9BD' }}>
+                  <div style={{ fontSize: '0.82rem', color: '#EDD9BD' }}>
                     {t('academyArticleModalSub')}
                   </div>
                 </div>
@@ -7395,23 +7395,23 @@ export const ClientStorefront = () => {
               <button
                 onClick={() => setSelectedAcademyArticle(null)}
                 className="btn btn-outline"
-                style={{ width: '36px', height: '36px', padding: 0, borderRadius: '50%', color: '#FFFDF9', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.25)' }}
+                style={{ width: '38px', height: '38px', padding: 0, borderRadius: '50%', color: '#FFFDF9', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.25)' }}
                 aria-label={t('closeModal')}
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Scrollable Body */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 'clamp(20px, 3vw, 36px)' }}>
               {/* Cover Hero Image */}
               <div style={{
                 position: 'relative',
-                borderRadius: '16px',
+                borderRadius: '20px',
                 overflow: 'hidden',
-                height: '240px',
-                marginBottom: '20px',
-                boxShadow: '0 8px 24px rgba(74, 50, 32, 0.12)'
+                height: 'clamp(260px, 38vh, 380px)',
+                marginBottom: '24px',
+                boxShadow: '0 10px 30px rgba(74, 50, 32, 0.14)'
               }}>
                 <img
                   src={selectedAcademyArticle.image}
@@ -7421,19 +7421,19 @@ export const ClientStorefront = () => {
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(to top, rgba(44, 24, 16, 0.9) 0%, rgba(44, 24, 16, 0.3) 60%, transparent 100%)',
+                  background: 'linear-gradient(to top, rgba(44, 24, 16, 0.92) 0%, rgba(44, 24, 16, 0.35) 60%, transparent 100%)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
-                  padding: '20px'
+                  padding: 'clamp(18px, 3vw, 28px)'
                 }}>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                     <span style={{
-                      background: 'rgba(196, 154, 92, 0.9)',
+                      background: 'rgba(196, 154, 92, 0.95)',
                       color: '#ffffff',
-                      padding: '3px 10px',
+                      padding: '4px 12px',
                       borderRadius: '20px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.8rem',
                       fontWeight: '800'
                     }}>
                       {(language === 'en' && selectedAcademyArticle.levelEn) ? selectedAcademyArticle.levelEn : (language === 'en' ? 'All Levels' : (selectedAcademyArticle.level || 'لجميع المستويات'))}
@@ -7442,9 +7442,9 @@ export const ClientStorefront = () => {
                       background: 'rgba(150, 102, 59, 0.95)',
                       border: '1px solid rgba(237, 217, 189, 0.5)',
                       color: '#ffffff',
-                      padding: '3px 10px',
+                      padding: '4px 12px',
                       borderRadius: '20px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.8rem',
                       fontWeight: '800'
                     }}>
                       {selectedAcademyArticle.category === 'brewing' ? t('catBrewing') :
@@ -7453,17 +7453,17 @@ export const ClientStorefront = () => {
                     </span>
                   </div>
 
-                  <h1 style={{ color: '#ffffff', fontSize: '1.45rem', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.3' }}>
+                  <h1 style={{ color: '#ffffff', fontSize: 'clamp(1.45rem, 2.6vw, 2rem)', fontWeight: '900', margin: '0 0 10px', lineHeight: '1.35' }}>
                     {(language === 'en' && selectedAcademyArticle.titleEn) ? selectedAcademyArticle.titleEn : selectedAcademyArticle.title}
                   </h1>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'rgba(255,255,255,0.88)', fontSize: '0.8rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Clock size={14} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '18px', color: 'rgba(255,255,255,0.92)', fontSize: '0.88rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={16} />
                       {(language === 'en' && selectedAcademyArticle.readTimeEn) ? selectedAcademyArticle.readTimeEn : (language === 'en' ? (selectedAcademyArticle.readTime?.replace('دقائق قراءة', 'min read')?.replace('دقائق', 'mins') || '4 min read') : (selectedAcademyArticle.readTime || '4 دقائق قراءة'))}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Award size={14} />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Award size={16} />
                       {(language === 'en' && selectedAcademyArticle.authorEn) ? selectedAcademyArticle.authorEn : (language === 'en' ? 'Caturra Specialists' : (selectedAcademyArticle.author || 'خبراء كاتورا'))}
                     </span>
                   </div>
@@ -7473,16 +7473,16 @@ export const ClientStorefront = () => {
               {/* Summary lead */}
               <div style={{
                 background: '#FFF8EE',
-                border: '1px solid #EDD9BD',
-                borderRight: isRtl ? '4px solid #96663B' : 'none',
-                borderLeft: isRtl ? 'none' : '4px solid #96663B',
-                padding: '14px 18px',
-                borderRadius: '8px',
-                fontSize: '0.98rem',
+                border: '1.5px solid #EDD9BD',
+                borderRight: isRtl ? '5px solid #96663B' : 'none',
+                borderLeft: isRtl ? 'none' : '5px solid #96663B',
+                padding: '16px 22px',
+                borderRadius: '10px',
+                fontSize: '1.08rem',
                 color: '#4A3220',
-                lineHeight: '1.6',
+                lineHeight: '1.7',
                 fontWeight: '600',
-                marginBottom: '20px'
+                marginBottom: '24px'
               }}>
                 {(language === 'en' && selectedAcademyArticle.summaryEn) ? selectedAcademyArticle.summaryEn : selectedAcademyArticle.summary}
               </div>
@@ -7616,17 +7616,17 @@ export const ClientStorefront = () => {
               )}
 
               {/* Content Formatted */}
-              <div className="academy-modal-content" style={{ fontSize: '0.96rem', lineHeight: '1.8', color: '#5C3D2E' }}>
+              <div className="academy-modal-content" style={{ fontSize: '1.06rem', lineHeight: '1.95', color: '#5C3D2E' }}>
                 {(((language === 'en' && selectedAcademyArticle.contentEn) ? selectedAcademyArticle.contentEn : selectedAcademyArticle.content) || '').split('\n\n').map((block, i) => {
                   if (block.startsWith('### ')) {
                     return (
-                      <h3 key={i} style={{ color: '#4A3220', fontWeight: '800', fontSize: '1.18rem', margin: '22px 0 10px', borderBottom: '1px solid #EDD9BD', paddingBottom: '6px' }}>
+                      <h3 key={i} style={{ color: '#4A3220', fontWeight: '800', fontSize: '1.24rem', margin: '24px 0 12px', borderBottom: '1px solid #EDD9BD', paddingBottom: '8px' }}>
                         {block.replace('### ', '')}
                       </h3>
                     );
                   } else if (block.startsWith('## ')) {
                     return (
-                      <h2 key={i} style={{ color: '#4A3220', fontWeight: '900', fontSize: '1.3rem', margin: '26px 0 12px' }}>
+                      <h2 key={i} style={{ color: '#4A3220', fontWeight: '900', fontSize: '1.45rem', margin: '28px 0 14px' }}>
                         {block.replace('## ', '')}
                       </h2>
                     );
@@ -7634,19 +7634,21 @@ export const ClientStorefront = () => {
                     return (
                       <div key={i} style={{
                         background: '#FFF8EE',
-                        border: '1px solid #EDD9BD',
-                        borderRadius: '12px',
-                        padding: '14px 16px',
-                        margin: '16px 0',
+                        border: '1.5px solid #EDD9BD',
+                        borderRadius: '14px',
+                        padding: '16px 20px',
+                        margin: '18px 0',
                         color: '#96663B',
-                        fontWeight: '700'
+                        fontWeight: '700',
+                        fontSize: '1.02rem',
+                        lineHeight: '1.7'
                       }}>
                         {block}
                       </div>
                     );
                   } else {
                     return (
-                      <p key={i} style={{ margin: '0 0 14px', whiteSpace: 'pre-line', color: '#5C3D2E' }}>
+                      <p key={i} style={{ margin: '0 0 16px', whiteSpace: 'pre-line', color: '#5C3D2E' }}>
                         {block}
                       </p>
                     );
@@ -7659,8 +7661,8 @@ export const ClientStorefront = () => {
             <div
               style={{
                 display: 'flex',
-                gap: '12px',
-                padding: '16px 24px',
+                gap: '14px',
+                padding: '18px 30px',
                 borderTop: '1px solid #EDD9BD',
                 background: '#FFFDF9'
               }}
@@ -7668,16 +7670,16 @@ export const ClientStorefront = () => {
               <button
                 onClick={() => navigateToStoreFromAcademy(selectedAcademyArticle)}
                 className="btn btn-primary"
-                style={{ flex: 1, padding: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)', color: '#ffffff', border: 'none', borderRadius: '12px', boxShadow: '0 4px 14px rgba(150, 102, 59, 0.25)' }}
+                style={{ flex: 1, padding: '14px 24px', fontWeight: '800', fontSize: '1.02rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'linear-gradient(135deg, #96663B 0%, #7A5230 100%)', color: '#ffffff', border: 'none', borderRadius: '14px', boxShadow: '0 4px 14px rgba(150, 102, 59, 0.25)' }}
               >
-                <Coffee size={18} />
+                <Coffee size={20} />
                 <span>{t('shopBeansForPrep')}</span>
               </button>
 
               <button
                 onClick={() => setSelectedAcademyArticle(null)}
                 className="btn btn-outline"
-                style={{ padding: '12px 24px', fontWeight: '700', background: '#FFF8EE', border: '1px solid #EDD9BD', color: '#4A3220', borderRadius: '12px' }}
+                style={{ padding: '14px 28px', fontWeight: '700', fontSize: '1rem', background: '#FFF8EE', border: '1.5px solid #EDD9BD', color: '#4A3220', borderRadius: '14px' }}
               >
                 {t('closeModal')}
               </button>
