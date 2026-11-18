@@ -159,9 +159,30 @@ export default async function handler(req, res) {
         };
       }
 
+      // Merge customers safely - never overwrite non-empty server customers with an empty array unless wipeCustomers is set
+      let mergedCustomers = Array.isArray(current.customers) ? [...current.customers] : [];
+      if (Array.isArray(incoming.customers) && (incoming.customers.length > 0 || incoming.wipeCustomers)) {
+        mergedCustomers = incoming.customers;
+      }
+
+      // Merge categories safely - never overwrite non-empty server categories with an empty array unless wipeCategories is set
+      let mergedCategories = Array.isArray(current.categories) ? [...current.categories] : [];
+      if (Array.isArray(incoming.categories) && (incoming.categories.length > 0 || incoming.wipeCategories)) {
+        mergedCategories = incoming.categories;
+      }
+
+      // Merge batches safely
+      let mergedBatches = Array.isArray(current.batches) ? [...current.batches] : [];
+      if (Array.isArray(incoming.batches) && (incoming.batches.length > 0 || incoming.wipeBatches)) {
+        mergedBatches = incoming.batches;
+      }
+
       const merged = {
         ...current,
         ...incoming,
+        customers: mergedCustomers,
+        categories: mergedCategories,
+        batches: mergedBatches,
         contactInfo: mergedContactInfo,
         products: mergedProducts,
         invoices: mergedInvoices,
