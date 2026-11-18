@@ -29,6 +29,7 @@ import {
   InventoryImportModal
 } from '../components/InventoryImportModal';
 import BagStudioModal from '../components/BagStudioModal';
+import { resolveProductImage, isToolProduct } from '../utils/productImages';
 
 // Helper to save newly typed values into localStorage for future suggestions
 export const saveOptionToStorage = (key, val) => {
@@ -837,8 +838,9 @@ export const ProductsView = () => {
           
           const profit = prod.sellingPrice - prod.costPrice;
           const profitPercent = prod.costPrice > 0 ? Math.round((profit / prod.costPrice) * 100) : 0;
-          const isCoffee = prod.category === 'specialty' || prod.category === 'classic_blends' || prod.category === 'espresso' || prod.category === 'filter' || prod.category === 'coffee' || !!prod.bagVariant;
-          const isClassic = prod.category === 'classic_blends' || prod.category === 'coffee';
+          const isTool = isToolProduct(prod);
+          const isCoffee = !isTool && (prod.category === 'specialty' || prod.category === 'classic_blends' || prod.category === 'espresso' || prod.category === 'filter' || prod.category === 'coffee' || prod.category === 'fermented');
+          const isClassic = !isTool && (prod.category === 'classic_blends' || prod.category === 'coffee');
 
           return (
             <div
@@ -857,7 +859,7 @@ export const ProductsView = () => {
                 transition: 'transform 180ms ease, box-shadow 180ms ease'
               }}
             >
-              {/* Product Visual Container (Interactive Coffee Bag Mockup) */}
+              {/* Product Visual Container */}
               <div
                 style={{
                   width: '100%',
@@ -873,7 +875,23 @@ export const ProductsView = () => {
                   padding: '10px'
                 }}
               >
-                {prod.image && prod.image.startsWith('data:') ? (
+                {isTool ? (
+                  <div
+                    style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <img
+                      src={resolveProductImage(prod)}
+                      alt={prod.name}
+                      style={{
+                        maxHeight: '92%',
+                        maxWidth: '92%',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        transition: 'transform 0.25s ease'
+                      }}
+                    />
+                  </div>
+                ) : prod.image && prod.image.startsWith('data:') ? (
                   <div
                     onClick={() => {
                       setZoomBagProduct(prod);
@@ -938,7 +956,7 @@ export const ProductsView = () => {
                   </div>
                 ) : (
                   <img
-                    src={prod.image || '/caturra_ethiopia.jpg'}
+                    src={resolveProductImage(prod)}
                     alt={prod.name}
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
@@ -961,8 +979,8 @@ export const ProductsView = () => {
                   )}
                 </div>
 
-                {/* Zoom / Bag Preview Icon Overlay */}
-                {isCoffee && (
+                {/* Zoom / Bag Preview Icon Overlay (Coffee bags only) */}
+                {isCoffee && !isTool && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -996,8 +1014,27 @@ export const ProductsView = () => {
                   </button>
                 )}
 
-                {/* Coffee Category / Type Badge */}
-                {isCoffee && (
+                {/* Product Category Badge */}
+                {isTool ? (
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
+                    <span
+                      style={{
+                        background: 'rgba(51, 65, 85, 0.92)',
+                        backdropFilter: 'blur(4px)',
+                        color: '#ffffff',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: '800',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <span>🛠️ أدوات تحضير وإكسسوارات</span>
+                    </span>
+                  </div>
+                ) : isCoffee ? (
                   <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
                     <span
                       style={{
@@ -1030,7 +1067,7 @@ export const ProductsView = () => {
                       </span>
                     </span>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* Title & Specs */}

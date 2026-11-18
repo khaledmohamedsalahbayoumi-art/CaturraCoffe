@@ -172,7 +172,8 @@ export const exportInventoryTemplate = (products = [], categories = []) => {
     'سعر البيع قطاعي (Selling Price)',
     'سعر بيع الجملة B2B (Wholesale Price)',
     'حد التنبيه الأدنى (Min Stock Alert)',
-    'بلد المنشأ (Origin)'
+    'بلد المنشأ (Origin)',
+    'مسار أو رابط الصورة (Image URL)'
   ];
 
   // Pre-fill existing products so the user can easily update quantities or add new rows
@@ -195,7 +196,8 @@ export const exportInventoryTemplate = (products = [], categories = []) => {
       priceUnit,
       wholesaleUnit,
       p.minStockAlert || 5,
-      p.coffeeOrigin?.country || p.origin || ''
+      p.coffeeOrigin?.country || p.origin || '',
+      p.image || ''
     ];
   });
 
@@ -289,6 +291,10 @@ export const parseInventoryRows = (rawRows) => {
     findCol(['بلد المنشأ', 'منشأ', 'بلد', 'دولة', 'origin', 'country']),
     10
   );
+  const imageCol = getTemplateFallback(
+    findCol(['صورة', 'صوره', 'image', 'photo', 'رابط الصورة', 'img', 'مسار الصورة']),
+    11
+  );
   const notesCol = findCol(['نكهات', 'إيحاءات', 'ايحاءات', 'ملاحظات', 'وصف', 'notes', 'flavor', 'description']);
 
   // Helper to parse numbers (supports ASCII digits, Eastern Arabic ٠-٩, Persian ۰-۹, Arabic decimal ٫)
@@ -329,6 +335,7 @@ export const parseInventoryRows = (rawRows) => {
     const rawWholesale = wholesaleCol !== -1 ? row[wholesaleCol] : '';
     const rawMin = minAlertCol !== -1 ? row[minAlertCol] : '';
     const rawOrigin = ((originCol !== -1 ? row[originCol] : '') || '').trim();
+    const rawImage = ((imageCol !== -1 ? row[imageCol] : '') || '').trim();
     const rawNotes = ((notesCol !== -1 ? row[notesCol] : '') || '').trim();
 
     // Normalize category while keeping custom rawCategory if unknown
@@ -389,6 +396,7 @@ export const parseInventoryRows = (rawRows) => {
       wholesalePrice,
       minAlert,
       origin: rawOrigin,
+      image: rawImage || undefined,
       notes: rawNotes
     });
   }

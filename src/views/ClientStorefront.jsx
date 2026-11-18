@@ -76,6 +76,7 @@ import {
   sendInvoicePdfToWhatsApp
 } from '../utils/exportUtils';
 import { calculateStoreStats } from '../utils/storeStats';
+import { resolveProductImage, isToolProduct } from '../utils/productImages';
 
 const GoogleDriveIcon = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 87.3 78" fill="none" style={{ flexShrink: 0, display: 'inline-block', verticalAlign: 'middle' }}>
@@ -2118,12 +2119,12 @@ export const ClientStorefront = () => {
                   {/* Image Container */}
                   <div className="store-product-img-wrap" style={{ background: '#FAF6EE' }}>
                     <img
-                      src={prod.image || '/bags/bag_espresso_landscape.jpg'}
+                      src={resolveProductImage(prod)}
                       alt={localizedName}
                       className="store-product-img"
                       style={{
-                        objectFit: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? 'cover' : 'contain',
-                        padding: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? '0' : '4px'
+                        objectFit: 'contain',
+                        padding: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? '8px' : '4px'
                       }}
                     />
                     {/* Badges */}
@@ -2273,12 +2274,12 @@ export const ClientStorefront = () => {
                   {/* Image */}
                   <div className="store-product-img-wrap" style={{ background: '#FAF6EE' }}>
                     <img
-                      src={prod.image || '/bags/bag_espresso_landscape.jpg'}
+                      src={resolveProductImage(prod)}
                       alt={localizedName}
                       className="store-product-img"
                       style={{
-                        objectFit: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? 'cover' : 'contain',
-                        padding: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? '0' : '4px'
+                        objectFit: 'contain',
+                        padding: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? '8px' : '4px'
                       }}
                     />
                     <div className="store-badges-container">
@@ -2628,12 +2629,12 @@ export const ClientStorefront = () => {
         {/* Image - Scaled proportionally */}
         <div className="store-product-img-wrap" style={{ background: '#FAF6EE' }}>
           <img
-            src={prod.image || '/bags/bag_espresso_landscape.jpg'}
+            src={resolveProductImage(prod)}
             alt={localizedName}
             className="store-product-img"
             style={{
-              objectFit: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? 'cover' : 'contain',
-              padding: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? '0' : '4px'
+              objectFit: 'contain',
+              padding: (prod.unitType === 'piece' || prod.category === 'tools' || prod.category === 'accessories') ? '8px' : '4px'
             }}
           />
 
@@ -4848,7 +4849,7 @@ export const ClientStorefront = () => {
                   padding: '14px'
                 }}>
                   <img
-                    src={(activeBagSide === 'back' && selectedProductDetails.backImage) ? selectedProductDetails.backImage : (selectedProductDetails.image || '/bags/bag_espresso_landscape.jpg')}
+                    src={(activeBagSide === 'back' && selectedProductDetails.backImage) ? selectedProductDetails.backImage : resolveProductImage(selectedProductDetails)}
                     alt={getLocalizedName(selectedProductDetails, language)}
                     style={{
                       width: '100%',
@@ -7787,9 +7788,9 @@ export const ClientStorefront = () => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                       <img
-                        src={prod.image || '/caturra_ethiopia.jpg'}
+                        src={resolveProductImage(prod)}
                         alt={prod.name}
-                        style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #EDD9BD' }}
+                        style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'contain', background: '#F9F6F0', border: '1px solid #EDD9BD' }}
                       />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: '800', fontSize: '0.92rem', color: '#4A3220', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

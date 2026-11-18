@@ -36,6 +36,7 @@ import {
   getLocalizedBrewMethod,
   formatPrice
 } from '../utils/translations';
+import { sanitizeProductData, resolveProductImage, isToolProduct } from '../utils/productImages';
 
 // ⚡ Zero-latency cross-tab live synchronization via BroadcastChannel
 const liveSyncChannel = typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined'
@@ -459,7 +460,7 @@ export const AppProvider = ({ children }) => {
       }
     }
 
-    return result;
+    return (result || []).map(p => sanitizeProductData(p));
   });
   const [invoices, setInvoices] = useState(() => {
     const rawInvoices = loadState('invoices', initialInvoices);
@@ -1227,9 +1228,10 @@ export const AppProvider = ({ children }) => {
 
           if (isMounted && Array.isArray(serverData.products)) {
             skipNextProductSyncRef.current = true;
-            setProducts(serverData.products);
+            const sanitized = serverData.products.map(p => sanitizeProductData(p));
+            setProducts(sanitized);
             try {
-              localStorage.setItem('caturra_eg_products', JSON.stringify(serverData.products));
+              localStorage.setItem('caturra_eg_products', JSON.stringify(sanitized));
             } catch { }
 
             if (Array.isArray(serverData.batches)) {
@@ -1351,7 +1353,7 @@ export const AppProvider = ({ children }) => {
       if (key === 'contactInfo') {
         setContactInfo(prev => ({ ...prev, ...payload }));
       } else if (key === 'products' && Array.isArray(payload)) {
-        setProducts(payload);
+        setProducts(payload.map(p => sanitizeProductData(p)));
       } else if (key === 'batches' && Array.isArray(payload)) {
         setBatches(payload);
       } else if (key === 'categories' && Array.isArray(payload)) {
@@ -1379,7 +1381,7 @@ export const AppProvider = ({ children }) => {
         if (e.key === 'caturra_eg_contact_info' && val && typeof val === 'object') {
           setContactInfo(prev => ({ ...prev, ...val }));
         } else if (e.key === 'caturra_eg_products' && Array.isArray(val)) {
-          setProducts(val);
+          setProducts(val.map(p => sanitizeProductData(p)));
         } else if (e.key === 'caturra_eg_batches' && Array.isArray(val)) {
           setBatches(val);
         } else if (e.key === 'caturra_eg_categories' && Array.isArray(val)) {
@@ -1429,10 +1431,11 @@ export const AppProvider = ({ children }) => {
 
         // 2. Sync products
         if (Array.isArray(serverData.products) && serverData.products.length > 0) {
+          const cleanProds = serverData.products.map(p => sanitizeProductData(p));
           setProducts(prev => {
-            if (prev.length !== serverData.products.length || JSON.stringify(prev) !== JSON.stringify(serverData.products)) {
-              try { localStorage.setItem('caturra_eg_products', JSON.stringify(serverData.products)); } catch { }
-              return serverData.products;
+            if (prev.length !== cleanProds.length || JSON.stringify(prev) !== JSON.stringify(cleanProds)) {
+              try { localStorage.setItem('caturra_eg_products', JSON.stringify(cleanProds)); } catch { }
+              return cleanProds;
             }
             return prev;
           });
@@ -3598,8 +3601,7 @@ export const AppProvider = ({ children }) => {
         if (!updatedMap.has(match.id) && existing.some(e => e.id === match.id)) {
           updatedCount++;
         }
-        const matchIsClassic = prevTarget.category === 'classic_blends' || prevTarget.category === 'coffee';
-        const mergedProd = {
+        const baseMerged = {
           ...prevTarget,
           sku: it.sku || prevTarget.sku,
           name: it.name || prevTarget.name,
@@ -3617,19 +3619,16 @@ export const AppProvider = ({ children }) => {
           coffeeOrigin: it.origin ? { ...(prevTarget.coffeeOrigin || {}), country: it.origin } : prevTarget.coffeeOrigin,
           country: it.origin || prevTarget.country,
           origin: it.origin || prevTarget.origin,
-          bagVariant: prevTarget.bagVariant || (matchIsClassic ? 'vertical' : 'landscape'),
-          image: prevTarget.image || (matchIsClassic
-            ? '/bags/bag_classic_blends.jpg'
-            : (isWeight ? '/bags/bag_espresso_landscape.jpg' : '/caturra_ethiopia.jpg')),
+          image: it.image || prevTarget.image,
           showInStore: prevTarget.showInStore !== false
         };
+        const mergedProd = sanitizeProductData(baseMerged, prevTarget);
         updatedMap.set(match.id, mergedProd);
       } else {
         addedCount++;
         const resolvedCat = resolveCategory(it.category, it.rawCategory, isWeight);
-        const isClassic = resolvedCat.id === 'classic_blends';
         const newProdId = `prod-import-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`;
-        const newProduct = {
+        const rawNewProduct = {
           id: newProdId,
           sku: it.sku || `CAT-${Math.floor(1000 + Math.random() * 9000)}`,
           barcode: `${Math.floor(622100000000 + Math.random() * 999999)}`,
@@ -3653,13 +3652,11 @@ export const AppProvider = ({ children }) => {
           country: it.origin || '',
           origin: it.origin || '',
           coffeeOrigin: it.origin ? { country: it.origin } : undefined,
-          bagVariant: isClassic ? 'vertical' : 'landscape',
-          image: isClassic
-            ? '/bags/bag_classic_blends.jpg'
-            : (isWeight ? '/bags/bag_espresso_landscape.jpg' : '/caturra_ethiopia.jpg'),
+          image: it.image || undefined,
           showInStore: true,
           isImported: true
         };
+        const newProduct = sanitizeProductData(rawNewProduct);
         addedProducts.push(newProduct);
         batchSeen.push(newProduct);
         updatedMap.set(newProdId, newProduct);
