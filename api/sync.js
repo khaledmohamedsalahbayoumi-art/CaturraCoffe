@@ -130,6 +130,14 @@ export default async function handler(req, res) {
         }
       }
 
+      // Sanitize products: prevent heavy inline base64 images from bloating the database state
+      mergedProducts = mergedProducts.map(p => {
+        if (p.image && typeof p.image === 'string' && p.image.startsWith('data:image') && p.image.length > 2000) {
+          return { ...p, image: '/caturra_colombia.jpg' };
+        }
+        return p;
+      });
+
       // Merge contactInfo safely so partial or incoming updates don't drop fields
       let mergedContactInfo = { ...(current.contactInfo || {}) };
       if (incoming.contactInfo && typeof incoming.contactInfo === 'object') {
@@ -149,6 +157,12 @@ export default async function handler(req, res) {
         _version: Date.now(),
         updated_at: new Date().toISOString()
       };
+
+      // Strip temporary and transient payload properties so they don't persist into the database
+      delete merged.updatedProduct;
+      delete merged.wipeInvoices;
+      delete merged.replaceInvoices;
+      delete merged.testPing;
 
       if (supabase) {
         const { error: upsertErr } = await supabase

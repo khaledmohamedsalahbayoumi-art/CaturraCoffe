@@ -8,8 +8,8 @@ import { OrderTrackingModal } from './components/OrderTrackingModal';
 import { AppConfirmModal } from './components/AppConfirmModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Customer Storefront (Loaded directly for instant 0ms storefront rendering)
-import { ClientStorefront } from './views/ClientStorefront';
+// Customer Storefront (Code-split with React.lazy for instant isolation between store and ERP)
+const ClientStorefront = lazy(() => import('./views/ClientStorefront').then(m => ({ default: m.ClientStorefront })));
 
 // Admin ERP Views (Code-split with React.lazy so customer mobile bundle stays ultra-lightweight)
 const LoginView = lazy(() => import('./views/LoginView').then(m => ({ default: m.LoginView })));
@@ -27,6 +27,20 @@ const AcademyAdminView = lazy(() => import('./views/AcademyAdminView').then(m =>
 const StoreSettingsView = lazy(() => import('./views/StoreSettingsView').then(m => ({ default: m.StoreSettingsView })));
 const TreasuryView = lazy(() => import('./views/TreasuryView').then(m => ({ default: m.TreasuryView })));
 const B2BAdminView = lazy(() => import('./views/B2BAdminView').then(m => ({ default: m.B2BAdminView })));
+
+// Smart Route Preloading: Pre-warm modules in idle time based on destination route for 0ms transitions
+if (typeof window !== 'undefined') {
+  const p = window.location.pathname.toLowerCase();
+  const isDocAdmin = p.includes('caturra') || p.includes('admin') || p.includes('dashboard') || sessionStorage.getItem('caturra_view_mode') === 'admin';
+  if (isDocAdmin) {
+    import('./views/LoginView');
+    import('./views/PosView');
+    import('./views/ProductsView');
+    import('./views/InvoicesView');
+  } else {
+    import('./views/ClientStorefront');
+  }
+}
 
 const AdminLoadingFallback = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px', color: '#96663B', fontWeight: '700' }}>
@@ -97,7 +111,13 @@ const MainLayout = () => {
   if (viewMode === 'client') {
     return (
       <div className="caturra-storefront-wrapper caturra-store-theme">
-        <ClientStorefront />
+        <Suspense fallback={
+          <div style={{ minHeight: '100vh', background: '#FAF6EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '42px', height: '42px', border: '3px solid #EDD9BD', borderTopColor: '#96663B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          </div>
+        }>
+          <ClientStorefront />
+        </Suspense>
         <InvoiceModal />
         <NotificationSettingsModal
           isOpen={isNotificationSettingsOpen}

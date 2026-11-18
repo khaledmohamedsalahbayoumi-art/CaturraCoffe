@@ -240,6 +240,14 @@ function serverDbPlugin() {
                 }
               }
 
+              // Sanitize products: prevent heavy inline base64 images from bloating state
+              mergedProducts = mergedProducts.map(p => {
+                if (p.image && typeof p.image === 'string' && p.image.startsWith('data:image') && p.image.length > 2000) {
+                  return { ...p, image: '/caturra_colombia.jpg' };
+                }
+                return p;
+              });
+
               const merged = {
                 ...current,
                 ...incoming,
@@ -247,6 +255,10 @@ function serverDbPlugin() {
                 invoices: mergedInvoices,
                 users: mergedUsers
               }
+              delete merged.updatedProduct;
+              delete merged.wipeInvoices;
+              delete merged.replaceInvoices;
+              delete merged.testPing;
               fs.writeFileSync(dbFile, JSON.stringify(merged, null, 2), 'utf8')
               res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify({ success: true, timestamp: Date.now() }))
@@ -285,6 +297,9 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('jsqr') || id.includes('qrcode')) return 'vendor-qr';
             if (id.includes('lucide-react')) return 'vendor-lucide';
             if (id.includes('canvas-confetti')) return 'vendor-confetti';
             if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) return 'vendor-react';

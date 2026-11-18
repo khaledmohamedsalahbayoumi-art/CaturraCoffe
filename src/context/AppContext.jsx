@@ -640,18 +640,26 @@ export const AppProvider = ({ children }) => {
   const [b2bStandingOrders, setB2bStandingOrders] = useState(() => loadState('b2b_standing_orders', initialB2BStandingOrders));
   const [brewingGuides, setBrewingGuides] = useState(() => loadState('brewing_guides', initialBrewingGuides));
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(() => loadState('current_user_id', null));
-  const [loginPreselectedUsername, setLoginPreselectedUsername] = useState('');
-
-  // Purge any legacy persistent auth flag so user is always prompted for login
-  useEffect(() => {
-    try {
-      localStorage.removeItem('caturra_eg_auth');
-    } catch {
-      // ignore
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return sessionStorage.getItem('caturra_session_auth') === 'true';
+      } catch {
+        return false;
+      }
     }
-  }, []);
+    return false;
+  });
+  const [currentUserId, setCurrentUserId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const sId = sessionStorage.getItem('caturra_session_user_id');
+        if (sId) return sId;
+      } catch { }
+    }
+    return loadState('current_user_id', null);
+  });
+  const [loginPreselectedUsername, setLoginPreselectedUsername] = useState('');
 
   // App UI State: Default is determined by current URL path/hash
   const [activeTab, setActiveTab] = useState('pos');
@@ -1082,11 +1090,8 @@ export const AppProvider = ({ children }) => {
       }
     };
 
-    // Run immediately on component mount
-    syncInvoices();
-
-    // 8-second heartbeat poll for instantaneous incoming orders
-    const pollInterval = setInterval(syncInvoices, 8000);
+    // Heartbeat poll for instantaneous incoming orders (every 16 seconds)
+    const pollInterval = setInterval(syncInvoices, 16000);
 
     const handleStorageChange = (e) => {
       if (e.key === 'caturra_eg_invoices') {
@@ -1128,6 +1133,7 @@ export const AppProvider = ({ children }) => {
       });
 
     localStorage.setItem('caturra_eg_users', JSON.stringify(cleanUsers));
+    if (!hasFetchedServerSyncRef.current) return;
     if (typeof fetch !== 'undefined') {
       const timer = setTimeout(() => {
         fetch('/api/sync', {
@@ -1297,6 +1303,7 @@ export const AppProvider = ({ children }) => {
 
   // Sync invoices to server
   useEffect(() => {
+    if (!hasFetchedServerSyncRef.current) return;
     if (typeof fetch !== 'undefined' && invoices.length > 0) {
       const timer = setTimeout(() => {
         fetch('/api/sync', {
@@ -1597,6 +1604,8 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('caturra_eg_users', JSON.stringify(newUsers));
       localStorage.setItem('caturra_eg_current_user_id', JSON.stringify(ownerUser.id));
       sessionStorage.setItem('caturra_view_mode', 'admin');
+      sessionStorage.setItem('caturra_session_auth', 'true');
+      sessionStorage.setItem('caturra_session_user_id', ownerUser.id);
     } catch (err) {
       console.error('Storage error:', err);
     }
@@ -1661,6 +1670,11 @@ export const AppProvider = ({ children }) => {
       setIsAuthenticated(true);
       setViewMode('admin');
 
+      try {
+        sessionStorage.setItem('caturra_session_auth', 'true');
+        sessionStorage.setItem('caturra_session_user_id', found.id);
+      } catch {}
+
       // Auto route to first allowed tab
       const perms = found.permissions || {};
       if (perms.pos) setActiveTab('pos');
@@ -1687,6 +1701,8 @@ export const AppProvider = ({ children }) => {
     setLoginPreselectedUsername('');
     try {
       localStorage.removeItem('caturra_eg_auth');
+      sessionStorage.removeItem('caturra_session_auth');
+      sessionStorage.removeItem('caturra_session_user_id');
       sessionStorage.removeItem('caturra_view_mode');
       localStorage.removeItem('caturra_view_mode');
     } catch {
@@ -1700,6 +1716,8 @@ export const AppProvider = ({ children }) => {
     setViewMode('admin');
     try {
       localStorage.removeItem('caturra_eg_auth');
+      sessionStorage.removeItem('caturra_session_auth');
+      sessionStorage.removeItem('caturra_session_user_id');
       sessionStorage.removeItem('caturra_view_mode');
       localStorage.removeItem('caturra_view_mode');
     } catch {
@@ -1715,6 +1733,8 @@ export const AppProvider = ({ children }) => {
       setViewMode('admin');
       try {
         localStorage.removeItem('caturra_eg_auth');
+        sessionStorage.setItem('caturra_session_auth', 'true');
+        sessionStorage.setItem('caturra_session_user_id', target.id);
         localStorage.setItem('caturra_eg_current_user_id', JSON.stringify(target.id));
       } catch {
         // ignore
@@ -1733,6 +1753,8 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('caturra_eg_users', JSON.stringify(withoutOwner));
       localStorage.removeItem('caturra_eg_current_user_id');
       localStorage.removeItem('caturra_eg_auth');
+      sessionStorage.removeItem('caturra_session_auth');
+      sessionStorage.removeItem('caturra_session_user_id');
       sessionStorage.removeItem('caturra_view_mode');
     } catch (err) {
       console.warn('Error resetting admin:', err);
