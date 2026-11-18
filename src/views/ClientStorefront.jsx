@@ -55,7 +55,8 @@ import {
   Filter,
   Globe,
   RotateCcw,
-  Maximize2
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { CoffeeBagMockup, RoastDots, getCountryMeta } from '../components/CoffeeBagMockup';
 import { getLocalizedProcess, getLocalizedBrewMethod } from '../utils/translations';
@@ -262,6 +263,7 @@ export const ClientStorefront = () => {
   const [isAcademyPageOpen, setIsAcademyPageOpen] = useState(false);
   const [academySearchQuery, setAcademySearchQuery] = useState('');
   const [selectedAcademyArticle, setSelectedAcademyArticle] = useState(null);
+  const [isAcademyArticleFullscreen, setIsAcademyArticleFullscreen] = useState(false);
   const [academyCategoryFilter, setAcademyCategoryFilter] = useState('all');
   const [viewingAcademyPdf, setViewingAcademyPdf] = useState(null);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -7348,7 +7350,10 @@ export const ClientStorefront = () => {
       {selectedAcademyArticle && (
         <div
           className="modal-overlay academy-reader-overlay"
-          onClick={() => setSelectedAcademyArticle(null)}
+          onClick={() => {
+            setIsAcademyArticleFullscreen(false);
+            setSelectedAcademyArticle(null);
+          }}
           style={{
             position: 'fixed',
             top: 0,
@@ -7365,7 +7370,7 @@ export const ClientStorefront = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px',
+            padding: isAcademyArticleFullscreen ? 0 : 'clamp(6px, 1.5vh, 16px) clamp(6px, 1.5vw, 18px)',
             animation: 'fadeIn 0.2s ease-out'
           }}
         >
@@ -7373,19 +7378,21 @@ export const ClientStorefront = () => {
             className="modal-content academy-reader-modal"
             onClick={e => e.stopPropagation()}
             style={{
-              maxWidth: '1180px',
-              width: 'min(1180px, 95vw)',
-              maxHeight: '94vh',
+              maxWidth: isAcademyArticleFullscreen ? '100vw' : '1580px',
+              width: isAcademyArticleFullscreen ? '100vw' : 'min(1580px, 98vw)',
+              height: isAcademyArticleFullscreen ? '100vh' : '96vh',
+              maxHeight: isAcademyArticleFullscreen ? '100vh' : '96vh',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
               padding: 0,
-              borderRadius: '24px',
+              borderRadius: isAcademyArticleFullscreen ? 0 : '24px',
               background: '#FFFDF9',
-              border: '1.5px solid #EDD9BD',
+              border: isAcademyArticleFullscreen ? 'none' : '1.5px solid #EDD9BD',
               boxShadow: '0 25px 65px rgba(44, 24, 16, 0.35)',
               position: 'relative',
-              animation: 'modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+              animation: 'modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
             {/* Header */}
@@ -7423,24 +7430,54 @@ export const ClientStorefront = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedAcademyArticle(null)}
-                className="btn btn-outline"
-                style={{ width: '38px', height: '38px', padding: 0, borderRadius: '50%', color: '#FFFDF9', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.25)' }}
-                aria-label={t('closeModal')}
-              >
-                <X size={20} />
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAcademyArticleFullscreen(prev => !prev)}
+                  className="btn btn-outline"
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    padding: 0,
+                    borderRadius: '50%',
+                    color: '#FFFDF9',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  title={isAcademyArticleFullscreen ? (language === 'en' ? 'Exit Fullscreen' : 'تصغير النافذة') : (language === 'en' ? 'Fullscreen' : 'ملء الشاشة')}
+                  aria-label={isAcademyArticleFullscreen ? (language === 'en' ? 'Exit Fullscreen' : 'تصغير النافذة') : (language === 'en' ? 'Fullscreen' : 'ملء الشاشة')}
+                >
+                  {isAcademyArticleFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsAcademyArticleFullscreen(false);
+                    setSelectedAcademyArticle(null);
+                  }}
+                  className="btn btn-outline"
+                  style={{ width: '38px', height: '38px', padding: 0, borderRadius: '50%', color: '#FFFDF9', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  aria-label={t('closeModal')}
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 'clamp(20px, 3vw, 36px)' }}>
+              <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
               {/* Cover Hero Image */}
               <div style={{
                 position: 'relative',
                 borderRadius: '20px',
                 overflow: 'hidden',
-                height: 'clamp(260px, 38vh, 380px)',
+                height: 'clamp(280px, 42vh, 460px)',
                 marginBottom: '24px',
                 boxShadow: '0 10px 30px rgba(74, 50, 32, 0.14)'
               }}>
@@ -7686,6 +7723,7 @@ export const ClientStorefront = () => {
                   }
                 })}
               </div>
+              </div>
             </div>
 
             {/* Modal Actions */}
@@ -7708,7 +7746,10 @@ export const ClientStorefront = () => {
               </button>
 
               <button
-                onClick={() => setSelectedAcademyArticle(null)}
+                onClick={() => {
+                  setIsAcademyArticleFullscreen(false);
+                  setSelectedAcademyArticle(null);
+                }}
                 className="btn btn-outline"
                 style={{ padding: '14px 28px', fontWeight: '700', fontSize: '1rem', background: '#FFF8EE', border: '1.5px solid #EDD9BD', color: '#4A3220', borderRadius: '14px' }}
               >
