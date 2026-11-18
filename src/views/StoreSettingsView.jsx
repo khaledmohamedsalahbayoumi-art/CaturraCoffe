@@ -81,6 +81,7 @@ export const StoreSettingsView = () => {
     facebook: contactInfo?.facebook || 'https://facebook.com',
     tiktok: contactInfo?.tiktok || 'https://tiktok.com',
     aboutUs: contactInfo?.aboutUs || '',
+    aboutUsEn: contactInfo?.aboutUsEn || '',
     storyTag: contactInfo?.storyTag || 'من نحن • شغف البن المختص',
     storySubtitle: contactInfo?.storySubtitle || 'محمصة كاتورا للقهوة المختصة',
     aboutStoryP1: contactInfo?.aboutStoryP1 || contactInfo?.aboutUs || 'في محمصة كاتورا للقهوة المختصة، بدأنا بشغف حقيقي لاستكشاف سحر البن وأسراره العميقة. نؤمن بأن كل حبة بن تحمل في طياتها حكاية فريدة تبدأ من سفوح الجبال وأعالي مزارع البن العالمية في إثيوبيا، كولومبيا، جواتيمالا، والبرازيل وصولاً إلى فنجانك اليومي.',
@@ -2058,7 +2059,7 @@ export const StoreSettingsView = () => {
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
-                    نبذة سريعة عن المحمصة (تظهر في فوتر المتجر وبطاقات النبذة السريعة):
+                    نبذة سريعة عن المحمصة (تظهر في فوتر المتجر وبطاقات النبذة السريعة - عربي):
                   </label>
                   <textarea
                     name="aboutUs"
@@ -2066,6 +2067,21 @@ export const StoreSettingsView = () => {
                     value={formData.aboutUs}
                     onChange={handleChange}
                     placeholder="اكتب نبذة مختصرة عن قصة كاتورا ومصادر المحاصيل الفاخرة..."
+                    className="form-input"
+                    style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    نبذة سريعة بالإنجليزية (About Us - English):
+                  </label>
+                  <textarea
+                    name="aboutUsEn"
+                    rows={2}
+                    value={formData.aboutUsEn}
+                    onChange={handleChange}
+                    placeholder="Caturra is a 100% Egyptian specialty coffee roastery..."
                     className="form-input"
                     style={{ fontSize: '0.85rem', lineHeight: '1.6' }}
                   />

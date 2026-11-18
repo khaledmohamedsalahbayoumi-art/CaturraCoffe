@@ -170,15 +170,17 @@ export const ClientStorefront = () => {
   const activePhone = contactInfo?.phone || '01033144498';
   const activeEmail = contactInfo?.email || 'contact@caturracoffee.com';
   const activeAddress = (language === 'en')
-    ? (contactInfo?.addressEn || (contactInfo?.address?.includes('قريباً') ? 'Coming Soon - Cairo & Egypt' : contactInfo?.address || 'Cairo, Heliopolis - Al-Thawra St., near Al-Ahram Station'))
+    ? (contactInfo?.addressEn || (contactInfo?.address && !/[\u0600-\u06FF]/.test(contactInfo.address) ? contactInfo.address : 'Cairo, Heliopolis - Al-Thawra St., near Al-Ahram Station'))
     : (contactInfo?.address || 'القاهرة، مصر الجديدة - شارع الثورة، بالقرب من محطة الأهرام');
   const activeHours = (language === 'en')
-    ? (contactInfo?.workingHoursEn || (contactInfo?.workingHours?.includes('يومياً') ? 'Daily: 8:00 AM – 12:00 Midnight' : contactInfo?.workingHours || 'Daily: 8:00 AM – 12:00 Midnight'))
+    ? (contactInfo?.workingHoursEn || (contactInfo?.workingHours && !/[\u0600-\u06FF]/.test(contactInfo.workingHours) ? contactInfo.workingHours : 'Daily: 8:00 AM – 12:00 Midnight'))
     : (contactInfo?.workingHours || 'يومياً من 8:00 صباحاً حتى 12:00 منتصف الليل');
   const activeShipping = (language === 'en')
-    ? (contactInfo?.shippingInfoEn || (contactInfo?.shippingInfo?.includes('شحن') ? 'Express shipping across all Egypt in 24-48 hours 🚚' : contactInfo?.shippingInfo || 'Express shipping across all Egypt in 24-48 hours 🚚'))
+    ? (contactInfo?.shippingInfoEn || (contactInfo?.shippingInfo && !/[\u0600-\u06FF]/.test(contactInfo.shippingInfo) ? contactInfo.shippingInfo : 'Express shipping across all Egypt in 24-48 hours 🚚'))
     : (contactInfo?.shippingInfo || 'شحن لجميع المحافظات خلال 24-48 ساعة 🚚');
-  const activeAboutUs = contactInfo?.aboutUs || (language === 'en' ? 'Caturra is a 100% Egyptian specialty coffee roastery. We believe every coffee seed tells an extraordinary tale. We handpick fine green lots from Ethiopia, Colombia, and Brazil, roasting them with unwavering precision.' : 'كاتورا (Caturra) محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.');
+  const activeAboutUs = (language === 'en')
+    ? (contactInfo?.aboutUsEn || (contactInfo?.aboutUs && !/[\u0600-\u06FF]/.test(contactInfo.aboutUs) ? contactInfo.aboutUs : 'Caturra is a 100% Egyptian specialty coffee roastery. We believe every coffee seed tells an extraordinary tale. We handpick fine green lots from Ethiopia, Colombia, and Brazil, roasting them with unwavering precision to highlight vibrant floral and fruity notes with zero artificial additives.'))
+    : (contactInfo?.aboutUs || 'كاتورا (Caturra) محمصة ومتجر قهوة مختصة مصري 100%. نؤمن بأن كل حبة بن تروي قصة فريدة. ننتقي بعناية أفضل المحاصيل الخضراء من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها بدرجات متوازنة لإبراز النكهات العطرية والإيحاءات الفاكهية والزهرية الفاخرة بدون أي إضافات صناعية.');
   const activeInstagram = contactInfo?.instagram || 'https://instagram.com';
   const activeFacebook = contactInfo?.facebook || 'https://facebook.com';
   const activeTiktok = contactInfo?.tiktok || 'https://tiktok.com';
@@ -2676,9 +2678,7 @@ export const ClientStorefront = () => {
               </div>
             </div>
             <p style={{ fontSize: '1.15rem', color: '#FFF8EE', lineHeight: '1.9', margin: 0, whiteSpace: 'pre-line' }}>
-              {contactInfo?.aboutUs || (language === 'en'
-                ? 'Caturra was founded in Cairo out of a genuine passion for 100% pure specialty coffee. Inspired by the legendary Caturra varietal known for its exceptional balance and rich cup profile, we handpick green beans from Ethiopia, Colombia, and Brazil, roasting locally with zero artificial additives to ensure an honest, exceptional cup in every sip.'
-                : 'تأسست كاتورا (Caturra) في قلب القاهرة كشغف حقيقي بالقهوة المختصة النقية 100%. استلهمنا اسمنا من سلالة "كاتورا" العريقة، أحد أشهر سلالات البن التي تميزت بالتوازن الاستثنائي والنكهات الغنية. ننتقي حبوب البن الخضراء بعناية من مزارع إثيوبيا، كولومبيا، والبرازيل، ونحمصها محلياً في القاهرة بدون أي إضافات أو نكهات صناعية لنضمن لك فنجاناً صادقاً وفاخراً في كل رشفة.')}
+              {activeAboutUs}
             </p>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '8px' }}>
               <span style={{ fontSize: '0.95rem', fontWeight: '700', background: 'rgba(196, 154, 92, 0.15)', color: '#C49A5C', padding: '7px 16px', borderRadius: '10px', border: '1px solid rgba(196, 154, 92, 0.3)' }}>
@@ -3397,7 +3397,9 @@ export const ClientStorefront = () => {
               {/* Narrative Story Text */}
               <div className="about-story-text-container" style={{ textAlign: isRtl ? 'right' : 'left' }}>
                 <span className="about-story-tag anim-stagger-1">
-                  {contactInfo?.storyTag || t('ourStoryTag')}
+                  {language === 'en'
+                    ? (contactInfo?.storyTagEn || (contactInfo?.storyTag && !/[\u0600-\u06FF]/.test(contactInfo.storyTag) ? contactInfo.storyTag : t('ourStoryTag')))
+                    : (contactInfo?.storyTag || t('ourStoryTag'))}
                 </span>
 
                 <h2 className="about-story-title anim-stagger-2">
@@ -3405,16 +3407,22 @@ export const ClientStorefront = () => {
                 </h2>
 
                 <div className="about-story-subtitle anim-stagger-3">
-                  {contactInfo?.storySubtitle || contactInfo?.brandNameAr || t('roasterySubtitle')}
+                  {language === 'en'
+                    ? (contactInfo?.storySubtitleEn || (contactInfo?.storySubtitle && !/[\u0600-\u06FF]/.test(contactInfo.storySubtitle) ? contactInfo.storySubtitle : t('roasterySubtitle')))
+                    : (contactInfo?.storySubtitle || contactInfo?.brandNameAr || t('roasterySubtitle'))}
                 </div>
 
                 <p className="about-story-p1 anim-stagger-4" style={{ whiteSpace: 'pre-line' }}>
-                  {contactInfo?.aboutStoryP1 || contactInfo?.aboutUs || t('aboutStoryP1')}
+                  {language === 'en'
+                    ? (contactInfo?.aboutStoryP1En || (contactInfo?.aboutStoryP1 && !/[\u0600-\u06FF]/.test(contactInfo.aboutStoryP1) ? contactInfo.aboutStoryP1 : t('aboutStoryP1')))
+                    : (contactInfo?.aboutStoryP1 || contactInfo?.aboutUs || t('aboutStoryP1'))}
                 </p>
 
-                {(contactInfo?.aboutStoryP2 || (!contactInfo?.aboutStoryP1 && !contactInfo?.aboutUs)) && (
+                {(contactInfo?.aboutStoryP2 || (!contactInfo?.aboutStoryP1 && !contactInfo?.aboutUs) || language === 'en') && (
                   <p className="about-story-p2 anim-stagger-5" style={{ whiteSpace: 'pre-line' }}>
-                    {contactInfo?.aboutStoryP2 || t('aboutStoryP2')}
+                    {language === 'en'
+                      ? (contactInfo?.aboutStoryP2En || (contactInfo?.aboutStoryP2 && !/[\u0600-\u06FF]/.test(contactInfo.aboutStoryP2) ? contactInfo.aboutStoryP2 : t('aboutStoryP2')))
+                      : (contactInfo?.aboutStoryP2 || t('aboutStoryP2'))}
                   </p>
                 )}
 
@@ -4425,7 +4433,7 @@ export const ClientStorefront = () => {
                   </span>
                 </h2>
                 <p style={{ margin: '4px 0 0 0', fontSize: '0.86rem', color: '#6B4A2E', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
-                  <span>{contactInfo?.aboutUs || t('footerBrandDesc')}</span>
+                  <span>{activeAboutUs}</span>
                   <Coffee size={16} color="#96663B" strokeWidth={2.2} />
                 </p>
               </div>
