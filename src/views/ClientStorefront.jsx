@@ -449,11 +449,11 @@ export const ClientStorefront = () => {
       document.title = `${pName} | محمصة كاتورا للقهوة المختصة (Caturra)`;
     } else if (selectedAcademyArticle) {
       const aTitle = (language === 'en' && selectedAcademyArticle.titleEn) ? selectedAcademyArticle.titleEn : selectedAcademyArticle.title;
-      document.title = `${aTitle} | أكاديمية كاتورا للقهوة`;
+      document.title = `${aTitle} | مدونة كاتورا للقهوة`;
     } else if (activeNav === 'b2b') {
       document.title = language === 'en' ? 'B2B Wholesale Specialty Coffee Cairo | Caturra Coffee' : 'شراكات وتوريد القهوة المختصة B2B للمقاهي والشركات | كاتورا';
     } else if (activeNav === 'academy') {
-      document.title = language === 'en' ? 'Coffee Academy & Brewing Guides | Caturra Roastery' : 'أكاديمية ووصفات تحضير القهوة المختصة | محمصة كاتورا';
+      document.title = language === 'en' ? 'Coffee Blog & Brewing Guides | Caturra Roastery' : 'مدونة ووصفات تحضير القهوة المختصة | محمصة كاتورا';
     } else if (activeNav === 'store') {
       document.title = language === 'en' ? 'Shop Specialty Coffee Beans | Caturra Coffee Roaster' : 'تسوق أرقى محاصيل القهوة المختصة | محمصة كاتورا';
     } else {
@@ -2504,10 +2504,10 @@ export const ClientStorefront = () => {
             >
               <div>
                 <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: '#FFF8EE', border: '1.5px solid #EDD9BD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#96663B', marginBottom: '18px' }}>
-                  <GraduationCap size={28} />
+                  <BookOpen size={28} />
                 </div>
                 <h3 style={{ fontSize: '1.45rem', fontWeight: '900', color: '#4A3220', margin: '0 0 12px' }}>
-                  {language === 'en' ? 'Caturra Coffee Academy' : 'أكاديمية كاتورا للقهوة'}
+                  {language === 'en' ? 'Caturra Coffee Blog' : 'مدونة كاتورا للقهوة'}
                 </h3>
                 <p style={{ fontSize: '1.04rem', color: '#5C3D2E', lineHeight: '1.75', margin: 0 }}>
                   {language === 'en'
@@ -2543,7 +2543,7 @@ export const ClientStorefront = () => {
                 onMouseLeave={e => { e.currentTarget.style.background = '#FFF8EE'; e.currentTarget.style.color = '#96663B'; }}
               >
                 <BookOpen size={17} />
-                <span>{language === 'en' ? 'Explore Academy Articles' : 'تصفح مقالات الأكاديمية'}</span>
+                <span>{language === 'en' ? 'Explore Blog Articles' : 'تصفح مقالات المدونة'}</span>
               </button>
             </div>
           </div>
@@ -4557,7 +4557,7 @@ export const ClientStorefront = () => {
                     flexShrink: 0
                   }}
                 >
-                  <GraduationCap size={18} color="#96663B" strokeWidth={2.2} />
+                  <BookOpen size={18} color="#96663B" strokeWidth={2.2} />
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#2C1810' }}>{t('footerAcademyTitle')}</h3>

@@ -65,7 +65,7 @@ export const AcademyAdminView = () => {
     level: 'جميع المستويات',
     readTime: '4 دقائق',
     image: '/v60_set.jpg',
-    author: 'أكاديمية كاتورا',
+    author: 'مدونة كاتورا',
     summary: '',
     content: '',
     featured: false,
@@ -193,10 +193,10 @@ export const AcademyAdminView = () => {
   // Delete article
   const handleDelete = async (id, title) => {
     const ok = await confirmDialog({
-      title: 'حذف الدرس التعليمي',
-      message: `هل أنت متأكد من حذف الدرس: "${title}" من الأكاديمية؟`,
+      title: 'حذف المقال',
+      message: `هل أنت متأكد من حذف المقال: "${title}" من المدونة؟`,
       details: 'سيتم حذف المقال والمحتوى المرتبط به من متجر العملاء.',
-      confirmText: 'نعم، حذف الدرس',
+      confirmText: 'نعم، حذف المقال',
       cancelText: 'إلغاء',
       type: 'danger'
     });
@@ -213,14 +213,14 @@ export const AcademyAdminView = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(34, 203, 124, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mint-700)' }}>
-              <GraduationCap size={24} />
+              <BookOpen size={24} />
             </div>
             <div>
               <h1 style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-main)', margin: 0 }}>
-                أكاديمية كاتورا للقهوة المختصة
+                مدونة كاتورا للقهوة المختصة
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                إدارة المحتوى التعليمي، أدلة الاستخلاص، ودروس الباريستا المعروضة لعملاء المتجر.
+                إدارة مقالات المدونة، أدلة الاستخلاص، وفنون تحضير القهوة المعروضة لعملاء المتجر.
               </p>
             </div>
           </div>
