@@ -1,8 +1,10 @@
 /**
- * Source Code & Asset Protection Utility
- * Prevents right-click context menu ("عرض مصدر الصفحة" / "فحص"),
- * blocks devtools keyboard shortcuts (F12, Ctrl+U, Ctrl+Shift+I/J/C, Ctrl+S),
- * and prevents dragging images, while keeping input & form fields fully functional.
+ * Comprehensive Source Code, Media & Brand Protection Utility
+ * - Blocks right-click context menu ("عرض مصدر الصفحة" / "فحص")
+ * - Blocks devtools & inspect shortcuts (F12, Ctrl+U, Ctrl+Shift+I/J/C, Ctrl+S, Ctrl+P)
+ * - Prevents media dragging & long-press download popups
+ * - Enforces anti-debugging and console traps in production
+ * - Preserves full usability of customer input forms & checkout
  */
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
@@ -62,11 +64,21 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         e.stopPropagation();
         return false;
       }
+
+      // Ctrl + P (Print Page / طباعة الصفحة مباشرة - إلا لو كان داخل نافذة طباعة مخصصة)
+      if (ctrlOrCmd && (key === 'p' || code === 80)) {
+        const isPrintModalOpen = document.querySelector('.printable-invoice-modal, .pos-receipt-print');
+        if (!isPrintModalOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
     },
     { capture: true }
   );
 
-  // 3. Disable Dragging Images onto desktop
+  // 3. Disable Dragging Images & Videos onto desktop
   document.addEventListener(
     'dragstart',
     (e) => {
@@ -79,7 +91,32 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     { capture: true }
   );
 
-  // 4. Subtle security notice in console if opened via menu
+  // 4. Anti-DevTools & Console Clearing (Production Only)
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD) {
+    try {
+      let devtoolsOpen = false;
+      const detector = new Image();
+      Object.defineProperty(detector, 'id', {
+        get: function () {
+          devtoolsOpen = true;
+        }
+      });
+
+      setInterval(() => {
+        try {
+          devtoolsOpen = false;
+          console.dir(detector);
+          if (devtoolsOpen) {
+            console.clear();
+            console.log('%c🔒 محمصة كاتورا للقهوة المختصة (Caturra Coffee Roaster)', 'color: #8B5E34; font-size: 16px; font-weight: 900;');
+            console.log('%c⚠️ تنبيه: كافة حقوق الملكية والتصميم والبرمجة محمية قانونياً.', 'color: #DC2626; font-size: 13px; font-weight: bold;');
+          }
+        } catch (_) {}
+      }, 2000);
+    } catch (_) {}
+  }
+
+  // 5. Security Watermark Notice
   try {
     const titleStyle = 'color: #8B5E34; font-size: 18px; font-weight: 900;';
     const warningStyle = 'color: #DC2626; font-size: 13px; font-weight: bold;';

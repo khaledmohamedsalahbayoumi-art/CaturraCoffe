@@ -153,6 +153,29 @@ img, video {
   -moz-user-drag: none;
   -o-user-drag: none;
   user-drag: none;
+  -webkit-touch-callout: none !important;
+}
+
+/* 🔒 Global Source & Brand Asset Selection Protection */
+.storefront-view,
+.home-hero-section,
+.store-product-card,
+.caturra-home-product-card,
+.card {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Ensure inputs, textareas, and editable fields remain fully functional */
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: auto !important;
+  -moz-user-select: auto !important;
+  -ms-user-select: auto !important;
+  user-select: auto !important;
 }
 
 /* LTR English Overrides */

@@ -278,6 +278,7 @@ export default defineConfig({
   plugins: [react(), serverDbPlugin()],
   build: {
     target: 'es2020',
+    sourcemap: false,
     cssCodeSplit: true,
     chunkSizeWarningLimit: 800,
     rollupOptions: {
