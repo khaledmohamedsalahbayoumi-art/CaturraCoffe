@@ -122,17 +122,29 @@ export default async function handler(req, res) {
       // Merge single updated product atomically if provided
       let mergedProducts = Array.isArray(incoming.products) ? incoming.products : (Array.isArray(current.products) ? [...current.products] : []);
       if (incoming.updatedProduct && incoming.updatedProduct.id) {
-        const idx = mergedProducts.findIndex(p => p.id === incoming.updatedProduct.id);
-        if (idx !== -1) {
-          mergedProducts[idx] = { ...mergedProducts[idx], ...incoming.updatedProduct };
-        } else {
-          mergedProducts.push(incoming.updatedProduct);
+        const uProd = incoming.updatedProduct;
+        const normName = (uProd.name || '').trim().toLowerCase();
+        const normSku = (uProd.sku || '').trim().toLowerCase();
+
+        let foundMatch = false;
+        mergedProducts = mergedProducts.map(p => {
+          const pName = (p.name || '').trim().toLowerCase();
+          const pSku = (p.sku || '').trim().toLowerCase();
+          if (p.id === uProd.id || (normName && pName && pName === normName) || (normSku && pSku && pSku === normSku)) {
+            foundMatch = true;
+            return { ...p, ...uProd };
+          }
+          return p;
+        });
+
+        if (!foundMatch) {
+          mergedProducts.push(uProd);
         }
       }
 
-      // Sanitize products: prevent heavy inline base64 images from bloating the database state
+      // Sanitize products: preserve custom bag images while guarding against massive file bloat (> 500KB)
       mergedProducts = mergedProducts.map(p => {
-        if (p.image && typeof p.image === 'string' && p.image.startsWith('data:image') && p.image.length > 2000) {
+        if (p.image && typeof p.image === 'string' && p.image.startsWith('data:image') && p.image.length > 500000) {
           return { ...p, image: '/caturra_colombia.jpg' };
         }
         return p;

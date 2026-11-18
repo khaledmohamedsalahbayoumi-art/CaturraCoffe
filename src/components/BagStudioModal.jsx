@@ -35,21 +35,31 @@ export default function BagStudioModal({ product, isOpen, onClose, onSaveSuccess
         const recipe = backDesign?.recipe || {};
         const notesStr = Array.isArray(crop.notes) ? crop.notes.join(' / ') : (crop.notes || '');
 
+        const rows = frontDesign.rows || [];
+        const findRow = (lbl) => (rows.find(r => r.en === lbl || r.ar === lbl)?.ve || '');
+        const varietyVal = crop.variety || findRow('Variety') || updatedFields?.variety || '';
+        const altitudeVal = crop.altitude || findRow('Altitude') || updatedFields?.altitude || '';
+        const processVal = crop.process || frontDesign.process || findRow('Process') || updatedFields?.process || '';
+        const regionVal = crop.region || findRow('Region') || updatedFields?.region || '';
+        const farmVal = crop.farm || findRow('Farm') || updatedFields?.farm || '';
+        const countryVal = crop.country || frontDesign.country || updatedFields?.country || '';
+        const roastVal = crop.roast || frontDesign.roast || findRow('Roast') || updatedFields?.roastLevel || '';
+
         const updates = {
           image: frontImage,
           backImage: backImage || null,
           customBagDesign: customBagDesign,
           bagVariant: bagVariant || (customBagDesign?.format === 'wide' ? 'landscape' : 'vertical'),
-          country: crop.country || frontDesign.country,
-          origin: crop.country || frontDesign.country,
-          region: crop.region,
-          farm: crop.farm || '',
-          altitude: crop.altitude,
-          variety: crop.variety,
-          process: crop.process || frontDesign.process,
+          country: countryVal,
+          origin: countryVal,
+          region: regionVal,
+          farm: farmVal,
+          altitude: altitudeVal,
+          variety: varietyVal,
+          process: processVal,
           flavorNotes: notesStr,
           notes: notesStr,
-          roastLevel: crop.roast || frontDesign.roast,
+          roastLevel: roastVal,
           recommendedFor: recipe.brew || recipe.method || (customBagDesign?.format === 'wide' ? 'espresso' : 'v60'),
           espressoRecipe: {
             dose: recipe.dose || '18g',
@@ -58,12 +68,12 @@ export default function BagStudioModal({ product, isOpen, onClose, onSaveSuccess
             temp: recipe.temp || '92°C'
           },
           coffeeOrigin: {
-            country: crop.country || frontDesign.country || '',
-            region: crop.region || '',
-            farm: crop.farm || '',
-            altitude: crop.altitude || '',
-            variety: crop.variety || '',
-            process: crop.process || frontDesign.process || ''
+            country: countryVal,
+            region: regionVal,
+            farm: farmVal,
+            altitude: altitudeVal,
+            variety: varietyVal,
+            process: processVal
           },
           ...(updatedFields || {}),
           lastDesignUpdate: new Date().toISOString()

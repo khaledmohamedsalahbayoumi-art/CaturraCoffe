@@ -1611,6 +1611,27 @@ export const ClientStorefront = () => {
       'prod-brazil-santos': 65
     };
 
+    const getCuratedPriority = (p, priorityMap) => {
+      if (!p) return 0;
+      if (priorityMap[p.id]) return priorityMap[p.id];
+      const name = String(p.name || '').toLowerCase();
+      const sku = String(p.sku || '').toLowerCase();
+      for (const [key, score] of Object.entries(priorityMap)) {
+        if (key.includes('colombia-supremo') && (name.includes('سوبريمو') || sku.includes('remo'))) return score;
+        if (key.includes('strawberry') && (name.includes('فراولة') || sku.includes('erry'))) return score;
+        if (key.includes('cantaloupe') && (name.includes('كانتالوب') || sku.includes('oupe'))) return score;
+        if (key.includes('citrus') && (name.includes('حمضيات') || sku.includes('trus'))) return score;
+        if (key.includes('banana') && (name.includes('موز') || sku.includes('nana'))) return score;
+        if (key.includes('french') && (name.includes('فرنساوي') || sku.includes('french'))) return score;
+        if (key.includes('santos') && (name.includes('سانتوس') || sku.includes('santos'))) return score;
+        if (key.includes('yirgacheffe') && (name.includes('يرجاتشيف') || sku.includes('yirg'))) return score;
+        if (key.includes('guji') && (name.includes('غوجي') || name.includes('قوجي') || sku.includes('guji'))) return score;
+        if (key.includes('cerrado') && (name.includes('سيرادو') || sku.includes('cerrado'))) return score;
+        if (key.includes('house-blend') && (name.includes('هاوس') || sku.includes('house'))) return score;
+      }
+      return 0;
+    };
+
     // 1. 🌟 NEW HARVEST CROPS (محاصيلنا الجديدة) - Dynamically calculated from newest roast/batch arrivals & inventory
     const getProductNewnessTimestamp = (p) => {
       const productBatches = batches.filter(b => b.productId === p.id && (b.status === 'good' || !b.status));
@@ -1642,8 +1663,8 @@ export const ClientStorefront = () => {
       .sort((a, b) => {
         const timeDiff = getProductNewnessTimestamp(b) - getProductNewnessTimestamp(a);
         if (timeDiff !== 0) return timeDiff;
-        const prioA = curatedNewHarvestPriority[a.id] || 0;
-        const prioB = curatedNewHarvestPriority[b.id] || 0;
+        const prioA = getCuratedPriority(a, curatedNewHarvestPriority);
+        const prioB = getCuratedPriority(b, curatedNewHarvestPriority);
         if (prioB !== prioA) return prioB - prioA;
         return (Number(b.stock) || 0) - (Number(a.stock) || 0);
       });
@@ -1655,8 +1676,8 @@ export const ClientStorefront = () => {
         const salesA = (salesVolumeMap[a.id] || 0) + (Number(a.salesCount) || 0);
         const salesB = (salesVolumeMap[b.id] || 0) + (Number(b.salesCount) || 0);
         if (salesB !== salesA) return salesB - salesA;
-        const prioA = curatedPopularityPriority[a.id] || 0;
-        const prioB = curatedPopularityPriority[b.id] || 0;
+        const prioA = getCuratedPriority(a, curatedPopularityPriority);
+        const prioB = getCuratedPriority(b, curatedPopularityPriority);
         return prioB - prioA;
       });
     const bestSellers = sortedBestSellers.slice(0, 4);
@@ -5027,16 +5048,18 @@ export const ClientStorefront = () => {
                     const frontDesign = customDesign.front || {};
                     const backDesign = customDesign.back || {};
                     const recipe = backDesign.recipe || {};
+                    const rows = frontDesign.rows || [];
+                    const findRow = (lbl) => (rows.find(r => r.en === lbl || r.ar === lbl)?.ve || '');
 
                     const countryVal = crop.country || frontDesign.country || selectedProductDetails.country || selectedProductDetails.coffeeOrigin?.country || selectedProductDetails.origin;
-                    const regionVal = crop.region || selectedProductDetails.coffeeOrigin?.region || selectedProductDetails.region;
-                    const farmVal = crop.farm || selectedProductDetails.coffeeOrigin?.farm || selectedProductDetails.farm;
-                    const altitudeVal = crop.altitude || selectedProductDetails.altitude || selectedProductDetails.coffeeOrigin?.altitude;
-                    const varietyVal = crop.variety || selectedProductDetails.variety || selectedProductDetails.coffeeOrigin?.variety;
-                    const processVal = crop.process || frontDesign.process || selectedProductDetails.process || selectedProductDetails.coffeeOrigin?.process;
+                    const regionVal = crop.region || findRow('Region') || selectedProductDetails.coffeeOrigin?.region || selectedProductDetails.region;
+                    const farmVal = crop.farm || findRow('Farm') || selectedProductDetails.coffeeOrigin?.farm || selectedProductDetails.farm;
+                    const altitudeVal = crop.altitude || findRow('Altitude') || selectedProductDetails.altitude || selectedProductDetails.coffeeOrigin?.altitude;
+                    const varietyVal = crop.variety || findRow('Variety') || selectedProductDetails.variety || selectedProductDetails.coffeeOrigin?.variety;
+                    const processVal = crop.process || frontDesign.process || findRow('Process') || selectedProductDetails.process || selectedProductDetails.coffeeOrigin?.process;
                     const rawNotes = (crop.notes && Array.isArray(crop.notes) ? crop.notes.join(' / ') : crop.notes) || selectedProductDetails.flavorNotes || selectedProductDetails.notes || selectedProductDetails.sensoryProfile?.flavorNotes;
                     const brewVal = recipe.brew || recipe.method || selectedProductDetails.recommendedFor;
-                    const roastVal = crop.roast || frontDesign.roast || selectedProductDetails.roastLevel;
+                    const roastVal = crop.roast || frontDesign.roast || findRow('Roast') || selectedProductDetails.roastLevel;
 
                     return (
                       <>

@@ -357,110 +357,72 @@ export const AppProvider = ({ children }) => {
   });
 
   const [products, setProducts] = useState(() => {
-    const loaded = loadState('products', initialProducts);
-    const loadedMap = new Map((loaded || []).map(p => [p.id, p]));
+    const loaded = loadState('products', null);
+    const hasLoaded = Array.isArray(loaded) && loaded.length > 0;
+    const baseList = hasLoaded ? loaded : initialProducts;
 
-    const result = [];
-    const processedIds = new Set();
+    const loadedMap = new Map();
+    // Normalize and deduplicate by name & SKU to avoid duplicate ghost products
+    for (const p of baseList) {
+      if (!p || !p.id) continue;
+      const normName = (p.name || '').trim().toLowerCase();
+      const normSku = (p.sku || '').trim().toLowerCase();
+      const key = normName || normSku || p.id;
 
-    // 1. First ensure all initial products exist with full specs and accurate coffee bag images
-    for (const initP of initialProducts) {
-      processedIds.add(initP.id);
-      const userP = loadedMap.get(initP.id);
-      const isCoffee = initP.unitType === 'weight' || initP.category === 'specialty' || initP.category === 'classic_blends' || initP.category === 'espresso' || initP.category === 'filter' || initP.category === 'coffee';
-
-      let finalImage = initP.image;
-      let finalBagVariant = initP.bagVariant;
-
-      const isClassicBlend = initP.category === 'classic_blends' || initP.category === 'coffee' || (userP && (userP.category === 'classic_blends' || userP.category === 'coffee'));
-
-      if (isClassicBlend) {
-        finalImage = '/bags/bag_classic_blends.jpg';
-        finalBagVariant = 'vertical';
-      } else if (isCoffee) {
-        finalImage = '/bags/bag_espresso_landscape.jpg';
-        finalBagVariant = 'landscape';
-      }
-
-      if (userP) {
-        let userCat = userP.category;
-        let userSubCat = userP.subCategory;
-        if (userCat === 'espresso') {
-          userCat = 'specialty';
-          if (!userSubCat) userSubCat = 'espresso';
-        } else if (userCat === 'filter') {
-          userCat = 'specialty';
-          if (!userSubCat) userSubCat = 'filter';
-        } else if (userCat === 'coffee') {
-          userCat = 'classic_blends';
-          if (!userSubCat) userSubCat = 'classic';
+      if (loadedMap.has(key)) {
+        const existing = loadedMap.get(key);
+        // Prefer the product that has a customBagDesign, custom image, or valid stock
+        const hasBetterData = (p.customBagDesign && !existing.customBagDesign) ||
+                              ((Number(p.stock) || 0) > 0 && (Number(existing.stock) || 0) <= 0) ||
+                              (p.image && p.image.startsWith('data:') && (!existing.image || !existing.image.startsWith('data:')));
+        if (hasBetterData) {
+          loadedMap.set(key, { ...existing, ...p });
+        } else {
+          loadedMap.set(key, { ...p, ...existing });
         }
-
-        if (userCat === 'classic_blends' || userCat === 'coffee') {
-          finalImage = '/bags/bag_classic_blends.jpg';
-          finalBagVariant = 'vertical';
-        }
-
-        result.push({
-          ...initP,
-          ...userP,
-          category: userCat || initP.category,
-          subCategory: userSubCat || initP.subCategory,
-          image: finalImage,
-          bagVariant: finalBagVariant,
-          coffeeOrigin: userP.coffeeOrigin || initP.coffeeOrigin,
-          sensoryProfile: userP.sensoryProfile || initP.sensoryProfile,
-          espressoRecipe: userP.espressoRecipe || initP.espressoRecipe,
-          roastingProfile: userP.roastingProfile || initP.roastingProfile,
-          recommendedFor: userP.recommendedFor || initP.recommendedFor
-        });
       } else {
-        result.push({
-          ...initP,
-          image: finalImage,
-          bagVariant: finalBagVariant
-        });
+        loadedMap.set(key, p);
       }
     }
 
-    // 2. Append any custom products added by the user
-    for (const p of (loaded || [])) {
-      if (!processedIds.has(p.id)) {
-        let pCat = p.category;
-        let pSubCat = p.subCategory;
-        if (pCat === 'espresso') {
-          pCat = 'specialty';
-          if (!pSubCat) pSubCat = 'espresso';
-        } else if (pCat === 'filter') {
-          pCat = 'specialty';
-          if (!pSubCat) pSubCat = 'filter';
-        } else if (pCat === 'coffee') {
-          pCat = 'classic_blends';
-          if (!pSubCat) pSubCat = 'classic';
-        }
-
-        const isCoffee = p.unitType === 'weight' || pCat === 'specialty' || pCat === 'classic_blends' || pCat === 'filter' || pCat === 'espresso' || pCat === 'coffee';
-        const isCustomClassic = pCat === 'classic_blends' || pCat === 'coffee';
-        let finalImage = p.image;
-        let finalBagVariant = p.bagVariant;
-        if (isCustomClassic) {
-          finalImage = '/bags/bag_classic_blends.jpg';
-          finalBagVariant = 'vertical';
-        } else if (isCoffee) {
-          finalImage = '/bags/bag_espresso_landscape.jpg';
-          finalBagVariant = 'landscape';
-        }
-        result.push({
-          ...p,
-          category: pCat,
-          subCategory: pSubCat,
-          image: finalImage,
-          bagVariant: finalBagVariant
-        });
+    const result = Array.from(loadedMap.values()).map(p => {
+      let pCat = p.category;
+      let pSubCat = p.subCategory;
+      if (pCat === 'espresso') {
+        pCat = 'specialty';
+        if (!pSubCat) pSubCat = 'espresso';
+      } else if (pCat === 'filter') {
+        pCat = 'specialty';
+        if (!pSubCat) pSubCat = 'filter';
+      } else if (pCat === 'coffee') {
+        pCat = 'classic_blends';
+        if (!pSubCat) pSubCat = 'classic';
       }
-    }
 
-    return (result || []).map(p => sanitizeProductData(p));
+      const isCoffee = p.unitType === 'weight' || pCat === 'specialty' || pCat === 'classic_blends' || pCat === 'filter' || pCat === 'espresso' || pCat === 'coffee';
+      const isClassic = pCat === 'classic_blends' || pCat === 'coffee';
+
+      // PRESERVE user / studio image if already present! DO NOT OVERWRITE!
+      let finalImage = p.image;
+      if (!finalImage) {
+        finalImage = isClassic ? '/bags/bag_classic_blends.jpg' : (isCoffee ? '/bags/bag_espresso_landscape.jpg' : resolveProductImage(p));
+      }
+
+      let finalBagVariant = p.bagVariant;
+      if (!finalBagVariant) {
+        finalBagVariant = isClassic ? 'vertical' : (isCoffee ? 'landscape' : undefined);
+      }
+
+      return sanitizeProductData({
+        ...p,
+        category: pCat || p.category,
+        subCategory: pSubCat || p.subCategory,
+        image: finalImage,
+        bagVariant: finalBagVariant
+      });
+    });
+
+    return result;
   });
   const [invoices, setInvoices] = useState(() => {
     const rawInvoices = loadState('invoices', initialInvoices);
@@ -1816,8 +1778,19 @@ export const AppProvider = ({ children }) => {
   const updateProduct = (id, updatedFields) => {
     let targetUpdated = null;
     setProducts(prev => {
+      // Find the product being updated to identify any aliases by name or SKU
+      const targetP = prev.find(p => p.id === id);
+      const targetName = (targetP?.name || updatedFields.name || '').trim().toLowerCase();
+      const targetSku = (targetP?.sku || updatedFields.sku || '').trim().toLowerCase();
+
       const next = prev.map(p => {
-        if (p.id === id) {
+        const pName = (p.name || '').trim().toLowerCase();
+        const pSku = (p.sku || '').trim().toLowerCase();
+        const isMatch = p.id === id ||
+                        (targetName && pName && pName === targetName) ||
+                        (targetSku && pSku && pSku === targetSku);
+
+        if (isMatch) {
           const isWeight = (updatedFields.unitType || p.unitType) === 'weight';
           let stock = updatedFields.stock !== undefined ? Number(updatedFields.stock) : p.stock;
           let stockGram = p.stockGram || (stock * 1000);
@@ -1837,7 +1810,7 @@ export const AppProvider = ({ children }) => {
             costPrice: updatedFields.costPrice !== undefined ? Number(updatedFields.costPrice) : p.costPrice,
             sellingPrice: updatedFields.sellingPrice !== undefined ? Number(updatedFields.sellingPrice) : p.sellingPrice
           };
-          targetUpdated = updated;
+          if (p.id === id) targetUpdated = updated;
           return updated;
         }
         return p;

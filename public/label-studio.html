@@ -1819,6 +1819,16 @@ async function applyToCaturraStore() {
     const back = (S && S.back) || {};
     const recipe = (back && back.recipe) || {};
 
+    const rows = front.rows || [];
+    const findRow = (lbl) => (rows.find(r => r.en === lbl || r.ar === lbl)?.ve || '');
+    const varietyVal = crop.variety || findRow('Variety') || '';
+    const altitudeVal = crop.altitude || findRow('Altitude') || '';
+    const processVal = crop.process || front.process || findRow('Process') || '';
+    const roastVal = crop.roast || front.roast || findRow('Roast') || '';
+    const regionVal = crop.region || findRow('Region') || '';
+    const farmVal = crop.farm || findRow('Farm') || '';
+    const countryVal = crop.country || front.country || '';
+
     const notesStr = Array.isArray(crop.notes) ? crop.notes.join(' / ') : (crop.notes || '');
 
     const updatedFields = {
@@ -1826,16 +1836,16 @@ async function applyToCaturraStore() {
       backImage: backDataUrl,
       customBagDesign: JSON.parse(JSON.stringify(S)),
       bagVariant: (S && S.format === 'wide') ? 'landscape' : 'vertical',
-      country: crop.country || front.country || undefined,
-      origin: crop.country || front.country || undefined,
-      region: crop.region || undefined,
-      farm: crop.farm || '',
-      altitude: crop.altitude || undefined,
-      variety: crop.variety || undefined,
-      process: crop.process || front.process || undefined,
-      flavorNotes: notesStr || undefined,
-      notes: notesStr || undefined,
-      roastLevel: crop.roast || front.roast || undefined,
+      country: countryVal,
+      origin: countryVal,
+      region: regionVal,
+      farm: farmVal,
+      altitude: altitudeVal,
+      variety: varietyVal,
+      process: processVal,
+      flavorNotes: notesStr,
+      notes: notesStr,
+      roastLevel: roastVal || 'Medium',
       recommendedFor: recipe.brew || recipe.method || (S.format === 'wide' ? 'espresso' : 'v60'),
       espressoRecipe: {
         dose: recipe.dose || '18g',
@@ -1844,12 +1854,12 @@ async function applyToCaturraStore() {
         temp: recipe.temp || '92°C'
       },
       coffeeOrigin: {
-        country: crop.country || front.country || '',
-        region: crop.region || '',
-        farm: crop.farm || '',
-        altitude: crop.altitude || '',
-        variety: crop.variety || '',
-        process: crop.process || front.process || ''
+        country: countryVal,
+        region: regionVal,
+        farm: farmVal,
+        altitude: altitudeVal,
+        variety: varietyVal,
+        process: processVal
       },
       lastDesignUpdate: new Date().toISOString()
     };
@@ -1978,11 +1988,16 @@ function loadCaturraProduct(prod) {
   if (prod.bagVariant === 'landscape') S.format = 'wide';
 
   const orig = prod.coffeeOrigin || {};
-  if (orig.country) S.crop.country = orig.country.toLowerCase();
-  if (orig.region) S.crop.region = orig.region;
-  if (orig.altitude) S.crop.altitude = orig.altitude;
-  if (orig.variety) S.crop.variety = orig.variety;
-  if (orig.process) S.crop.process = orig.process;
+  const cCountry = orig.country || prod.country;
+  const cRegion = orig.region || prod.region;
+  const cAltitude = orig.altitude || prod.altitude;
+  const cVariety = orig.variety || prod.variety;
+  const cProcess = orig.process || prod.process;
+  if (cCountry) S.crop.country = cCountry.toLowerCase();
+  if (cRegion) S.crop.region = cRegion;
+  if (cAltitude) S.crop.altitude = cAltitude;
+  if (cVariety) S.crop.variety = cVariety;
+  if (cProcess) S.crop.process = cProcess;
   if (prod.roastLevel) S.crop.roast = prod.roastLevel;
   if (prod.notes || prod.flavorNotes) {
     const rawNotes = (prod.flavorNotes || prod.notes).split(/[/,·]+/).map(s => s.trim()).filter(Boolean);

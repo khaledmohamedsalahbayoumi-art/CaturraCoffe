@@ -563,13 +563,13 @@ export const ProductsView = () => {
       wholesalePricePerKg: prod.wholesalePricePerKg || Math.round((prod.pricePerKg || prod.sellingPrice * 4) * 0.8),
       stock: prod.stock,
       stockGram: prod.stockGram || (prod.stock * 1000),
-      country: prod.coffeeOrigin?.country || prod.country || '',
-      region: prod.coffeeOrigin?.region || prod.region || '',
-      farm: prod.coffeeOrigin?.farm || prod.farm || '',
-      altitude: prod.coffeeOrigin?.altitude || prod.altitude || '',
-      variety: prod.coffeeOrigin?.variety || prod.variety || '',
-      process: prod.coffeeOrigin?.process || prod.process || '',
-      flavorNotes: prod.sensoryProfile?.flavorNotes || prod.notes || ''
+      country: prod.country || prod.coffeeOrigin?.country || prod.customBagDesign?.crop?.country || '',
+      region: prod.region || prod.coffeeOrigin?.region || prod.customBagDesign?.crop?.region || '',
+      farm: prod.farm || prod.coffeeOrigin?.farm || prod.customBagDesign?.crop?.farm || '',
+      altitude: prod.altitude || prod.coffeeOrigin?.altitude || prod.customBagDesign?.crop?.altitude || '',
+      variety: prod.variety || prod.coffeeOrigin?.variety || prod.customBagDesign?.crop?.variety || '',
+      process: prod.process || prod.coffeeOrigin?.process || prod.customBagDesign?.crop?.process || '',
+      flavorNotes: prod.flavorNotes || prod.notes || prod.sensoryProfile?.flavorNotes || (Array.isArray(prod.customBagDesign?.crop?.notes) ? prod.customBagDesign.crop.notes.join(' / ') : prod.customBagDesign?.crop?.notes) || ''
     });
     setIsAddModalOpen(true);
   };
@@ -1096,6 +1096,27 @@ export const ProductsView = () => {
                 {prod.notes && (
                   <div style={{ fontSize: '0.78rem', color: '#451A03', marginTop: '4px', background: '#FEF9EE', border: '1px solid #FDE68A', padding: '4px 8px', borderRadius: '6px', fontWeight: '600' }}>
                     ✨ {prod.notes}
+                  </div>
+                )}
+
+                {/* Specifics snippet: Variety, Altitude, Process */}
+                {isCoffee && (prod.variety || prod.coffeeOrigin?.variety || prod.altitude || prod.coffeeOrigin?.altitude) && (
+                  <div style={{ fontSize: '0.74rem', color: '#78350F', marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap', fontWeight: '700' }}>
+                    {(prod.variety || prod.coffeeOrigin?.variety) && (
+                      <span style={{ background: '#FDF6E2', padding: '2px 6px', borderRadius: '4px', border: '1px solid #FDE68A' }}>
+                        🌱 {prod.variety || prod.coffeeOrigin?.variety}
+                      </span>
+                    )}
+                    {(prod.altitude || prod.coffeeOrigin?.altitude) && (
+                      <span style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#334155' }}>
+                        ⛰️ {prod.altitude || prod.coffeeOrigin?.altitude}
+                      </span>
+                    )}
+                    {(prod.process || prod.coffeeOrigin?.process) && (
+                      <span style={{ background: '#F0FDF4', padding: '2px 6px', borderRadius: '4px', border: '1px solid #BBF7D0', color: '#166534' }}>
+                        ⚙️ {prod.process || prod.coffeeOrigin?.process}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -2488,9 +2509,10 @@ export const ProductsView = () => {
         isOpen={!!activeBagStudioProduct}
         onClose={() => setActiveBagStudioProduct(null)}
         onSaveSuccess={(productId, updates) => {
-          if (editingProduct && editingProduct.id === productId) {
+          if (editingProduct && (editingProduct.id === productId || editingProduct.name === updates.name)) {
             setFormData(prev => ({ ...prev, ...updates }));
           }
+          setActiveBagStudioProduct(prev => prev && (prev.id === productId || prev.name === updates.name) ? { ...prev, ...updates } : prev);
         }}
       />
     </div>
