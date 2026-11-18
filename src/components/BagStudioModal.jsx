@@ -8,6 +8,44 @@ export default function BagStudioModal({ product, isOpen, onClose, onSaveSuccess
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
+  const toggleFullScreen = () => {
+    setIsFullScreen(prev => {
+      const next = !prev;
+      try {
+        if (next) {
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        } else {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }
+      } catch (_) {}
+      return next;
+    });
+  };
+
+  const handleClose = () => {
+    setIsFullScreen(false);
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (_) {}
+    onClose();
+  };
+
+  useEffect(() => {
+    const handleFs = () => {
+      if (!document.fullscreenElement && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFs);
+    return () => document.removeEventListener('fullscreenchange', handleFs);
+  }, [isFullScreen]);
+
   useEffect(() => {
     if (!isOpen || !product) return;
 
@@ -115,7 +153,7 @@ export default function BagStudioModal({ product, isOpen, onClose, onSaveSuccess
         padding: isFullScreen ? '0' : '14px',
         animation: 'fadeIn 0.2s ease-out'
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         style={{
@@ -220,7 +258,7 @@ export default function BagStudioModal({ product, isOpen, onClose, onSaveSuccess
 
             <button
               type="button"
-              onClick={() => setIsFullScreen(prev => !prev)}
+              onClick={toggleFullScreen}
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
                 color: '#e2d5c5',
@@ -233,12 +271,12 @@ export default function BagStudioModal({ product, isOpen, onClose, onSaveSuccess
               }}
               title={isFullScreen ? 'تصغير النافذة' : 'تكبير ملء الشاشة'}
             >
-              {isFullScreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              {isFullScreen ? <Minimize2 size={14} style={{ pointerEvents: 'none' }} /> : <Maximize2 size={14} style={{ pointerEvents: 'none' }} />}
             </button>
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               style={{
                 background: '#dc2626',
                 color: '#fff',

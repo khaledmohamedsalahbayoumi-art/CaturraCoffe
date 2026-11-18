@@ -264,6 +264,47 @@ export const ClientStorefront = () => {
   const [academySearchQuery, setAcademySearchQuery] = useState('');
   const [selectedAcademyArticle, setSelectedAcademyArticle] = useState(null);
   const [isAcademyArticleFullscreen, setIsAcademyArticleFullscreen] = useState(false);
+
+  const toggleAcademyFullscreen = () => {
+    setIsAcademyArticleFullscreen(prev => {
+      const next = !prev;
+      try {
+        if (next) {
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        } else {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }
+      } catch (_) {}
+      return next;
+    });
+  };
+
+  const closeAcademyArticle = () => {
+    setIsAcademyArticleFullscreen(false);
+    setSelectedAcademyArticle(null);
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (!document.fullscreenElement && isAcademyArticleFullscreen) {
+        setIsAcademyArticleFullscreen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+    };
+  }, [isAcademyArticleFullscreen]);
+
   const [academyCategoryFilter, setAcademyCategoryFilter] = useState('all');
   const [viewingAcademyPdf, setViewingAcademyPdf] = useState(null);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -7349,11 +7390,8 @@ export const ClientStorefront = () => {
       {/* 📖 ACADEMY ARTICLE READING MODAL (مودال قراءة مقالات الأكاديمية للعميل) 📖 */}
       {selectedAcademyArticle && (
         <div
-          className="modal-overlay academy-reader-overlay"
-          onClick={() => {
-            setIsAcademyArticleFullscreen(false);
-            setSelectedAcademyArticle(null);
-          }}
+          className={`modal-overlay academy-reader-overlay ${isAcademyArticleFullscreen ? 'is-fullscreen' : ''}`}
+          onClick={closeAcademyArticle}
           style={{
             position: 'fixed',
             top: 0,
@@ -7375,7 +7413,7 @@ export const ClientStorefront = () => {
           }}
         >
           <div
-            className="modal-content academy-reader-modal"
+            className={`modal-content academy-reader-modal ${isAcademyArticleFullscreen ? 'is-fullscreen' : ''}`}
             onClick={e => e.stopPropagation()}
             style={{
               maxWidth: isAcademyArticleFullscreen ? '100vw' : '1580px',
@@ -7433,7 +7471,11 @@ export const ClientStorefront = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsAcademyArticleFullscreen(prev => !prev)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleAcademyFullscreen();
+                  }}
                   className="btn btn-outline"
                   style={{
                     width: '38px',
@@ -7441,30 +7483,34 @@ export const ClientStorefront = () => {
                     padding: 0,
                     borderRadius: '50%',
                     color: '#FFFDF9',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
+                    pointerEvents: 'auto',
+                    zIndex: 10,
                     transition: 'all 0.2s'
                   }}
                   title={isAcademyArticleFullscreen ? (language === 'en' ? 'Exit Fullscreen' : 'تصغير النافذة') : (language === 'en' ? 'Fullscreen' : 'ملء الشاشة')}
                   aria-label={isAcademyArticleFullscreen ? (language === 'en' ? 'Exit Fullscreen' : 'تصغير النافذة') : (language === 'en' ? 'Fullscreen' : 'ملء الشاشة')}
                 >
-                  {isAcademyArticleFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  {isAcademyArticleFullscreen ? <Minimize2 size={18} style={{ pointerEvents: 'none' }} /> : <Maximize2 size={18} style={{ pointerEvents: 'none' }} />}
                 </button>
 
                 <button
-                  onClick={() => {
-                    setIsAcademyArticleFullscreen(false);
-                    setSelectedAcademyArticle(null);
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    closeAcademyArticle();
                   }}
                   className="btn btn-outline"
-                  style={{ width: '38px', height: '38px', padding: 0, borderRadius: '50%', color: '#FFFDF9', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: '38px', height: '38px', padding: 0, borderRadius: '50%', color: '#FFFDF9', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', pointerEvents: 'auto', zIndex: 10 }}
                   aria-label={t('closeModal')}
                 >
-                  <X size={20} />
+                  <X size={20} style={{ pointerEvents: 'none' }} />
                 </button>
               </div>
             </div>
@@ -7746,10 +7792,7 @@ export const ClientStorefront = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setIsAcademyArticleFullscreen(false);
-                  setSelectedAcademyArticle(null);
-                }}
+                onClick={closeAcademyArticle}
                 className="btn btn-outline"
                 style={{ padding: '14px 28px', fontWeight: '700', fontSize: '1rem', background: '#FFF8EE', border: '1.5px solid #EDD9BD', color: '#4A3220', borderRadius: '14px' }}
               >
