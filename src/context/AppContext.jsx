@@ -37,6 +37,7 @@ import {
   formatPrice
 } from '../utils/translations';
 import { sanitizeProductData, resolveProductImage, isToolProduct } from '../utils/productImages';
+import { safeStorage, pruneOversizedStorage } from '../utils/safeStorage';
 
 // ⚡ Zero-latency cross-tab live synchronization via BroadcastChannel
 const liveSyncChannel = typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined'
@@ -244,25 +245,14 @@ export const AppProvider = ({ children }) => {
     }
   }
 
-  // Load from localStorage or fallback
+  // Load from safeStorage or fallback
   const loadState = (key, fallback) => {
-    try {
-      const saved = localStorage.getItem(`caturra_eg_${key}`);
-      return saved ? JSON.parse(saved) : fallback;
-    } catch {
-      return fallback;
-    }
+    return safeStorage.getItem(`caturra_eg_${key}`, fallback);
   };
 
-  // Save to localStorage
+  // Save to safeStorage
   const saveState = (key, value) => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`caturra_eg_${key}`, JSON.stringify(value));
-      }
-    } catch {
-      // ignore
-    }
+    return safeStorage.setItem(`caturra_eg_${key}`, value);
   };
 
   // Bilingual Language Support (Arabic & English)
@@ -878,13 +868,13 @@ export const AppProvider = ({ children }) => {
     }
   }, [invoices]);
 
-  // Sync to localStorage
+  // Sync to safeStorage
   useEffect(() => {
-    localStorage.setItem('caturra_eg_categories', JSON.stringify(categories));
+    safeStorage.setItem('caturra_eg_categories', categories);
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_products', JSON.stringify(products));
+    safeStorage.setItem('caturra_eg_products', products);
     if (!hasFetchedServerSyncRef.current) return;
     if (skipNextProductSyncRef.current) {
       skipNextProductSyncRef.current = false;
@@ -907,11 +897,11 @@ export const AppProvider = ({ children }) => {
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_customers', JSON.stringify(customers));
+    safeStorage.setItem('caturra_eg_customers', customers);
   }, [customers]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_invoices', JSON.stringify(invoices));
+    safeStorage.setItem('caturra_eg_invoices', invoices);
   }, [invoices]);
 
   // Automatic reconciliation: keep customer debt and statistics in sync with invoices in real-time
@@ -1070,15 +1060,15 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_purchases', JSON.stringify(purchases));
+    safeStorage.setItem('caturra_eg_purchases', purchases);
   }, [purchases]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_batches', JSON.stringify(batches));
+    safeStorage.setItem('caturra_eg_batches', batches);
   }, [batches]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_expenses', JSON.stringify(expenses));
+    safeStorage.setItem('caturra_eg_expenses', expenses);
   }, [expenses]);
 
   useEffect(() => {
@@ -1094,7 +1084,7 @@ export const AppProvider = ({ children }) => {
         return copy;
       });
 
-    localStorage.setItem('caturra_eg_users', JSON.stringify(cleanUsers));
+    safeStorage.setItem('caturra_eg_users', cleanUsers);
     if (!hasFetchedServerSyncRef.current) return;
     if (typeof fetch !== 'undefined') {
       const timer = setTimeout(() => {
@@ -1280,34 +1270,27 @@ export const AppProvider = ({ children }) => {
 
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_current_user_id', JSON.stringify(currentUserId));
+    safeStorage.setItem('caturra_eg_current_user_id', currentUserId);
   }, [currentUserId]);
 
   useEffect(() => {
-    saveState('contact_info', contactInfo);
-    try {
-      localStorage.setItem('caturra_eg_contact_info', JSON.stringify(contactInfo));
-    } catch { }
+    safeStorage.setItem('caturra_eg_contact_info', contactInfo);
   }, [contactInfo]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_treasury_accounts', JSON.stringify(treasuryAccounts));
+    safeStorage.setItem('caturra_eg_treasury_accounts', treasuryAccounts);
   }, [treasuryAccounts]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_suppliers', JSON.stringify(suppliers));
+    safeStorage.setItem('caturra_eg_suppliers', suppliers);
   }, [suppliers]);
 
   useEffect(() => {
-    localStorage.setItem('caturra_eg_treasury_transactions', JSON.stringify(treasuryTransactions));
+    safeStorage.setItem('caturra_eg_treasury_transactions', treasuryTransactions);
   }, [treasuryTransactions]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('caturra_eg_b2b_requests', JSON.stringify(b2bRequests));
-    } catch (e) {
-      console.warn('Failed to save b2b_requests to localStorage', e);
-    }
+    safeStorage.setItem('caturra_eg_b2b_requests', b2bRequests);
   }, [b2bRequests]);
 
   // 🌟 UNIVERSAL ZERO-LATENCY REAL-TIME AUTO SYNC (CROSS-TAB & CROSS-DEVICE) 🌟

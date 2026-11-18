@@ -8,37 +8,61 @@ import { OrderTrackingModal } from './components/OrderTrackingModal';
 import { AppConfirmModal } from './components/AppConfirmModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+// Safe dynamic import with auto-retry for new deployments (stale chunk recovery)
+const lazyWithRetry = (factory) =>
+  lazy(() =>
+    factory().catch((error) => {
+      const errMsg = error?.message || error?.toString() || '';
+      const isChunkError =
+        error?.name === 'ChunkLoadError' ||
+        /Failed to fetch dynamically imported module/i.test(errMsg) ||
+        /dynamically imported module/i.test(errMsg);
+
+      if (isChunkError && typeof window !== 'undefined') {
+        const lastReloadKey = 'caturra_chunk_retry';
+        const lastReload = Number(sessionStorage.getItem(lastReloadKey) || 0);
+        const now = Date.now();
+        if (now - lastReload > 10000) {
+          sessionStorage.setItem(lastReloadKey, String(now));
+          window.location.reload();
+          return new Promise(() => {}); // Prevent component tree crash while reloading
+        }
+      }
+      throw error;
+    })
+  );
+
 // Customer Storefront (Code-split with React.lazy for instant isolation between store and ERP)
-const ClientStorefront = lazy(() => import('./views/ClientStorefront').then(m => ({ default: m.ClientStorefront })));
+const ClientStorefront = lazyWithRetry(() => import('./views/ClientStorefront').then(m => ({ default: m.ClientStorefront })));
 
 // Admin ERP Views (Code-split with React.lazy so customer mobile bundle stays ultra-lightweight)
-const LoginView = lazy(() => import('./views/LoginView').then(m => ({ default: m.LoginView })));
-const ProductsView = lazy(() => import('./views/ProductsView').then(m => ({ default: m.ProductsView })));
-const PosView = lazy(() => import('./views/PosView').then(m => ({ default: m.PosView })));
-const InvoicesView = lazy(() => import('./views/InvoicesView').then(m => ({ default: m.InvoicesView })));
-const CustomersView = lazy(() => import('./views/CustomersView').then(m => ({ default: m.CustomersView })));
-const PurchasesView = lazy(() => import('./views/PurchasesView').then(m => ({ default: m.PurchasesView })));
-const SuppliersView = lazy(() => import('./views/SuppliersView').then(m => ({ default: m.SuppliersView })));
-const SalesAlertsView = lazy(() => import('./views/SalesAlertsView').then(m => ({ default: m.SalesAlertsView })));
-const WarehouseView = lazy(() => import('./views/WarehouseView').then(m => ({ default: m.WarehouseView })));
-const AccountsView = lazy(() => import('./views/AccountsView').then(m => ({ default: m.AccountsView })));
-const UsersPermissionsView = lazy(() => import('./views/UsersPermissionsView').then(m => ({ default: m.UsersPermissionsView })));
-const AcademyAdminView = lazy(() => import('./views/AcademyAdminView').then(m => ({ default: m.AcademyAdminView })));
-const StoreSettingsView = lazy(() => import('./views/StoreSettingsView').then(m => ({ default: m.StoreSettingsView })));
-const TreasuryView = lazy(() => import('./views/TreasuryView').then(m => ({ default: m.TreasuryView })));
-const B2BAdminView = lazy(() => import('./views/B2BAdminView').then(m => ({ default: m.B2BAdminView })));
+const LoginView = lazyWithRetry(() => import('./views/LoginView').then(m => ({ default: m.LoginView })));
+const ProductsView = lazyWithRetry(() => import('./views/ProductsView').then(m => ({ default: m.ProductsView })));
+const PosView = lazyWithRetry(() => import('./views/PosView').then(m => ({ default: m.PosView })));
+const InvoicesView = lazyWithRetry(() => import('./views/InvoicesView').then(m => ({ default: m.InvoicesView })));
+const CustomersView = lazyWithRetry(() => import('./views/CustomersView').then(m => ({ default: m.CustomersView })));
+const PurchasesView = lazyWithRetry(() => import('./views/PurchasesView').then(m => ({ default: m.PurchasesView })));
+const SuppliersView = lazyWithRetry(() => import('./views/SuppliersView').then(m => ({ default: m.SuppliersView })));
+const SalesAlertsView = lazyWithRetry(() => import('./views/SalesAlertsView').then(m => ({ default: m.SalesAlertsView })));
+const WarehouseView = lazyWithRetry(() => import('./views/WarehouseView').then(m => ({ default: m.WarehouseView })));
+const AccountsView = lazyWithRetry(() => import('./views/AccountsView').then(m => ({ default: m.AccountsView })));
+const UsersPermissionsView = lazyWithRetry(() => import('./views/UsersPermissionsView').then(m => ({ default: m.UsersPermissionsView })));
+const AcademyAdminView = lazyWithRetry(() => import('./views/AcademyAdminView').then(m => ({ default: m.AcademyAdminView })));
+const StoreSettingsView = lazyWithRetry(() => import('./views/StoreSettingsView').then(m => ({ default: m.StoreSettingsView })));
+const TreasuryView = lazyWithRetry(() => import('./views/TreasuryView').then(m => ({ default: m.TreasuryView })));
+const B2BAdminView = lazyWithRetry(() => import('./views/B2BAdminView').then(m => ({ default: m.B2BAdminView })));
 
 // Smart Route Preloading: Pre-warm modules in idle time based on destination route for 0ms transitions
 if (typeof window !== 'undefined') {
   const p = window.location.pathname.toLowerCase();
   const isDocAdmin = p.includes('caturra') || p.includes('admin') || p.includes('dashboard') || sessionStorage.getItem('caturra_view_mode') === 'admin';
   if (isDocAdmin) {
-    import('./views/LoginView');
-    import('./views/PosView');
-    import('./views/ProductsView');
-    import('./views/InvoicesView');
+    import('./views/LoginView').catch(() => {});
+    import('./views/PosView').catch(() => {});
+    import('./views/ProductsView').catch(() => {});
+    import('./views/InvoicesView').catch(() => {});
   } else {
-    import('./views/ClientStorefront');
+    import('./views/ClientStorefront').catch(() => {});
   }
 }
 

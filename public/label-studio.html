@@ -1895,19 +1895,33 @@ async function applyToCaturraStore() {
       }
     }
 
-    // B. Direct LocalStorage Persistence for instant client-side update
+    // B. Direct LocalStorage Persistence for instant client-side update (safe for mobile quota)
     try {
+      // Clean up legacy heavy bag design keys to keep storage under 5MB quota
+      const keysToClean = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('caturra_bag_design_') || k.startsWith('caturra_preview_'))) {
+          keysToClean.push(k);
+        }
+      }
+      keysToClean.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+
       const storedProds = JSON.parse(localStorage.getItem('caturra_eg_products') || '[]');
       const pIdx = storedProds.findIndex(p => p.id === targetProductId);
       if (pIdx !== -1) {
+        const leanFields = { ...updatedFields };
+        delete leanFields.customBagDesign;
+        delete leanFields.backImage;
         storedProds[pIdx] = {
           ...storedProds[pIdx],
-          ...updatedFields
+          ...leanFields
         };
         localStorage.setItem('caturra_eg_products', JSON.stringify(storedProds));
       }
-      localStorage.setItem('caturra_bag_design_' + targetProductId, JSON.stringify(payload));
-    } catch (e) {}
+    } catch (e) {
+      console.warn('LocalStorage save skipped (quota limit):', e);
+    }
 
     // C. Post message to parent modal if embedded
     if (window.parent && window.parent !== window) {

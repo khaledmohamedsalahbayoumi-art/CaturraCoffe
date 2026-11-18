@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { pruneOversizedStorage } from '../utils/safeStorage';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -14,9 +15,49 @@ export class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
+
+    const errMsg = (error?.message || error?.toString() || '');
+
+    // 1. Automatic recovery for stale chunk errors after deployment
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      /Failed to fetch dynamically imported module/i.test(errMsg) ||
+      /dynamically imported module/i.test(errMsg);
+
+    if (isChunkError && typeof window !== 'undefined') {
+      const now = Date.now();
+      const lastChunkReload = Number(sessionStorage.getItem('last_chunk_reload') || 0);
+      if (now - lastChunkReload > 10000) {
+        sessionStorage.setItem('last_chunk_reload', String(now));
+        window.location.reload();
+        return;
+      }
+    }
+
+    // 2. Automatic recovery for LocalStorage Quota Exceeded errors on mobile devices
+    const isQuotaError =
+      error?.name === 'QuotaExceededError' ||
+      error?.code === 22 ||
+      /quota has been exceeded/i.test(errMsg);
+
+    if (isQuotaError && typeof window !== 'undefined') {
+      try {
+        pruneOversizedStorage();
+      } catch (_) {}
+      const now = Date.now();
+      const lastQuotaReload = Number(sessionStorage.getItem('last_quota_reload') || 0);
+      if (now - lastQuotaReload > 10000) {
+        sessionStorage.setItem('last_quota_reload', String(now));
+        window.location.reload();
+        return;
+      }
+    }
   }
 
   handleReload = () => {
+    try {
+      pruneOversizedStorage();
+    } catch (_) {}
     window.location.reload();
   };
 
