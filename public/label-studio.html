@@ -1911,13 +1911,26 @@ async function applyToCaturraStore() {
       const pIdx = storedProds.findIndex(p => p.id === targetProductId);
       if (pIdx !== -1) {
         const leanFields = { ...updatedFields };
+        // CRITICAL: Never store Base64 images in localStorage — Safari iOS 5MB limit!
         delete leanFields.customBagDesign;
         delete leanFields.backImage;
-        storedProds[pIdx] = {
-          ...storedProds[pIdx],
+        // If image is Base64, remove it — the server has the real image
+        if (leanFields.image && typeof leanFields.image === 'string' && leanFields.image.startsWith('data:')) {
+          delete leanFields.image; // Will fall back to category image until page refreshes from server
+        }
+        // Also clean any existing Base64 images in the whole products array
+        const cleanedProds = storedProds.map(p => {
+          const cp = { ...p };
+          if (cp.image && typeof cp.image === 'string' && cp.image.startsWith('data:')) delete cp.image;
+          if (cp.backImage) delete cp.backImage;
+          if (cp.customBagDesign) delete cp.customBagDesign;
+          return cp;
+        });
+        cleanedProds[pIdx] = {
+          ...cleanedProds[pIdx],
           ...leanFields
         };
-        localStorage.setItem('caturra_eg_products', JSON.stringify(storedProds));
+        localStorage.setItem('caturra_eg_products', JSON.stringify(cleanedProds));
       }
     } catch (e) {
       console.warn('LocalStorage save skipped (quota limit):', e);

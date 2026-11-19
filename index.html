@@ -14,6 +14,7 @@
     <script>
       (function(){
         // 1. Immediate Storage Quota Protection for iOS Safari
+        // Strip ALL Base64 image data from stored products + remove old cache keys
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
             var keysToRemove = [];
@@ -26,6 +27,28 @@
             for (var j = 0; j < keysToRemove.length; j++) {
               try { localStorage.removeItem(keysToRemove[j]); } catch(e){}
             }
+            // Strip Base64 from stored products (the main quota killer!)
+            try {
+              var rawProds = localStorage.getItem('caturra_eg_products');
+              if (rawProds) {
+                var prods = JSON.parse(rawProds);
+                if (Array.isArray(prods)) {
+                  var hadBase64 = false;
+                  var cleaned = prods.map(function(p) {
+                    var cp = Object.assign({}, p);
+                    if (cp.image && typeof cp.image === 'string' && cp.image.indexOf('data:') === 0) {
+                      delete cp.image; hadBase64 = true;
+                    }
+                    if (cp.backImage) { delete cp.backImage; hadBase64 = true; }
+                    if (cp.customBagDesign) { delete cp.customBagDesign; hadBase64 = true; }
+                    return cp;
+                  });
+                  if (hadBase64) {
+                    localStorage.setItem('caturra_eg_products', JSON.stringify(cleaned));
+                  }
+                }
+              }
+            } catch(e2) {}
           }
         } catch(e) {}
 

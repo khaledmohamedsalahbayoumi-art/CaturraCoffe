@@ -37,7 +37,7 @@ import {
   formatPrice
 } from '../utils/translations';
 import { sanitizeProductData, resolveProductImage, isToolProduct } from '../utils/productImages';
-import { safeStorage, pruneOversizedStorage } from '../utils/safeStorage';
+import { safeStorage, pruneOversizedStorage, stripBase64FromProducts } from '../utils/safeStorage';
 
 // ⚡ Zero-latency cross-tab live synchronization via BroadcastChannel
 const liveSyncChannel = typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined'
@@ -1189,7 +1189,7 @@ export const AppProvider = ({ children }) => {
             const sanitized = serverData.products.map(p => sanitizeProductData(p));
             setProducts(sanitized);
             try {
-              localStorage.setItem('caturra_eg_products', JSON.stringify(sanitized));
+              localStorage.setItem('caturra_eg_products', JSON.stringify(stripBase64FromProducts(sanitized)));
             } catch { }
 
             if (Array.isArray(serverData.batches)) {
@@ -1386,7 +1386,7 @@ export const AppProvider = ({ children }) => {
           const cleanProds = serverData.products.map(p => sanitizeProductData(p));
           setProducts(prev => {
             if (prev.length !== cleanProds.length || JSON.stringify(prev) !== JSON.stringify(cleanProds)) {
-              try { localStorage.setItem('caturra_eg_products', JSON.stringify(cleanProds)); } catch { }
+              try { localStorage.setItem('caturra_eg_products', JSON.stringify(stripBase64FromProducts(cleanProds))); } catch { }
               return cleanProds;
             }
             return prev;
@@ -1799,7 +1799,7 @@ export const AppProvider = ({ children }) => {
         return p;
       });
       try {
-        localStorage.setItem('caturra_eg_products', JSON.stringify(next));
+        localStorage.setItem('caturra_eg_products', JSON.stringify(stripBase64FromProducts(next)));
       } catch { }
       broadcastLiveSync('products', next);
       return next;
@@ -1832,7 +1832,7 @@ export const AppProvider = ({ children }) => {
     broadcastLiveSync('products', nextProducts);
     broadcastLiveSync('batches', nextBatches);
     try {
-      localStorage.setItem('caturra_eg_products', JSON.stringify(nextProducts));
+      localStorage.setItem('caturra_eg_products', JSON.stringify(stripBase64FromProducts(nextProducts)));
       localStorage.setItem('caturra_eg_batches', JSON.stringify(nextBatches));
     } catch { }
     if (typeof fetch !== 'undefined') {
@@ -3663,7 +3663,7 @@ export const AppProvider = ({ children }) => {
 
     setProducts(result);
     try {
-      localStorage.setItem('caturra_eg_products', JSON.stringify(result));
+      localStorage.setItem('caturra_eg_products', JSON.stringify(stripBase64FromProducts(result)));
     } catch { }
 
     // Update existing batches, drop batches of deleted products, and create batches for products without one

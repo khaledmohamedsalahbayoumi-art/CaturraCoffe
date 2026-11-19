@@ -726,7 +726,7 @@ export const ProductsView = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      
+
       {/* Top Action Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -842,7 +842,7 @@ export const ProductsView = () => {
           const isOutOfStock = prod.stock <= 0;
           const isLowStock = prod.stock <= (prod.minStockAlert || 5);
           const isWeight = prod.unitType === 'weight' || prod.category === 'specialty' || prod.category === 'classic_blends' || prod.category === 'espresso' || prod.category === 'filter' || prod.category === 'coffee';
-          
+
           const profit = prod.sellingPrice - prod.costPrice;
           const profitPercent = prod.costPrice > 0 ? Math.round((profit / prod.costPrice) * 100) : 0;
           const isTool = isToolProduct(prod);
@@ -1048,10 +1048,10 @@ export const ProductsView = () => {
                         background: (prod.category === 'classic_blends' || prod.category === 'coffee')
                           ? 'rgba(113, 63, 18, 0.95)'
                           : (prod.subCategory === 'espresso' || prod.category === 'espresso')
-                          ? 'rgba(139, 94, 52, 0.95)'
-                          : (prod.subCategory === 'filter' || prod.category === 'filter')
-                          ? 'rgba(16, 107, 61, 0.95)'
-                          : 'rgba(74, 34, 18, 0.95)',
+                            ? 'rgba(139, 94, 52, 0.95)'
+                            : (prod.subCategory === 'filter' || prod.category === 'filter')
+                              ? 'rgba(16, 107, 61, 0.95)'
+                              : 'rgba(74, 34, 18, 0.95)',
                         backdropFilter: 'blur(4px)',
                         color: '#ffffff',
                         padding: '3px 8px',
@@ -1067,10 +1067,10 @@ export const ProductsView = () => {
                         {(prod.category === 'classic_blends' || prod.category === 'coffee')
                           ? '✨ بن وتوليفات كلاسيكية'
                           : (prod.subCategory === 'espresso' || prod.category === 'espresso')
-                          ? '☕ بن مختص (إسبريسو)'
-                          : (prod.subCategory === 'filter' || prod.category === 'filter')
-                          ? '💧 بن مختص (فلتر)'
-                          : '☕ بن مختص'}
+                            ? '☕ بن مختص (إسبريسو)'
+                            : (prod.subCategory === 'filter' || prod.category === 'filter')
+                              ? '💧 بن مختص (فلتر)'
+                              : '☕ بن مختص'}
                       </span>
                     </span>
                   </div>
@@ -1737,8 +1737,8 @@ export const ProductsView = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px', marginBottom: '18px' }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--mint-900)' }}>
-                {editingProduct 
-                  ? ((formData.unitType === 'piece' || formData.category === 'tools') ? 'تعديل بيانات الأداة والأسعار والمخزون' : 'تعديل بيانات المحصول والأسعار والمعايرة') 
+                {editingProduct
+                  ? ((formData.unitType === 'piece' || formData.category === 'tools') ? 'تعديل بيانات الأداة والأسعار والمخزون' : 'تعديل بيانات المحصول والأسعار والمعايرة')
                   : 'إضافة منتج جديد للمنظومة'}
               </h2>
               <button onClick={() => setIsAddModalOpen(false)} className="btn-icon" style={{ width: '32px', height: '32px' }}>
@@ -1897,27 +1897,27 @@ export const ProductsView = () => {
                       <span>🎨 تصميم كيس مخصص لهذا المنتج</span>
                     </button>
                     {formData.image && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#dc2626',
-                        fontSize: '0.74rem',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 6px'
-                      }}
-                      title="إزالة الصورة"
-                    >
-                      <Trash2 size={13} />
-                      <span>حذف الصورة</span>
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#dc2626',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '2px 6px'
+                        }}
+                        title="إزالة الصورة"
+                      >
+                        <Trash2 size={13} />
+                        <span>حذف الصورة</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
