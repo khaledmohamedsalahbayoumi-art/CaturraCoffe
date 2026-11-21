@@ -1180,36 +1180,6 @@ export const ProductsView = () => {
                 </div>
               </div>
 
-              {/* 🎨 Bag Studio Direct Trigger for Coffee Products */}
-              {isCoffee && (
-                <button
-                  type="button"
-                  onClick={() => setActiveBagStudioProduct(prod)}
-                  style={{
-                    width: '100%',
-                    padding: '7px 12px',
-                    fontSize: '0.82rem',
-                    fontWeight: '800',
-                    color: '#ffffff',
-                    background: 'linear-gradient(135deg, #78350F, #92400E)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    boxShadow: '0 2px 6px rgba(120, 53, 15, 0.22)',
-                    marginTop: '8px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="تصميم وضبط كيس هذا المنتج بواسطة الاستوديو وتطبيقه على المتجر"
-                >
-                  <Sparkles size={14} color="#FDE68A" />
-                  <span>🎨 تصميم وضبط كيس المنتج</span>
-                </button>
-              )}
-
               {/* Actions Footer */}
               <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '4px' }}>
                 {/* Quick Pricing & Stock Edit Button */}
